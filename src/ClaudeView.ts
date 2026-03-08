@@ -10,6 +10,8 @@ export class ClaudeView extends ItemView {
   private inputEl: HTMLTextAreaElement;
   private messagesEl: HTMLElement;
   private sendBtn: HTMLButtonElement;
+  private sessionStatusEl: HTMLElement;
+  private currentSessionId: string | undefined;
 
   constructor(leaf: WorkspaceLeaf, plugin: CortexPlugin) {
     super(leaf);
@@ -24,6 +26,12 @@ export class ClaudeView extends ItemView {
     const root = this.containerEl.children[1] as HTMLElement;
     root.empty();
     root.addClass('cortex-view');
+
+    // Session toolbar
+    const toolbar = root.createDiv({ cls: 'cortex-toolbar' });
+    this.sessionStatusEl = toolbar.createSpan({ cls: 'cortex-session-status', text: 'New session' });
+    const newSessionBtn = toolbar.createEl('button', { text: 'New session', cls: 'cortex-new-session' });
+    newSessionBtn.addEventListener('click', () => this.startNewSession());
 
     this.messagesEl = root.createDiv({ cls: 'cortex-messages' });
 
@@ -45,6 +53,23 @@ export class ClaudeView extends ItemView {
 
   async onClose() { /* nothing to clean up yet */ }
 
+  private startNewSession() {
+    this.currentSessionId = undefined;
+    this.messagesEl.empty();
+    this.updateSessionStatus();
+    log('New session started');
+  }
+
+  private updateSessionStatus() {
+    if (this.currentSessionId) {
+      this.sessionStatusEl.setText(`Session: ${this.currentSessionId.substring(0, 8)}…`);
+      this.sessionStatusEl.title = this.currentSessionId;
+    } else {
+      this.sessionStatusEl.setText('New session');
+      this.sessionStatusEl.title = '';
+    }
+  }
+
   private handleSend() {
     const prompt = this.inputEl.value.trim();
     if (!prompt) return;
@@ -55,7 +80,7 @@ export class ClaudeView extends ItemView {
     }
 
     const unlock = () => { this.sendBtn.disabled = false; };
-    log('handleSend — prompt:', prompt.substring(0, 80));
+    log('handleSend — session:', this.currentSessionId ?? 'new', '— prompt:', prompt.substring(0, 60));
 
     this.inputEl.value = '';
     this.sendBtn.disabled = true;
@@ -70,6 +95,7 @@ export class ClaudeView extends ItemView {
         prompt,
         vaultRoot: (this.app.vault.adapter as any).basePath,
         env: this.plugin.shellEnv,
+        resumeSessionId: this.currentSessionId,
       });
     } catch (e) {
       assistantEl.setText(`Failed to start claude: ${e}`);
@@ -85,17 +111,19 @@ export class ClaudeView extends ItemView {
     parseStreamOutput(proc, {
       onText: (delta) => {
         accumulated += delta;
-        // Plain text while streaming so we don't thrash the DOM
         assistantEl.setText(accumulated);
       },
       onToolCall: (tool) => {
         this.appendMessage('system', `Tool: ${tool}`);
       },
-      onDone: () => {
+      onDone: (sessionId) => {
+        if (sessionId) {
+          this.currentSessionId = sessionId;
+          this.updateSessionStatus();
+        }
         if (!accumulated) {
           assistantEl.setText('(no response)');
         } else {
-          // Render markdown now that the full response is in
           assistantEl.empty();
           MarkdownRenderer.render(this.app, accumulated, assistantEl, '', this);
         }
