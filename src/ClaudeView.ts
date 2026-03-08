@@ -1,6 +1,7 @@
 import { ItemView, WorkspaceLeaf, MarkdownRenderer } from 'obsidian';
 import type CortexPlugin from '../main';
 import { spawnClaude, parseStreamOutput } from './ClaudeProcess';
+import { ContextManager } from './ContextManager';
 import { log } from './utils/logger';
 
 export const VIEW_TYPE_CLAUDE = 'cortex-chat';
@@ -70,7 +71,7 @@ export class ClaudeView extends ItemView {
     }
   }
 
-  private handleSend() {
+  private async handleSend() {
     const prompt = this.inputEl.value.trim();
     if (!prompt) return;
 
@@ -80,6 +81,7 @@ export class ClaudeView extends ItemView {
     }
 
     const unlock = () => { this.sendBtn.disabled = false; };
+    const isNewSession = !this.currentSessionId;
     log('handleSend — session:', this.currentSessionId ?? 'new', '— prompt:', prompt.substring(0, 60));
 
     this.inputEl.value = '';
@@ -88,11 +90,20 @@ export class ClaudeView extends ItemView {
 
     const assistantEl = this.appendMessage('assistant', '…');
 
+    // On the first message of a new session, prepend vault context
+    let finalPrompt = prompt;
+    if (isNewSession) {
+      const ctx = new ContextManager(this.app, this.plugin.settings.contextFilePath);
+      const context = await ctx.buildSessionContext();
+      finalPrompt = ctx.injectContext(context, prompt);
+      if (context) log('Context injected, length:', context.length);
+    }
+
     let proc: ReturnType<typeof spawnClaude>;
     try {
       proc = spawnClaude({
         binaryPath: this.plugin.claudeBinaryPath,
-        prompt,
+        prompt: finalPrompt,
         vaultRoot: (this.app.vault.adapter as any).basePath,
         env: this.plugin.shellEnv,
         resumeSessionId: this.currentSessionId,

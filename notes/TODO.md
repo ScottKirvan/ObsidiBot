@@ -9,6 +9,7 @@ TODO
 - [ ] Install Hot Reload plugin in test vault for faster iteration
 - [ ] Strip verbose env logging from ClaudeProcess.ts (PATH/APPDATA lines) once stable
 - [ ] Commit current working state
+- [ ] feat: use enter key to send message (instead of button click) -- make this an option in Cortex settings.
 
 In Progress
 -----------
