@@ -1,15 +1,11 @@
 TODO
 ----
 - [ ] Copy/paste not working in chat panel
-- [ ] Markdown rendering in assistant messages (currently plain text)
-- [ ] Session persistence — resume previous conversation with --resume <sessionId>
 - [ ] Show thinking indicator while waiting for response (spinner or "thinking..." text)
-- [ ] Context injection (ContextManager.ts) — vault tree + context file at session start
 - [ ] Frontmatter enforcement (FrontmatterGuard.ts) — readonly/protect/context:never
-- [ ] Install Hot Reload plugin in test vault for faster iteration
-- [ ] Strip verbose env logging from ClaudeProcess.ts (PATH/APPDATA lines) once stable
-- [ ] Commit current working state
-- [ ] feat: use enter key to send message (instead of button click) -- make this an option in Cortex settings.
+- [ ] "send on enter" setting - make that default to true
+- [ ] add a thin box around the right-aligned user input text in the panel.
+- [ ] bug: ctrl-enter doesn't work to send messages, even when "send on enter" is enabled. 
 
 In Progress
 -----------
@@ -30,6 +26,12 @@ Done ✓
 - [X] Fix Windows/Electron spawn: use powershell.exe intermediary + stdin.end()
 - [X] Fix stream-json message parser (assistant type, not content_block_delta)
 - [X] End-to-end working: chat, read files, write files, tool use
+- [X] Markdown rendering in assistant messages
+- [X] Session persistence (--resume) + New session button + session indicator
+- [X] Context injection — vault tree + context file on new session start
+- [X] Send on Enter setting (toggle in Settings → Cortex)
+- [X] Strip verbose env logging from ClaudeProcess.ts
+- [X] Install Hot Reload plugin in test vault for faster iteration
 
 Not Gonna Do
 ------------

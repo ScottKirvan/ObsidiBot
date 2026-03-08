@@ -94,7 +94,8 @@ export class ClaudeView extends ItemView {
     this.sendBtn.disabled = true;
     this.appendMessage('user', prompt);
 
-    const assistantEl = this.appendMessage('assistant', '…');
+    const assistantEl = this.appendMessage('assistant', '');
+    assistantEl.addClass('cortex-thinking');
 
     // On the first message of a new session, prepend vault context
     let finalPrompt = prompt;
@@ -134,6 +135,7 @@ export class ClaudeView extends ItemView {
         this.appendMessage('system', `Tool: ${tool}`);
       },
       onDone: (sessionId) => {
+        assistantEl.removeClass('cortex-thinking');
         if (sessionId) {
           this.currentSessionId = sessionId;
           this.updateSessionStatus();

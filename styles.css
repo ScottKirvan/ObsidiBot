@@ -1,1 +1,99 @@
 /* Cortex plugin styles */
+
+/* ── Layout ── */
+.cortex-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.cortex-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  flex-shrink: 0;
+}
+
+.cortex-session-status {
+  font-size: 0.8em;
+  color: var(--text-muted);
+  flex: 1;
+}
+
+.cortex-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cortex-input-row {
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--background-modifier-border);
+  flex-shrink: 0;
+}
+
+.cortex-input {
+  flex: 1;
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+  font-size: inherit;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 6px 8px;
+}
+
+/* ── Messages ── */
+.cortex-message {
+  padding: 8px 12px;
+  border-radius: 6px;
+  line-height: 1.5;
+  /* Allow text selection for copy/paste */
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.cortex-user {
+  background: var(--background-secondary);
+  align-self: flex-end;
+  max-width: 85%;
+}
+
+.cortex-assistant {
+  background: var(--background-primary-alt);
+  align-self: flex-start;
+  max-width: 95%;
+  width: 100%;
+}
+
+.cortex-system {
+  color: var(--text-muted);
+  font-size: 0.85em;
+  align-self: center;
+  font-style: italic;
+}
+
+/* Thinking indicator */
+.cortex-assistant.cortex-thinking::after {
+  content: ' ▋';
+  animation: cortex-blink 1s step-end infinite;
+}
+
+@keyframes cortex-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Markdown content inside assistant messages */
+.cortex-assistant p:last-child { margin-bottom: 0; }
+.cortex-assistant pre { overflow-x: auto; }

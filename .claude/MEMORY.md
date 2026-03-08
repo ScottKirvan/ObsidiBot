@@ -14,61 +14,52 @@ Persistent cross-session notes for Claude Code. Keep concise.
 
 ## Current Status (as of 2026-03-08)
 
-- **Phase:** Active development. Scaffold complete, build passes, test vault symlink set up.
-- **Source files in place:** `main.ts`, `src/ClaudeView.ts`, `src/ClaudeProcess.ts`, `src/settings.ts`, stubs for session/context/guard/utils
-- **Blocker in progress:** Claude Code not yet installed natively in Windows — needed for plugin to find the binary
+- **Phase:** Active development. Core features working and committed.
+- **Working:** chat panel, session persistence (--resume), markdown rendering, context injection (vault tree + context file), Send-on-Enter setting
+- **Test vault:** `D:\2\deleteme` (symlinked to plugin dir)
+- **Remaining:** copy/paste in panel, thinking indicator, frontmatter enforcement (FrontmatterGuard.ts)
 
 ## Known Gotchas
 
 - **Claude Code must be installed AND logged in natively in Windows (PowerShell), not just in WSL.** Install: `winget install Anthropic.ClaudeCode`. Then: `claude login`. WSL auth does not carry over.
-- **Windows/Electron spawn fix (SOLVED):** `child_process.spawn` with `stdio:pipe` silently swallows stdout when called from Obsidian/Electron on Windows (both `shell:true` via cmd.exe and `shell:false` fail). Fix: spawn via `powershell.exe -NonInteractive -Command "& 'claude.exe' ..."` AND call `proc.stdin?.end()` immediately after spawn. Both required. See `src/ClaudeProcess.ts`.
-- **`--verbose` required:** `--output-format stream-json` requires `--verbose` when combined with `--print`, otherwise claude exits with an error on stderr.
+- **Windows/Electron spawn fix:** `child_process.spawn` with `stdio:pipe` silently swallows stdout from Obsidian/Electron. Fix: spawn via `powershell.exe -NonInteractive -Command "& 'claude.exe' ..."` AND call `proc.stdin?.end()` after spawn. See `src/ClaudeProcess.ts`.
+- **`--verbose` required:** `--output-format stream-json` requires `--verbose` with `--print`.
+- **`CLAUDECODE` env var:** must be deleted from spawn env or claude refuses to run nested.
 
 ## Key Architecture Decisions (Locked)
 
-- Uses Claude Code **CLI binary as subprocess** — NOT the API, NOT the Agent SDK
-- No API key needed — rides user's Pro/Max subscription
-- `child_process.spawn('claude', ['--output-format', 'stream-json', '--print', ...])`
-- Vault root = `cwd` for all claude spawns
-- Sessions stored in `.obsidian/claude/sessions/` (gitignored by default)
-- Context system replaces `CLAUDE.md`; uses `_claude-context.md` by default
-- Per-note frontmatter under `claude:` key controls access/behavior
+- Spawns `claude` CLI via subprocess — NOT the API, NOT the Agent SDK
+- No API key — rides Pro/Max subscription
+- Windows: spawn via `powershell.exe -NonInteractive` + `proc.stdin.end()`
+- Vault root = `cwd` for all spawns
+- Context injected once at new session start (vault tree + `_claude-context.md`)
+- Sessions tracked by ID; `--resume <id>` for continuity; "New session" button to clear
 - **Desktop only** — `isDesktopOnly: true`
 
 ## Scott's Preferences
 
-- Conventional commits + release-please (he handles commits, I write the code)
-- Scott moves between machines — notes must be self-contained enough to resume cold
-- Not yet fluent in TypeScript — I do most of the implementation writing
-- Does not want me to auto-commit or push
-- Project and plugin both called "Cortex" (not "obsidian-claude" or any other name)
+- Conventional commits + release-please (he commits, I write code)
+- Scott moves between machines — keep notes complete enough to resume cold
+- Not yet fluent in TypeScript — I do the implementation writing
+- No auto-commit or push
+- Project and plugin both called "Cortex"
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
 | `Claude.md` | Project instructions (in repo) |
-| `.claude/MEMORY.md` | This file — cross-session notes (in repo, git-tracked) |
-| `notes/obsidian-claude-plugin-design.md` | Full architecture + feature spec |
-| `notes/obsidian-claude-plugin-bootstrap.md` | Day-one dev setup |
-| `notes/obsidian-claude-plugin-frontmatter-schema.md` | Frontmatter schema |
-| `notes/obsidian-claude-plugin-questions.md` | Open design decisions |
+| `.claude/MEMORY.md` | This file |
+| `src/ClaudeView.ts` | Chat panel UI, session tracking, context injection |
+| `src/ClaudeProcess.ts` | Binary detection, spawn, stream-json parsing |
+| `src/ContextManager.ts` | Vault tree + context file assembly |
+| `src/settings.ts` | Settings schema + tab |
+| `test/spawn-test.mjs` | Standalone spawn test (run with node, no Obsidian needed) |
+| `notes/obsidian-claude-plugin-design.md` | Full architecture spec |
 
-## Implementation Order
+## Remaining Work (prioritized)
 
-- [x] Scaffold (manifest, package.json, tsconfig, esbuild, main.ts, src/)
-- [x] npm install + npm run build passes
-- [x] Test vault symlink created
-- [ ] Claude Code installed natively in Windows + plugin loads in Obsidian
-- [ ] Verify streaming output works end-to-end in ClaudeView
-- [ ] Session persistence (ClaudeSession.ts + sessionStorage.ts)
-- [ ] Context injection (ContextManager.ts)
-- [ ] Frontmatter enforcement (FrontmatterGuard.ts)
-
-## Open Design Questions (unresolved)
-
-See `notes/obsidian-claude-plugin-questions.md` for full detail. Key ones:
-- Q1: Context injection — once at session start vs. every turn (leaning: setting, default once)
-- Q2: Compaction notification UX (leaning: inline chat notice)
-- Q3: Concurrent sessions — out of scope for v1
-- Q6: Permission prompts — inline in chat with Allow/Deny buttons
+1. Copy/paste in chat panel (likely CSS `user-select` issue)
+2. Thinking indicator (spinner/animation while waiting)
+3. FrontmatterGuard.ts — readonly/protect/context:never enforcement
+4. Styles polish (styles.css is nearly empty)
