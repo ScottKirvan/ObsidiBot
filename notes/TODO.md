@@ -1,11 +1,10 @@
 TODO
 ----
-- [ ] Copy/paste not working in chat panel
-- [ ] Show thinking indicator while waiting for response (spinner or "thinking..." text)
+- [x] Copy/paste not working in chat panel ✅ 2026-03-08
+- [x] Show thinking indicator while waiting for response (spinner or "thinking..." text) ✅ 2026-03-08
 - [ ] Frontmatter enforcement (FrontmatterGuard.ts) — readonly/protect/context:never
-- [ ] "send on enter" setting - make that default to true
-- [ ] add a thin box around the right-aligned user input text in the panel.
-- [ ] bug: ctrl-enter doesn't work to send messages, even when "send on enter" is enabled. 
+- [x] "send on enter" setting - make that default to true ✅ 2026-03-08
+- [x] add a thin box around the right-aligned user input text in the panel. ✅ 2026-03-08
 - [ ] bug: when I use shift-enter to enter multiline messages, the newlines are stripped out when the message is redisplayed in the chat panel.
 
 In Progress
@@ -36,4 +35,5 @@ Done ✓
 
 Not Gonna Do
 ------------
-- [ ] .
+- [x] bug: ctrl-enter doesn't work to send messages, even when "send on enter" is enabled. ✅ 2026-03-08
+	-  ctrl-enter is gobbled up by a system level user setting - skip it
