@@ -16,17 +16,9 @@ export class ClaudeView extends ItemView {
     this.plugin = plugin;
   }
 
-  getViewType(): string {
-    return VIEW_TYPE_CLAUDE;
-  }
-
-  getDisplayText(): string {
-    return 'Cortex';
-  }
-
-  getIcon(): string {
-    return 'message-square';
-  }
+  getViewType(): string { return VIEW_TYPE_CLAUDE; }
+  getDisplayText(): string { return 'Cortex'; }
+  getIcon(): string { return 'message-square'; }
 
   async onOpen() {
     const root = this.containerEl.children[1] as HTMLElement;
@@ -63,8 +55,7 @@ export class ClaudeView extends ItemView {
     }
 
     const unlock = () => { this.sendBtn.disabled = false; };
-    const vaultRoot = (this.app.vault.adapter as any).basePath;
-    log('handleSend — vaultRoot:', vaultRoot, '— prompt:', prompt.substring(0, 80));
+    log('handleSend — prompt:', prompt.substring(0, 80));
 
     this.inputEl.value = '';
     this.sendBtn.disabled = true;
@@ -72,7 +63,7 @@ export class ClaudeView extends ItemView {
 
     const assistantEl = this.appendMessage('assistant', '…');
 
-    let proc;
+    let proc: ReturnType<typeof spawnClaude>;
     try {
       proc = spawnClaude({
         binaryPath: this.plugin.claudeBinaryPath,
@@ -94,18 +85,25 @@ export class ClaudeView extends ItemView {
     parseStreamOutput(proc, {
       onText: (delta) => {
         accumulated += delta;
+        // Plain text while streaming so we don't thrash the DOM
         assistantEl.setText(accumulated);
       },
       onToolCall: (tool) => {
         this.appendMessage('system', `Tool: ${tool}`);
       },
       onDone: () => {
-        if (!accumulated) assistantEl.setText('(no response)');
+        if (!accumulated) {
+          assistantEl.setText('(no response)');
+        } else {
+          // Render markdown now that the full response is in
+          assistantEl.empty();
+          MarkdownRenderer.render(this.app, accumulated, assistantEl, '', this);
+        }
+        assistantEl.scrollIntoView({ behavior: 'smooth' });
         unlock();
       },
       onError: (err) => {
         this.appendMessage('system', `stderr: ${err.trim()}`);
-        // don't unlock here — stderr can fire mid-stream; onDone handles unlock
       },
     });
 
