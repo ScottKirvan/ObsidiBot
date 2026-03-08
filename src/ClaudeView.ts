@@ -45,15 +45,10 @@ export class ClaudeView extends ItemView {
 
     this.sendBtn.addEventListener('click', () => this.handleSend());
     this.inputEl.addEventListener('keydown', (e) => {
-      const sendOnEnter = this.plugin.settings.sendOnEnter;
-      if (e.key === 'Enter') {
-        if (sendOnEnter && !e.shiftKey) {
-          e.preventDefault();
-          this.handleSend();
-        } else if (!sendOnEnter && (e.ctrlKey || e.metaKey)) {
-          e.preventDefault();
-          this.handleSend();
-        }
+      // Enter sends (when setting is on); Shift+Enter always inserts newline
+      if (e.key === 'Enter' && !e.shiftKey && this.plugin.settings.sendOnEnter) {
+        e.preventDefault();
+        this.handleSend();
       }
     });
   }

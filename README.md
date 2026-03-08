@@ -79,7 +79,7 @@ See the [User Guide](notes/USER_README.md) for full setup and configuration deta
 ## Quick Start
 
 1. Open the Cortex panel from the ribbon (message-square icon) or Command Palette
-2. Type a message and press **Ctrl+Enter** (or click Send)
+2. Type a message and press **Enter** (or click Send). Use Shift+Enter for a newline.
 3. Claude has access to your full vault — ask it to summarize a note, find related ideas, or draft new content
 
 See the [User Guide](notes/USER_README.md) for context files, frontmatter controls, and session management.

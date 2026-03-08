@@ -66,7 +66,7 @@ After enabling the plugin:
 
 ## Using the Chat Panel
 
-The chat panel opens as a sidebar. Type your message and press **Ctrl+Enter** (Windows/Linux) or **Cmd+Enter** (Mac) to send, or click **Send**.
+The chat panel opens as a sidebar. Type your message and press **Enter** to send, or click **Send**. Use **Shift+Enter** to insert a newline without sending. The "Send on Enter" behaviour can be toggled in **Settings → Cortex**.
 
 Claude has access to your full vault — it can read, write, create, move, and organize notes. The vault root is Claude's working directory.
 

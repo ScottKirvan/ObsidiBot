@@ -6,6 +6,7 @@ TODO
 - [ ] "send on enter" setting - make that default to true
 - [ ] add a thin box around the right-aligned user input text in the panel.
 - [ ] bug: ctrl-enter doesn't work to send messages, even when "send on enter" is enabled. 
+- [ ] bug: when I use shift-enter to enter multiline messages, the newlines are stripped out when the message is redisplayed in the chat panel.
 
 In Progress
 -----------

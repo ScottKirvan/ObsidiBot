@@ -10,7 +10,7 @@ export interface CortexSettings {
 export const DEFAULT_SETTINGS: CortexSettings = {
   binaryPath: '',
   contextFilePath: '_claude-context.md',
-  sendOnEnter: false,
+  sendOnEnter: true,
 };
 
 export class CortexSettingsTab extends PluginSettingTab {
@@ -53,7 +53,7 @@ export class CortexSettingsTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Send on Enter')
-      .setDesc('Press Enter to send. When off, use Ctrl+Enter (or Cmd+Enter on Mac).')
+      .setDesc('Press Enter to send. Shift+Enter always inserts a newline.')
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.sendOnEnter)
