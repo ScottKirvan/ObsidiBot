@@ -325,7 +325,7 @@ export default class ClaudePlugin extends Plugin {
     this.registerView(VIEW_TYPE_CLAUDE, (leaf) => new ClaudeView(leaf, this));
 
     // Ribbon icon to open panel
-    this.addRibbonIcon('message-square', 'Claude', () => {
+    this.addRibbonIcon('sprout', 'Claude', () => {
       this.activateView();
     });
 

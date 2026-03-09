@@ -23,5 +23,15 @@ function write(level: string, args: unknown[]) {
   }
 }
 
-export const log  = (...args: unknown[]) => write('INFO', args);
+export const log = (...args: unknown[]) => write('INFO', args);
 export const warn = (...args: unknown[]) => write('WARN', args);
+
+/**
+ * Rough token estimation (Claude uses ~4 chars per token on average).
+ * This is approximate; actual token count from API may differ.
+ */
+export function estimateTokens(text: string): number {
+  // Claude's tokenizer counts roughly 1 token per 4 characters for English text
+  // This is a rough approximation used for debugging
+  return Math.ceil(text.length / 4);
+}

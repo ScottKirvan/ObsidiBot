@@ -12,6 +12,7 @@ Cortex is an Obsidian plugin that puts a Claude Code agent inside your vault. Th
 - [Using the Chat Panel](#using-the-chat-panel)
 - [Context System](#context-system)
 - [Per-Note Frontmatter Controls](#per-note-frontmatter-controls)
+- [Commands](#commands)
 - [Settings](#settings)
 - [Known Limitations](#known-limitations)
 
@@ -58,7 +59,7 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for building from source.
 
 After enabling the plugin:
 
-- A **message-square icon** appears in the left ribbon — click it to open the Cortex chat panel
+- A **sprout icon** appears in the left ribbon — click it to open the Cortex chat panel
 - Or use the Command Palette: `Cortex: Open chat`
 - If Claude is not found automatically, a notice will appear — go to **Settings → Cortex** and enter the full path to your `claude` binary
 
@@ -109,13 +110,13 @@ The context file path is configurable in **Settings → Cortex**.
 
 #### Two kinds of memory
 
-| | Session memory (`--resume`) | Autonomous memory (context file) |
-|---|---|---|
-| **What** | Full conversation history | Key facts Claude chose to remember |
-| **How long** | Until the Claude Code session expires | Permanent (until you edit or delete) |
-| **Cross-machine** | No — stored in Claude Code's local cache (`~/.claude/`) | Yes — travels with vault sync |
-| **Size** | 10KB–several MB per session (plain JSON lines) | As small as you keep it |
-| **Inspectable** | No | Yes — it's just a markdown file |
+|                   | Session memory (`--resume`)                             | Autonomous memory (context file)     |
+| ----------------- | ------------------------------------------------------- | ------------------------------------ |
+| **What**          | Full conversation history                               | Key facts Claude chose to remember   |
+| **How long**      | Until the Claude Code session expires                   | Permanent (until you edit or delete) |
+| **Cross-machine** | No — stored in Claude Code's local cache (`~/.claude/`) | Yes — travels with vault sync        |
+| **Size**          | 10KB–several MB per session (plain JSON lines)          | As small as you keep it              |
+| **Inspectable**   | No                                                      | Yes — it's just a markdown file      |
 
 > **Cross-machine note:** Session files live at `~/.claude/projects/<vault-path>/` keyed to the vault's absolute path. Resuming a session from another machine requires the vault to be at the same absolute path AND the session file to be present on that machine. This is generally not practical. Use the context file for cross-machine continuity instead.
 
@@ -188,14 +189,46 @@ claude:
 
 ---
 
+## Commands
+
+Cortex provides a full command palette for quick access to all features. Press **Ctrl+P** (Windows/Linux) or **Cmd+P** (Mac) to open the Command Palette, then search for any of these commands:
+
+### Panel & Navigation
+
+| Command                         | ID                            | Description                                                                                    |
+| ------------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------- |
+| **Open Cortex agent**           | `open-cortex-agent`           | Opens or focuses the Cortex chat panel. You can also click the sprout icon in the left ribbon. |
+| **Toggle Cortex panel**         | `toggle-cortex-panel`         | Quickly hide or show the Cortex chat panel without closing it.                                 |
+| **Show Cortex session history** | `show-cortex-session-history` | Display a list of all saved sessions and resume a previous conversation.                       |
+
+### Session Management
+
+| Command                          | ID                     | Description                                                                                                            |
+| -------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **New Cortex session**           | `new-cortex-session`   | Start a fresh conversation with Claude. The current session is saved automatically.                                    |
+| **Clear current Cortex session** | `clear-cortex-session` | Clear all messages from the current session. Claude can still see the vault tree and context file at the next message. |
+
+### Communication & Settings
+
+| Command                        | ID                           | Description                                                                                           |
+| ------------------------------ | ---------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Export Cortex conversation** | `export-cortex-conversation` | Export the current conversation as a markdown file. Useful for saving recipes, decisions, or outputs. |
+| **Copy Cortex last response**  | `copy-cortex-last-response`  | Copy Claude's last response to the clipboard in markdown format.                                      |
+| **Open Cortex settings**       | `open-cortex-settings`       | Jump directly to the Cortex settings panel.                                                           |
+
+---
+
 ## Settings
 
 Open **Settings → Cortex** to configure:
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| Claude binary path | *(auto-detect)* | Full path to the `claude` executable. Leave blank to auto-detect from PATH and common install locations. |
-| Context file path | `_claude-context.md` | Vault-relative path to the context file injected at session start. |
+| Setting                        | Default              | Description                                                                                                                                             |
+| ------------------------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude binary path             | *(auto-detect)*      | Full path to the `claude` executable. Leave blank to auto-detect from PATH and common install locations.                                                |
+| Context file path              | `_claude-context.md` | Vault-relative path to the context file injected at session start.                                                                                      |
+| Send on Enter                  | On                   | Press Enter to send a message. Shift+Enter always inserts a newline.                                                                                    |
+| Resume last session on startup | On                   | Automatically resume the most recent session when the Cortex panel opens.                                                                               |
+| Autonomous memory              | On                   | Claude will autonomously update the context file as it learns about your vault. Disable if you prefer to manage it manually or if your vault is shared. |
 
 ---
 

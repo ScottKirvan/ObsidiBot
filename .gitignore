@@ -12,3 +12,4 @@ data.json
 # Cortex runtime data written when plugin runs from symlinked dev folder
 # In production vaults this lives at .obsidian/plugins/cortex/.claude/sessions/
 .claude/sessions/
+notes/COMMIT_DRAFT.md

@@ -1,10 +1,9 @@
 TODO
 ----
-- [ ] session history: add the ability to delete old sessions from the session list modal
-- [ ] session history button: let's remove the button and a search/filter box to the session list modal.
 - [ ] Frontmatter enforcement (FrontmatterGuard.ts) — readonly/protect/context:never
 - [ ] we have "dangerously-skip-permissions" set - I think this was set when trying to solve a permissions issue that turned out to be a red herring. Let's remove it and see if we run into any issues.
-- [ ] bug:  I ran out of my usage extremely fast - investigate why and see if we're not dumping too much data into the session or in every message/response. 
+- [x] Option B session architecture: remove --resume from turn-to-turn, keep only for session load ✅ 2026-03-09 
+- [ ] test and document any bugs or missing functionality in the commands
 
 In Progress
 -----------
@@ -12,6 +11,11 @@ In Progress
 
 Done ✓
 ------
+- [x] session history: add the ability to delete old sessions from the session list modal ✅ 2026-03-09
+- [x] session history: remove History button and add search/filter to session list modal ✅ 2026-03-09
+- [x] session history: add "New Session" button to create named sessions from the modal ✅ 2026-03-09
+- [x] Option B session architecture: remove --resume from turn-to-turn, keep only for session load ✅ 2026-03-09
+- [x] Add standard plugin commands (New session, Clear session, Toggle panel, Session history, Export conversation, Copy last response) ✅ 2026-03-09
 - [X] Write design specs (notes/)
 - [X] Write Claude.md and MEMORY.md project context
 - [X] Scaffold plugin structure (manifest, package.json, tsconfig, esbuild, main.ts, src/)

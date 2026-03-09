@@ -26,8 +26,73 @@ export default class CortexPlugin extends Plugin {
 
     this.registerView(VIEW_TYPE_CLAUDE, (leaf) => new ClaudeView(leaf, this));
 
-    this.addRibbonIcon('message-square', 'Cortex', () => {
+    this.addRibbonIcon('sprout', 'Open Cortex agent', () => {
       this.activateView();
+    });
+
+    this.addCommand({
+      id: 'open-cortex-agent',
+      name: 'Open Cortex agent',
+      callback: () => {
+        this.activateView();
+      }
+    });
+
+    this.addCommand({
+      id: 'open-cortex-settings',
+      name: 'Open Cortex settings',
+      callback: () => {
+        (this.app as any).setting.open();
+        (this.app as any).setting.openTabById('cortex');
+      }
+    });
+
+    this.addCommand({
+      id: 'new-cortex-session',
+      name: 'New Cortex session',
+      callback: () => {
+        this.newSession();
+      }
+    });
+
+    this.addCommand({
+      id: 'clear-cortex-session',
+      name: 'Clear current Cortex session',
+      callback: () => {
+        this.clearCurrentSession();
+      }
+    });
+
+    this.addCommand({
+      id: 'toggle-cortex-panel',
+      name: 'Toggle Cortex panel',
+      callback: () => {
+        this.togglePanel();
+      }
+    });
+
+    this.addCommand({
+      id: 'show-cortex-session-history',
+      name: 'Show Cortex session history',
+      callback: () => {
+        this.showSessionHistory();
+      }
+    });
+
+    this.addCommand({
+      id: 'export-cortex-conversation',
+      name: 'Export Cortex conversation',
+      callback: () => {
+        this.exportConversation();
+      }
+    });
+
+    this.addCommand({
+      id: 'copy-cortex-last-response',
+      name: 'Copy Cortex last response',
+      callback: () => {
+        this.copyLastResponse();
+      }
     });
 
     this.addSettingTab(new CortexSettingsTab(this.app, this));
@@ -50,6 +115,75 @@ export default class CortexPlugin extends Plugin {
     if (leaf) {
       await leaf.setViewState({ type: VIEW_TYPE_CLAUDE, active: true });
       workspace.revealLeaf(leaf);
+    }
+  }
+
+  newSession() {
+    const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
+    if (existing.length) {
+      const view = existing[0].view as ClaudeView;
+      view.startNewSession();
+    } else {
+      // If panel not open, open it and start new session
+      this.activateView().then(() => {
+        const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
+        if (existing.length) {
+          const view = existing[0].view as ClaudeView;
+          view.startNewSession();
+        }
+      });
+    }
+  }
+
+  clearCurrentSession() {
+    const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
+    if (existing.length) {
+      const view = existing[0].view as ClaudeView;
+      view.clearCurrentSession();
+    }
+  }
+
+  togglePanel() {
+    const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
+    if (existing.length) {
+      // Panel is open, detach it
+      this.app.workspace.detachLeavesOfType(VIEW_TYPE_CLAUDE);
+    } else {
+      // Panel is closed, open it
+      this.activateView();
+    }
+  }
+
+  showSessionHistory() {
+    const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
+    if (existing.length) {
+      const view = existing[0].view as ClaudeView;
+      view.showSessionHistory();
+    } else {
+      // If panel not open, open it first
+      this.activateView().then(() => {
+        const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
+        if (existing.length) {
+          const view = existing[0].view as ClaudeView;
+          view.showSessionHistory();
+        }
+      });
+    }
+  }
+
+  exportConversation() {
+    const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
+    if (existing.length) {
+      const view = existing[0].view as ClaudeView;
+      view.exportConversation();
+    }
+  }
+
+  copyLastResponse() {
+    const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
+    if (existing.length) {
+      const view = existing[0].view as ClaudeView;
+      view.copyLastResponse();
     }
   }
 

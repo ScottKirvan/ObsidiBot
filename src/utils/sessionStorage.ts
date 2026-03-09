@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 
@@ -31,6 +31,11 @@ export function loadAllSessions(vaultRoot: string): StoredSession[] {
   } catch {
     return [];
   }
+}
+
+export function deleteSession(vaultRoot: string, sessionId: string): void {
+  const filePath = join(getSessionsDir(vaultRoot), `${sessionId}.json`);
+  if (existsSync(filePath)) unlinkSync(filePath);
 }
 
 export function titleFromPrompt(prompt: string): string {
