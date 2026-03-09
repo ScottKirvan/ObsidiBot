@@ -4,6 +4,7 @@ TODO
 - [ ] session history button: let's remove the button and a search/filter box to the session list modal.
 - [ ] Frontmatter enforcement (FrontmatterGuard.ts) — readonly/protect/context:never
 - [ ] we have "dangerously-skip-permissions" set - I think this was set when trying to solve a permissions issue that turned out to be a red herring. Let's remove it and see if we run into any issues.
+- [ ] bug:  I ran out of my usage extremely fast - investigate why and see if we're not dumping too much data into the session or in every message/response. 
 
 In Progress
 -----------
