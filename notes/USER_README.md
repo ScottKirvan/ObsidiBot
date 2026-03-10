@@ -120,6 +120,22 @@ The context file path is configurable in **Settings → Cortex**.
 
 > **Cross-machine note:** Session files live at `~/.claude/projects/<vault-path>/` keyed to the vault's absolute path. Resuming a session from another machine requires the vault to be at the same absolute path AND the session file to be present on that machine. This is generally not practical. Use the context file for cross-machine continuity instead.
 
+#### Token cost model
+
+Understanding when tokens are spent helps you use Cortex efficiently:
+
+| Action | Token cost | Notes |
+|--------|-----------|-------|
+| Opening the panel | Free | No API call |
+| Switching sessions in History | Free | Reads local `.jsonl` file only |
+| Browsing session history | Free | All local disk reads |
+| **First message of a new session** | **Full price** | Context injection + your prompt, cache created here |
+| **Continuing a session (turn 2+, within ~1 hour)** | **Cheap** | History loaded from prompt cache (~10x cheaper) |
+| **Resuming after restart / 1+ hour gap** | **Full price** | Cache expired; full history re-charged as fresh input tokens |
+| Starting a new session | Free | No API call until you send |
+
+**The key insight:** Claude's prompt cache expires after ~1 hour. Continuing a session within an hour is cheap; resuming a session after an overnight shutdown pays full price to reload the history. For sessions you haven't used in a while, starting a new session (paying only for context injection) may be cheaper than resuming a large accumulated one.
+
 ### 3. Pinned Notes
 Individual notes can be permanently pinned to every session using frontmatter (see below).
 
