@@ -119,3 +119,4 @@ MIT — see [LICENSE.md](LICENSE.md)
 
 Project Link: [Cortex](https://github.com/ScottKirvan/Cortex)
 [CHANGELOG](notes/CHANGELOG.md) · [TODO](notes/TODO.md) · [User Guide](notes/USER_README.md)
+
