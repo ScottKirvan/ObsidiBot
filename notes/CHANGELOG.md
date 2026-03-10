@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/ScottKirvan/Cortex/compare/v0.2.0...v0.2.1) (2026-03-10)
+
+
+### Bug Fixes
+
+* test checkin - ignore ([b199bef](https://github.com/ScottKirvan/Cortex/commit/b199bef8f1757560d85d3f6bbd2ada60813df480))
+
 ## [0.2.0](https://github.com/ScottKirvan/Cortex/compare/v0.1.0...v0.2.0) (2026-03-10)
 
 
