@@ -277,8 +277,6 @@ export class ClaudeView extends ItemView {
       return;
     }
 
-    proc.stdin?.end();
-
     let accumulated = '';
 
     parseStreamOutput(proc, {

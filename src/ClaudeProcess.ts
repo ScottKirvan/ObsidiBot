@@ -77,8 +77,7 @@ export function spawnClaude(opts: SpawnOptions): ChildProcess {
   if (opts.resumeSessionId) {
     args.push('--resume', opts.resumeSessionId);
   }
-
-  args.push(opts.prompt);
+  // Prompt is written to stdin after spawn — avoids all shell/arg quoting issues.
 
   // Strip CLAUDECODE so claude doesn't refuse to launch inside another session.
   const env = { ...opts.env };
@@ -92,15 +91,8 @@ export function spawnClaude(opts: SpawnOptions): ChildProcess {
     // On Windows, Electron's child_process piping doesn't work correctly with
     // cmd.exe (shell:true) or direct spawn (shell:false) — stdout is swallowed.
     // Spawning via powershell.exe -NonInteractive works reliably.
-    // Single-quote the binary path; escape single quotes in each arg/prompt.
-    // Normalize Unicode smart quotes first — PowerShell treats \u2018/\u2019 as
-    // string delimiters, which breaks the command when prompts contain contractions.
-    const ps = (s: string) => {
-      const normalized = s
-        .replace(/[\u2018\u2019]/g, "'")   // curly single quotes → straight
-        .replace(/[\u201C\u201D]/g, '"');   // curly double quotes → straight
-      return `'${normalized.replace(/'/g, "''")}'`;
-    };
+    // Single-quote flags only (no user content in args now — prompt goes via stdin).
+    const ps = (s: string) => `'${s.replace(/'/g, "''")}'`;
     const psCmd = `& ${ps(opts.binaryPath)} ${args.map(ps).join(' ')}`;
     LOG('  powershell spawn');
     proc = spawn('powershell.exe', ['-NonInteractive', '-Command', psCmd], {
@@ -119,6 +111,12 @@ export function spawnClaude(opts: SpawnOptions): ChildProcess {
   }
 
   LOG('  pid:', proc.pid);
+
+  // Write prompt via stdin — bypasses all shell/arg quoting issues.
+  // claude --print reads from stdin when no positional prompt arg is given.
+  proc.stdin?.write(opts.prompt, 'utf8');
+  proc.stdin?.end();
+
   return proc;
 }
 
