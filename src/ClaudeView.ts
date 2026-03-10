@@ -52,7 +52,7 @@ export class ClaudeView extends ItemView {
     const inputRow = root.createDiv({ cls: 'cortex-input-row' });
     this.inputEl = inputRow.createEl('textarea', {
       cls: 'cortex-input',
-      attr: { placeholder: 'Ask Claude…', rows: '3' },
+      attr: { placeholder: 'Ask Cortex…', rows: '3' },
     });
     this.sendBtn = inputRow.createEl('button', { text: 'Send', cls: 'cortex-send' });
 
