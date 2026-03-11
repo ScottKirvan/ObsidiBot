@@ -49,7 +49,7 @@ export default class CortexPlugin extends Plugin {
 
     this.addCommand({
       id: 'new-cortex-session',
-      name: 'New Cortex session',
+      name: 'New session',
       callback: () => {
         this.newSession();
       }
@@ -57,7 +57,7 @@ export default class CortexPlugin extends Plugin {
 
     this.addCommand({
       id: 'clear-cortex-session',
-      name: 'Clear current Cortex session',
+      name: 'Clear current session',
       callback: () => {
         this.clearCurrentSession();
       }
@@ -73,7 +73,7 @@ export default class CortexPlugin extends Plugin {
 
     this.addCommand({
       id: 'show-cortex-session-history',
-      name: 'Show Cortex session history',
+      name: 'Show session history',
       callback: () => {
         this.showSessionHistory();
       }
@@ -81,7 +81,7 @@ export default class CortexPlugin extends Plugin {
 
     this.addCommand({
       id: 'export-cortex-conversation',
-      name: 'Export Cortex conversation',
+      name: 'Export conversation',
       callback: () => {
         this.exportConversation();
       }
@@ -89,7 +89,7 @@ export default class CortexPlugin extends Plugin {
 
     this.addCommand({
       id: 'copy-cortex-last-response',
-      name: 'Copy Cortex last response',
+      name: 'Copy last response',
       callback: () => {
         this.copyLastResponse();
       }
