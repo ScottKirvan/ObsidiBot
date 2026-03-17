@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/ScottKirvan/Cortex/compare/v0.3.0...v0.3.1) (2026-03-17)
+
+
+### Bug Fixes
+
+* add layer 0 context to give the agent some "you are here" context ([0bb37af](https://github.com/ScottKirvan/Cortex/commit/0bb37afb9dd96487174aab163ad5ef2521363607))
+
 ## [0.3.0](https://github.com/ScottKirvan/Cortex/compare/v0.2.1...v0.3.0) (2026-03-17)
 
 
