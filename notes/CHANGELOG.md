@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.3.0](https://github.com/ScottKirvan/Cortex/compare/v0.2.1...v0.3.0) (2026-03-17)
+
+
+### Features
+
+* [#21](https://github.com/ScottKirvan/Cortex/issues/21) Vault context file auto-generation on first launch ([7329009](https://github.com/ScottKirvan/Cortex/commit/7329009f76998e218b7f95cac516bc5c987246ad))
+* [#7](https://github.com/ScottKirvan/Cortex/issues/7)  Improve "thinking" feedback (better spinner/status while waiting) ([b15790f](https://github.com/ScottKirvan/Cortex/commit/b15790fbe824f313d5236d9cc5c7bf93abc81f6a))
+* [#8](https://github.com/ScottKirvan/Cortex/issues/8)  Up/down arrow to scroll through previous input messages ([92d198b](https://github.com/ScottKirvan/Cortex/commit/92d198b4c6c2343927785043e69fce7525483ad4))
+* added vault tree (context) depth settings ([5248300](https://github.com/ScottKirvan/Cortex/commit/5248300b9aa0bb1ca319dd0ef92edfebd48ae9cb))
+* UI updates - new icons, access to online help, discord, settings, etc, from the chat panel ([6b988fb](https://github.com/ScottKirvan/Cortex/commit/6b988fb0b37fdd6bd9d847e89eef3ab045db9c53))
+
+
+### Bug Fixes
+
+* bug[#4](https://github.com/ScottKirvan/Cortex/issues/4) add unicode curly quotes support (smart-quoted text) ([c27e89d](https://github.com/ScottKirvan/Cortex/commit/c27e89dd956a26012553f952abcdf48519de2a0a))
+* bug[#6](https://github.com/ScottKirvan/Cortex/issues/6) Include markdown in command-copied data from the chat-panel (plus a file size refactor) ([c3af74b](https://github.com/ScottKirvan/Cortex/commit/c3af74b25acf89d4dc41fdc359170ec74496825e))
+* release-please version updating support for package.json ([c42fb94](https://github.com/ScottKirvan/Cortex/commit/c42fb944ef6be9369aa5f5f2198bc7e361936b60))
+* replace the phrase, "Ask Claude..." with "Ask Cortex..." ([0000322](https://github.com/ScottKirvan/Cortex/commit/00003225043d7f1b17cd7b3f18231acd454ebbfb))
+* text parsing of doublequotes - included unit test ([96c5b52](https://github.com/ScottKirvan/Cortex/commit/96c5b52240152fcb93489584c6406092297cc87d))
+
 ## [0.2.1](https://github.com/ScottKirvan/Cortex/compare/v0.2.0...v0.2.1) (2026-03-10)
 
 
