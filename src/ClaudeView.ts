@@ -25,6 +25,9 @@ export class ClaudeView extends ItemView {
   private currentSessionTitle: string | undefined;
   private currentSessionCreatedAt: string | undefined;
   private placeholderSessionId: string | undefined;
+  private inputHistory: string[] = [];
+  private historyIndex: number = -1;
+  private inputDraft: string = '';
 
   constructor(leaf: WorkspaceLeaf, plugin: CortexPlugin) {
     super(leaf);
@@ -61,6 +64,38 @@ export class ClaudeView extends ItemView {
       if (e.key === 'Enter' && !e.shiftKey && this.plugin.settings.sendOnEnter) {
         e.preventDefault();
         this.handleSend();
+        return;
+      }
+
+      if (e.key === 'ArrowUp' && !e.shiftKey) {
+        const { selectionStart, value } = this.inputEl;
+        const onFirstLine = !value.substring(0, selectionStart).includes('\n');
+        if (onFirstLine && this.inputHistory.length > 0) {
+          e.preventDefault();
+          if (this.historyIndex === -1) this.inputDraft = value;
+          const next = Math.min(this.historyIndex + 1, this.inputHistory.length - 1);
+          this.historyIndex = next;
+          this.inputEl.value = this.inputHistory[this.inputHistory.length - 1 - next];
+          this.inputEl.setSelectionRange(0, 0);
+        }
+        return;
+      }
+
+      if (e.key === 'ArrowDown' && !e.shiftKey) {
+        if (this.historyIndex === -1) return;
+        e.preventDefault();
+        const { value } = this.inputEl;
+        const onLastLine = !value.substring(this.inputEl.selectionEnd).includes('\n');
+        if (!onLastLine) return;
+        if (this.historyIndex === 0) {
+          this.historyIndex = -1;
+          this.inputEl.value = this.inputDraft;
+        } else {
+          this.historyIndex -= 1;
+          this.inputEl.value = this.inputHistory[this.inputHistory.length - 1 - this.historyIndex];
+        }
+        const len = this.inputEl.value.length;
+        this.inputEl.setSelectionRange(len, len);
       }
     });
 
@@ -233,6 +268,9 @@ export class ClaudeView extends ItemView {
     const firstPrompt = isNewSession ? prompt : undefined;
     log('handleSend — session:', this.currentSessionId ?? 'new', '— prompt:', prompt.substring(0, 60));
 
+    this.inputHistory.push(prompt);
+    this.historyIndex = -1;
+    this.inputDraft = '';
     this.inputEl.value = '';
     this.sendBtn.disabled = true;
     this.appendMessage('user', prompt);
