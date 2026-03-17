@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/ScottKirvan/Cortex/compare/v0.3.1...v0.4.0) (2026-03-17)
+
+
+### Features
+
+* added an interrupt/stop button for interrupting long or unwanted tasks. ([3df5318](https://github.com/ScottKirvan/Cortex/commit/3df5318f6cdbfeb840832a66d03c0bc705ac7107))
+* UI Bridge: allow Claude to trigger Obsidian UI actions [#32](https://github.com/ScottKirvan/Cortex/issues/32) - automatically open notes, focus on a section, etc. ([e16af56](https://github.com/ScottKirvan/Cortex/commit/e16af56b0242fee5247efcae02a3a6755e8f6c15))
+
 ## [0.3.1](https://github.com/ScottKirvan/Cortex/compare/v0.3.0...v0.3.1) (2026-03-17)
 
 
