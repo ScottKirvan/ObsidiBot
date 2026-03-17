@@ -85,15 +85,16 @@
   font-style: italic;
 }
 
-/* Thinking indicator */
-.cortex-assistant.cortex-thinking::after {
-  content: ' ▋';
+/* Thinking / status indicator */
+.cortex-status {
+  font-style: italic;
+  opacity: 0.6;
   animation: cortex-blink 1s step-end infinite;
 }
 
 @keyframes cortex-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.15; }
 }
 
 /* ── Session history modal ── */

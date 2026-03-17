@@ -295,7 +295,7 @@ export class ClaudeView extends ItemView {
     this.appendMessage('user', prompt);
 
     const assistantEl = this.appendMessage('assistant', '');
-    assistantEl.addClass('cortex-thinking');
+    const statusEl = assistantEl.createSpan({ cls: 'cortex-status', text: 'Thinking…' });
 
     let finalPrompt = prompt;
     if (isNewSession) {
@@ -335,18 +335,31 @@ export class ClaudeView extends ItemView {
       return;
     }
 
+    const toolLabels: Record<string, string> = {
+      read_file:    'Reading…',
+      write_file:   'Writing…',
+      edit_file:    'Editing…',
+      list_files:   'Scanning vault…',
+      search_files: 'Searching…',
+      bash:         'Running command…',
+      web_fetch:    'Fetching…',
+      web_search:   'Searching the web…',
+    };
+
     let accumulated = '';
 
     parseStreamOutput(proc, {
       onText: (delta) => {
+        statusEl.remove();
         accumulated += delta;
         assistantEl.setText(accumulated);
       },
       onToolCall: (tool) => {
+        statusEl.setText(toolLabels[tool] ?? 'Working…');
         this.appendMessage('system', `Tool: ${tool}`);
       },
       onDone: (sessionId) => {
-        assistantEl.removeClass('cortex-thinking');
+        statusEl.remove();
 
         if (sessionId) {
           const vaultRoot = (this.app.vault.adapter as any).basePath;
