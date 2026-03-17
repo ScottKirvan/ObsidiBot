@@ -14,6 +14,23 @@ export class ContextManager {
     const parts: string[] = [];
     const layerBreakdown: Record<string, { text: string; chars: number; tokens: number }> = {};
 
+    // Layer 0: System orientation (always injected)
+    const orientation =
+      `## You are Cortex\n` +
+      `You are an AI agent embedded inside Obsidian via the Cortex plugin. ` +
+      `You are running as a Claude Code subprocess with full access to the user's Obsidian vault. ` +
+      `Your working directory is the vault root. ` +
+      `Help the user manage, write, organize, and think with their notes.\n\n` +
+      `If the user asks how to use Cortex, configure settings, or report a bug, ` +
+      `direct them to the documentation at https://www.scottkirvan.com/Cortex/notes/USER_README ` +
+      `or the Discord community at https://discord.gg/TN6XJSNK5Y`;
+    parts.push(orientation);
+    layerBreakdown['orientation'] = {
+      text: orientation,
+      chars: orientation.length,
+      tokens: estimateTokens(orientation),
+    };
+
     // Layer 1: Vault tree (folder/file names only — no content)
     const tree = buildVaultTree(this.app.vault, this.vaultTreeDepth);
     if (tree) {
