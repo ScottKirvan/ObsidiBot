@@ -1,6 +1,6 @@
 import { ItemView, WorkspaceLeaf, MarkdownRenderer, Notice, setIcon } from 'obsidian';
 import type CortexPlugin from '../main';
-import { spawnClaude, parseStreamOutput } from './ClaudeProcess';
+import { spawnClaude, parseStreamOutput, killProcess } from './ClaudeProcess';
 import { extractActions, executeAction } from './UIBridge';
 import { ContextManager } from './ContextManager';
 import { log, estimateTokens } from './utils/logger';
@@ -31,6 +31,7 @@ export class ClaudeView extends ItemView {
   private inputHistory: string[] = [];
   private historyIndex: number = -1;
   private inputDraft: string = '';
+  private activeProc: ReturnType<typeof spawnClaude> | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: CortexPlugin) {
     super(leaf);
@@ -102,7 +103,13 @@ export class ClaudeView extends ItemView {
     setIcon(this.sendBtn, 'arrow-up');
     this.sendBtn.title = 'Send message';
 
-    this.sendBtn.addEventListener('click', () => this.handleSend());
+    this.sendBtn.addEventListener('click', () => {
+      if (this.sendBtn.dataset.state === 'running') {
+        if (this.activeProc) killProcess(this.activeProc);
+      } else {
+        this.handleSend();
+      }
+    });
     this.inputEl.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey && this.plugin.settings.sendOnEnter) {
         e.preventDefault();
@@ -324,7 +331,13 @@ export class ClaudeView extends ItemView {
       return;
     }
 
-    const unlock = () => { this.sendBtn.disabled = false; };
+    const setSendState = (running: boolean) => {
+      this.sendBtn.dataset.state = running ? 'running' : '';
+      this.sendBtn.disabled = false;
+      setIcon(this.sendBtn, running ? 'square' : 'arrow-up');
+      this.sendBtn.title = running ? 'Stop' : 'Send message';
+    };
+    const unlock = () => setSendState(false);
     const isNewSession = !this.currentSessionId;
     const firstPrompt = isNewSession ? prompt : undefined;
     log('handleSend — session:', this.currentSessionId ?? 'new', '— prompt:', prompt.substring(0, 60));
@@ -333,7 +346,7 @@ export class ClaudeView extends ItemView {
     this.historyIndex = -1;
     this.inputDraft = '';
     this.inputEl.value = '';
-    this.sendBtn.disabled = true;
+    setSendState(true);
     this.appendMessage('user', prompt);
 
     const assistantEl = this.appendMessage('assistant', '');
@@ -365,12 +378,13 @@ export class ClaudeView extends ItemView {
     let proc: ReturnType<typeof spawnClaude>;
     try {
       proc = spawnClaude({
-        binaryPath: this.plugin.claudeBinaryPath,
+        binaryPath: this.plugin.claudeBinaryPath!,
         prompt: finalPrompt,
         vaultRoot: (this.app.vault.adapter as any).basePath,
         env: this.plugin.shellEnv,
         resumeSessionId: this.currentSessionId,
       });
+      this.activeProc = proc;
     } catch (e) {
       assistantEl.setText(`Failed to start claude: ${e}`);
       unlock();
@@ -416,6 +430,8 @@ export class ClaudeView extends ItemView {
       },
       onDone: (sessionId) => {
         statusEl.remove();
+        this.activeProc = null;
+        if (!accumulated) this.appendMessage('system', 'Interrupted.');
 
         if (sessionId) {
           const vaultRoot = (this.app.vault.adapter as any).basePath;

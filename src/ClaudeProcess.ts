@@ -121,6 +121,25 @@ export function spawnClaude(opts: SpawnOptions): ChildProcess {
   return proc;
 }
 
+/**
+ * Kill a spawned claude process and its entire process tree.
+ * On Windows, proc.kill() only kills the PowerShell wrapper — claude.exe keeps running.
+ * taskkill /F /T kills the full tree.
+ */
+export function killProcess(proc: ChildProcess): void {
+  if (!proc.pid) return;
+  LOG('killProcess — pid:', proc.pid);
+  if (process.platform === 'win32') {
+    try {
+      execSync(`taskkill /F /T /PID ${proc.pid}`, { stdio: 'ignore' });
+    } catch {
+      // Process may have already exited — ignore
+    }
+  } else {
+    proc.kill('SIGTERM');
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Stream-JSON parsing
 // ---------------------------------------------------------------------------
