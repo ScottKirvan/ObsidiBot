@@ -6,10 +6,11 @@ _cortex-debug.log
 # Obsidian plugin runtime data (machine-specific)
 data.json
 
-# Claude Code local settings (machine-specific, auto-generated)
+# Claude Code — machine-specific and runtime files
 .claude/settings.local.json
-
+.claude/settings.json
 # Cortex runtime data written when plugin runs from symlinked dev folder
 # In production vaults this lives at .obsidian/plugins/cortex/.claude/sessions/
 .claude/sessions/
+
 notes/COMMIT_DRAFT.md

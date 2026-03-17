@@ -34,13 +34,15 @@
   <span> · </span>
   <a href="notes/USER_README.md">User Guide</a>
   <span> · </span>
+  <a href="https://discord.gg/TN6XJSNK5Y">Discord</a>
+  <span> · </span>
   <a href="CONTRIBUTING.md">Contributing</a>
 </h4>
 </div>
 
 ---
 
-> **Status:** Early development — not yet available in the Obsidian community plugin browser.
+> **Status:** Public beta — not yet in the Obsidian community plugin browser. Install manually from [Releases](https://github.com/ScottKirvan/Cortex/releases). Feedback welcome on [Discord](https://discord.gg/TN6XJSNK5Y) or via [GitHub Issues](https://github.com/ScottKirvan/Cortex/issues).
 
 ---
 
@@ -55,7 +57,9 @@ Cortex is an Obsidian plugin that puts a Claude Code agent inside your vault. Yo
 - **Chat panel** — a persistent side panel for back-and-forth conversation with Claude
 - **Full vault access** — Claude can read, write, create, and move notes; the vault root is Claude's working directory
 - **Session persistence** — resume previous conversations; sessions stored in `.obsidian/plugins/cortex/.claude/sessions/`
-- **Context system** — vault folder/file tree, persistent context file, and autonomous memory instruction injected at session start
+- **Context system** — vault folder/file tree and persistent context file injected at session start; configurable depth
+- **Autonomous memory** — Claude maintains a context file across sessions as it learns your vault
+- **Session history** — named sessions, rename/delete, resume across restarts
 - **No API key** — uses your Claude Pro/Max subscription via the `claude` CLI
 
 ## Requirements
@@ -69,9 +73,10 @@ Cortex is an Obsidian plugin that puts a Claude Code agent inside your vault. Yo
 
 Cortex is not yet in the Obsidian community plugin browser. To install manually:
 
-1. Clone or Download the latest release from [Releases](https://github.com/ScottKirvan/Cortex/releases)
-2. Extract into `<your-vault>/.obsidian/plugins/cortex/`
-3. In Obsidian: Settings → Community Plugins → enable **Cortex**
+1. Download `cortex-<version>.zip` from [Releases](https://github.com/ScottKirvan/Cortex/releases)
+2. Extract the zip — you should have a `cortex/` folder containing `main.js`, `manifest.json`, and `styles.css`
+3. Move the `cortex/` folder into `<your-vault>/.obsidian/plugins/`
+4. In Obsidian: **Settings → Community Plugins** → disable Safe Mode if prompted → enable **Cortex**
 
 See the [User Guide](notes/USER_README.md) for full setup and configuration details.
 
@@ -96,6 +101,7 @@ Cortex/
     settings.ts             ← settings schema and UI
     modals/
       SessionListModal.ts   ← session history modal
+      AboutModal.ts         ← help/about modal
     utils/
       shellEnv.ts           ← shell environment resolution
       fileTree.ts           ← vault folder/file tree builder
@@ -105,7 +111,8 @@ Cortex/
     unit.test.ts            ← unit tests (npm test)
     stdin-quote-test.mjs    ← end-to-end stdin/quote test (calls Claude)
     spawn-test.mjs          ← standalone spawn smoke test
-  notes/                    ← design docs, changelog, user guide
+  notes/                    ← changelog, user guide, TODO
+  notes/dev/                ← internal design docs (not user-facing)
   .github/                  ← CI, release-please, issue templates
 ```
 
