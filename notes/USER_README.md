@@ -21,10 +21,8 @@ Cortex is an Obsidian plugin that puts a Claude Code agent inside your vault. Th
 
 - **Obsidian desktop** (Windows, Mac, or Linux) — mobile is not supported
 - **Claude Code CLI** installed and authenticated ([full install guide](https://code.claude.com/docs/en/overview#native-install-recommended))
-  - **Windows:** must be installed natively in PowerShell — a WSL-only install will not work
+  - **Windows:** must be installed natively **in PowerShell** — a WSL or CMD-only install will not work
     ```powershell
-    winget install Anthropic.ClaudeCode
-    # or
     irm https://claude.ai/install.ps1 | iex
     ```
   - **Mac/Linux:**
@@ -32,8 +30,7 @@ Cortex is an Obsidian plugin that puts a Claude Code agent inside your vault. Th
     curl -fsSL https://claude.ai/install.sh | bash
     ```
   - Verify the install: `claude --version` should return a version number in your terminal
-  - **Log in:** `claude login` — this opens a browser for OAuth authentication (one-time per environment)
-  - Having Claude Code installed in WSL does **not** count — you must install and log in natively in PowerShell
+  - **Log in:** run `claude` in your terminal — on first launch it will prompt you to authenticate and open a browser. If the browser doesn't open automatically, press `c` to copy the login URL.
 - A **Claude Pro or Max subscription** — Cortex rides your existing subscription, no separate API key needed
 
 ---
@@ -66,8 +63,8 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for building from source.
 
 After enabling the plugin:
 
-- A **sprout icon** appears in the left ribbon — click it to open the Cortex chat panel
-- Or use the Command Palette: `Cortex: Open chat`
+- A **wave icon** appears in the left ribbon — click it to open the Cortex chat panel
+- Or use the Command Palette: `Cortex: Open agent panel`
 - If Claude is not found automatically, a notice will appear — go to **Settings → Cortex** and enter the full path to your `claude` binary
 
 ---
@@ -90,24 +87,28 @@ Claude has access to your full vault — it can read, write, create, move, and o
 
 Cortex injects context at the start of each new session so Claude understands your vault before you ask your first question. Nothing is injected on subsequent turns — those use session resumption (`--resume`) which is far cheaper.
 
-### 1. Vault Tree
+### 1. System Orientation
+
+Automatically injected at every new session — no configuration needed. This tells Claude what Cortex is, that it's operating inside an Obsidian vault, what tools and capabilities it has available, and how to interact with Obsidian directly (opening files, navigating notes, showing notices). Claude is never starting blind.
+
+### 2. Vault Tree
 
 A folder and file name overview of your vault is automatically included so Claude understands your vault's layout. **Only names are listed — no file contents are read.** Hidden files and folders (names starting with `.`) are skipped.
 
 The depth of the tree is configurable in **Settings → Cortex → Vault tree depth**:
 
-| Setting | What Claude sees |
-|---------|-----------------|
-| Off | No vault tree — Claude has no structural overview |
-| 1 level | Root-level folders and files only |
-| 2 levels | Root + one sublevel |
-| 3 levels *(default)* | Root + two sublevels |
-| N levels | N levels deep from the root |
-| Unlimited | The full tree at any depth |
+| Setting              | What Claude sees                                  |
+| -------------------- | ------------------------------------------------- |
+| Off                  | No vault tree — Claude has no structural overview |
+| 1 level              | Root-level folders and files only                 |
+| 2 levels             | Root + one sublevel                               |
+| 3 levels *(default)* | Root + two sublevels                              |
+| N levels             | N levels deep from the root                       |
+| Unlimited            | The full tree at any depth                        |
 
 Deeper trees give Claude better spatial awareness of large vaults but cost more tokens on the first message of each session. For most vaults, 3 levels is a reasonable balance.
 
-### 2. Context File (Persistent Memory)
+### 3. Context File (Persistent Memory)
 
 A markdown file injected at the start of every session. Default path: `_claude-context.md` at your vault root. This file is Claude's **persistent memory** — it survives across sessions and syncs with your vault between machines.
 
@@ -127,7 +128,7 @@ Working on Q2 planning. Key notes: [[Q2 Goals]], [[Team Roster]]
 
 The context file path is configurable in **Settings → Cortex**.
 
-### 3. Autonomous Memory Instruction
+### 4. Autonomous Memory Instruction
 
 When **Autonomous memory** is enabled (on by default), Claude is instructed to actively maintain the context file as it learns about your vault — naming conventions, ongoing projects, your preferences, decisions made. Claude updates the file directly using its file-editing tools; you can inspect and edit it at any time in Obsidian.
 
@@ -149,15 +150,15 @@ Disable in **Settings → Cortex → Autonomous memory** if you prefer to manage
 
 Understanding when tokens are spent helps you use Cortex efficiently:
 
-| Action | Token cost | Notes |
-|--------|-----------|-------|
-| Opening the panel | Free | No API call |
-| Switching sessions in History | Free | Reads local `.jsonl` file only |
-| Browsing session history | Free | All local disk reads |
-| **First message of a new session** | **Full price** | Context injection + your prompt, cache created here |
-| **Continuing a session (turn 2+, within ~1 hour)** | **Cheap** | History loaded from prompt cache (~10x cheaper) |
-| **Resuming after restart / 1+ hour gap** | **Full price** | Cache expired; full history re-charged as fresh input tokens |
-| Starting a new session | Free | No API call until you send |
+| Action                                             | Token cost     | Notes                                                        |
+| -------------------------------------------------- | -------------- | ------------------------------------------------------------ |
+| Opening the panel                                  | Free           | No API call                                                  |
+| Switching sessions in History                      | Free           | Reads local `.jsonl` file only                               |
+| Browsing session history                           | Free           | All local disk reads                                         |
+| **First message of a new session**                 | **Full price** | Context injection + your prompt, cache created here          |
+| **Continuing a session (turn 2+, within ~1 hour)** | **Cheap**      | History loaded from prompt cache (~10x cheaper)              |
+| **Resuming after restart / 1+ hour gap**           | **Full price** | Cache expired; full history re-charged as fresh input tokens |
+| Starting a new session                             | Free           | No API call until you send                                   |
 
 **The key insight:** Claude's prompt cache expires after ~1 hour. Continuing a session within an hour is cheap; resuming a session after an overnight shutdown pays full price to reload the history. For sessions you haven't used in a while, starting a new session (paying only for context injection) may be cheaper than resuming a large accumulated one.
 
@@ -169,26 +170,26 @@ Cortex provides a full command palette for quick access to all features. Press *
 
 ### Panel & Navigation
 
-| Command palette name              | ID                            | Description                                                                                    |
-| --------------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------- |
-| **Cortex: Open agent panel**      | `open-cortex-agent`           | Opens or focuses the Cortex chat panel. You can also click the sprout icon in the left ribbon. |
-| **Cortex: Toggle Cortex panel**   | `toggle-cortex-panel`         | Quickly hide or show the Cortex chat panel without closing it.                                 |
-| **Cortex: Show session history**  | `show-cortex-session-history` | Display a list of all saved sessions and resume a previous conversation.                       |
+| Command palette name             | ID                            | Description                                                                                  |
+| -------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------- |
+| **Cortex: Open agent panel**     | `open-cortex-agent`           | Opens or focuses the Cortex chat panel. You can also click the wave icon in the left ribbon. |
+| **Cortex: Toggle Cortex panel**  | `toggle-cortex-panel`         | Quickly hide or show the Cortex chat panel without closing it.                               |
+| **Cortex: Show session history** | `show-cortex-session-history` | Display a list of all saved sessions and resume a previous conversation.                     |
 
 ### Session Management
 
-| Command palette name                | ID                     | Description                                                                                                            |
-| ----------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **Cortex: New session**             | `new-cortex-session`   | Start a fresh conversation with Claude. The current session is saved automatically.                                    |
-| **Cortex: Clear current session**   | `clear-cortex-session` | Clear all messages from the current session. Claude can still see the vault tree and context file at the next message. |
+| Command palette name              | ID                     | Description                                                                                                            |
+| --------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **Cortex: New session**           | `new-cortex-session`   | Start a fresh conversation with Claude. The current session is saved automatically.                                    |
+| **Cortex: Clear current session** | `clear-cortex-session` | Clear all messages from the current session. Claude can still see the vault tree and context file at the next message. |
 
 ### Communication & Settings
 
-| Command palette name               | ID                           | Description                                                                                           |
-| ---------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------- |
-| **Cortex: Export conversation**    | `export-cortex-conversation` | Copy the current conversation as markdown to the clipboard.                                           |
-| **Cortex: Copy last response**     | `copy-cortex-last-response`  | Copy Claude's last response to the clipboard in markdown format.                                      |
-| **Cortex: Open settings**          | `open-cortex-settings`       | Jump directly to the Cortex settings panel.                                                           |
+| Command palette name            | ID                           | Description                                                      |
+| ------------------------------- | ---------------------------- | ---------------------------------------------------------------- |
+| **Cortex: Export conversation** | `export-cortex-conversation` | Copy the current conversation as markdown to the clipboard.      |
+| **Cortex: Copy last response**  | `copy-cortex-last-response`  | Copy Claude's last response to the clipboard in markdown format. |
+| **Cortex: Open settings**       | `open-cortex-settings`       | Jump directly to the Cortex settings panel.                      |
 
 ---
 
@@ -200,7 +201,7 @@ Open **Settings → Cortex** to configure:
 | ------------------------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Claude binary path             | *(auto-detect)*      | Full path to the `claude` executable. Leave blank to auto-detect from PATH and common install locations.                                                |
 | Context file path              | `_claude-context.md` | Vault-relative path to the context file injected at session start.                                                                                      |
-| Vault tree depth               | 3 levels             | How many levels of folder/file names to inject at session start. 0 = off, 1 = root only, -1 = unlimited. Names only — no file contents are read.       |
+| Vault tree depth               | 3 levels             | How many levels of folder/file names to inject at session start. 0 = off, 1 = root only, -1 = unlimited. Names only — no file contents are read.        |
 | Send on Enter                  | On                   | Press Enter to send a message. Shift+Enter always inserts a newline.                                                                                    |
 | Resume last session on startup | On                   | Automatically resume the most recent session when the Cortex panel opens.                                                                               |
 | Autonomous memory              | On                   | Claude will autonomously update the context file as it learns about your vault. Disable if you prefer to manage it manually or if your vault is shared. |
@@ -210,7 +211,7 @@ Open **Settings → Cortex** to configure:
 ## Known Limitations
 
 - **Desktop only** — Obsidian mobile is not supported (Node.js APIs are unavailable on mobile)
-- **Windows:** Claude Code must be installed natively in PowerShell, not just the desktop or web app versions
+- **Claude Code must be installed via a terminal** — the Obsidian desktop app or web app alone is not sufficient. On Windows this means PowerShell; on Mac/Linux use Terminal. See the [Claude Code install guide](https://code.claude.com/docs/en/overview#native-install-recommended) for platform-specific instructions.
 - **One active session at a time** — concurrent sessions are not supported
 - Claude operates with full vault access
 - Sessions are stored in `.obsidian/plugins/cortex/.claude/sessions/` which is typically gitignored; sessions do not sync across devices
@@ -219,8 +220,11 @@ Open **Settings → Cortex** to configure:
 
 ## Troubleshooting
 
-**"Claude binary not found" notice on startup**
-Claude Code is not installed or not in a location Cortex can find. Either install it (see [Requirements](#requirements)) or enter the full path manually in **Settings → Cortex → Claude binary path**.
+**Setup panel appears instead of the chat panel**
+Cortex could not find your Claude Code installation. Follow the on-screen steps to install Claude Code, or if it's already installed, enter the full path to the binary in the path field on that panel. See the [Claude Code install guide](https://code.claude.com/docs/en/overview#native-install-recommended) for platform-specific instructions.
+
+**"Claude Code is not authenticated" error after sending a message**
+Claude Code is installed but not logged in. Click **Open terminal** in the error card — a terminal window will open running Claude Code. Follow the prompts to authenticate (a browser window will open). Click **Done** when finished.
 
 **Plugin doesn't appear in Obsidian after installing**
 Ensure Safe Mode is disabled (Settings → Community Plugins) and that the `cortex/` folder contains both `main.js` and `manifest.json`. Restart Obsidian after installing.
@@ -232,4 +236,4 @@ Check that your context file exists at the configured path (`_claude-context.md`
 Click the **Stop** button (the square icon in the input bar, visible while Claude is running) to interrupt immediately. Claude's process and any subprocesses are killed. Any files already written before you stopped will remain — review them before continuing. Start a new session or send a follow-up message to correct course.
 
 **Claude seems to be running but nothing is happening**
-If the status indicator has been showing for a long time with no output, Claude may be stuck. Click **Stop** to interrupt, then try again. On Windows, make sure Claude Code is installed and authenticated natively in PowerShell (`claude --version` should work in a PowerShell terminal).
+If the status indicator has been showing for a long time with no output, Claude may be stuck. Click **Stop** to interrupt, then try again. Make sure Claude Code is installed and authenticated via a terminal — on Windows use PowerShell, on Mac/Linux use Terminal. Run `claude --version` to confirm the install is visible.

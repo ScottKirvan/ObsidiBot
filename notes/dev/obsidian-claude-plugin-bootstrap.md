@@ -10,7 +10,7 @@ Confirm these are in place before starting:
 
 - [ ] Node.js 18+ installed (`node --version`)
 - [ ] npm installed (`npm --version`)
-- [ ] Claude Code installed and authenticated (`claude --version`, `claude login` if needed)
+- [ ] Claude Code installed and authenticated (`claude --version` to verify; run `claude` to launch the REPL and type `/login` to authenticate)
 - [ ] Obsidian desktop installed
 - [ ] A test vault ready (can be a throwaway vault — don't develop against your real vault until the plugin is stable)
 
@@ -198,7 +198,9 @@ function findClaudeBinary(settingsOverride?: string): string | null {
 }
 ```
 
-If `null` is returned, show a setup notice in the plugin UI with installation instructions and a link to claude.ai/code.
+If a settings override path is provided but doesn't exist, return `null` immediately — do not fall through to auto-detect. This makes misconfigured paths explicit rather than silently ignored.
+
+If `null` is returned, show a full setup panel in the chat view with platform-specific install instructions, copy buttons, and an "Open terminal" button to launch authentication.
 
 ---
 
@@ -324,8 +326,20 @@ export default class ClaudePlugin extends Plugin {
     // Register the chat view
     this.registerView(VIEW_TYPE_CLAUDE, (leaf) => new ClaudeView(leaf, this));
 
+    // Register a custom SVG icon, then use it for the ribbon.
+    // Pass only the inner SVG elements (no <svg> wrapper); use currentColor for all strokes/fills.
+    // Obsidian expects a 0 0 100 100 coordinate space.
+    addIcon('cortex', `
+      <path d="M10,32 C24,12 38,12 50,32 C62,52 76,52 90,32"
+            stroke="currentColor" fill="none" stroke-width="8" stroke-linecap="round"/>
+      <path d="M10,50 C24,30 38,30 50,50 C62,70 76,70 90,50"
+            stroke="currentColor" fill="none" stroke-width="8" stroke-linecap="round"/>
+      <path d="M10,68 C24,48 38,48 50,68 C62,88 76,88 90,68"
+            stroke="currentColor" fill="none" stroke-width="8" stroke-linecap="round"/>
+    `);
+
     // Ribbon icon to open panel
-    this.addRibbonIcon('sprout', 'Claude', () => {
+    this.addRibbonIcon('cortex', 'Cortex', () => {
       this.activateView();
     });
 

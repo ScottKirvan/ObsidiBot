@@ -33,8 +33,9 @@ Use the [feature request template](https://github.com/ScottKirvan/Cortex/issues/
 - Node.js 18+
 - npm
 - Claude Code CLI installed **and logged in** natively in PowerShell (not just in WSL on Windows)
-  - Install: `winget install Anthropic.ClaudeCode`
-  - Log in: `claude login` (opens browser for OAuth — required even if logged in via WSL)
+  - Install: `irm https://claude.ai/install.ps1 | iex` (PowerShell) or `curl -fsSL https://claude.ai/install.sh | bash` (Mac/Linux)
+  - Verify: `claude --version`
+  - Log in: run `claude` in a terminal — it will prompt for authentication on first launch, or type `/login` inside the REPL
 - Obsidian desktop
 - A throwaway test vault (do not develop against your real vault)
 
@@ -80,24 +81,38 @@ Without Hot Reload: use Ctrl/Cmd+P → "Reload app without saving" after each bu
 
 ```
 Cortex/
-  main.ts                 ← plugin entry point
-  manifest.json           ← plugin metadata (id, name, version)
+  main.ts                      ← plugin entry point, commands, custom icon registration
+  manifest.json                ← plugin metadata (id, name, version)
   package.json
   tsconfig.json
-  esbuild.config.mjs
+  esbuild.config.mjs           ← bundles main.js; embeds assets as base64 data URLs
+  styles.css
+  assets/
+    media/
+      logo.jpg                 ← About modal / plugin browser logo (embedded at build time)
   src/
-    ClaudeView.ts         ← chat panel UI (ItemView subclass)
-    ClaudeSession.ts      ← session load/save/resume
-    ClaudeProcess.ts      ← binary detection, spawn, stream-json parsing
-    ContextManager.ts     ← context file, pinned notes, frontmatter scanning
-    FrontmatterGuard.ts   ← intercept writes, enforce readonly/protect
-    settings.ts           ← settings schema and settings tab UI
+    ClaudeView.ts              ← chat panel UI, session state, setup/auth error panels
+    ClaudeProcess.ts           ← binary detection, spawn (PowerShell on Win), stream-json parsing
+    ContextManager.ts          ← vault tree + context file + memory instruction assembly
+    ContextGenerationModal.ts  ← first-run modal for context file setup
+    UIBridge.ts                ← @@CORTEX_ACTION protocol: parse + execute Obsidian UI actions
+    settings.ts                ← settings schema and settings tab UI
+    declarations.d.ts          ← TypeScript module declarations (e.g. *.jpg imports)
+    modals/
+      SessionListModal.ts      ← session history list modal
+      AboutModal.ts            ← about / help modal
     utils/
-      shellEnv.ts         ← shell environment resolution
-      fileTree.ts         ← vault folder tree builder
-      sessionStorage.ts   ← read/write .obsidian/claude/sessions/
-  notes/                  ← design docs and specs
-  .claude/                ← Claude Code project memory (git-tracked)
+      shellEnv.ts              ← shell environment resolution
+      fileTree.ts              ← vault folder/file tree builder
+      sessionStorage.ts        ← session CRUD, .jsonl parse, canResumeLocally
+      logger.ts                ← file + console logging, estimateTokens
+  test/
+    unit.test.ts               ← unit tests (npm test)
+    stdin-quote-test.mjs       ← end-to-end stdin/quote test (calls Claude)
+    spawn-test.mjs             ← standalone spawn smoke test
+  notes/                       ← user guide, changelog, TODO
+  notes/dev/                   ← internal design docs (not user-facing)
+  .github/                     ← CI workflow, release-please config, issue templates
 ```
 
 ---

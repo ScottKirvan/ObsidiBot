@@ -92,43 +92,15 @@ See the [User Guide](notes/USER_README.md) for full setup and configuration deta
 
 ## Quick Start
 
-1. Open the Cortex panel from the ribbon (sprout icon) or Command Palette
+1. Open the Cortex panel from the ribbon (wave icon) or Command Palette
 2. Type a message and press **Enter** (or click Send). Use Shift+Enter for a newline.
 3. Claude has access to your full vault — ask it to summarize a note, find related ideas, or draft new content
 
 See the [User Guide](notes/USER_README.md) for context files, session management, and settings.
 
-## Project Layout
-
-```
-Cortex/
-  main.ts                   ← plugin entry point
-  manifest.json             ← plugin metadata
-  src/
-    ClaudeView.ts           ← chat panel UI and session state
-    ClaudeProcess.ts        ← binary detection, spawn, stream-json parsing
-    ContextManager.ts       ← vault tree + context file + memory instruction
-    settings.ts             ← settings schema and UI
-    modals/
-      SessionListModal.ts   ← session history modal
-      AboutModal.ts         ← help/about modal
-    utils/
-      shellEnv.ts           ← shell environment resolution
-      fileTree.ts           ← vault folder/file tree builder
-      sessionStorage.ts     ← session read/write
-      logger.ts             ← file + console logging
-  test/
-    unit.test.ts            ← unit tests (npm test)
-    stdin-quote-test.mjs    ← end-to-end stdin/quote test (calls Claude)
-    spawn-test.mjs          ← standalone spawn smoke test
-  notes/                    ← changelog, user guide, TODO
-  notes/dev/                ← internal design docs (not user-facing)
-  .github/                  ← CI, release-please, issue templates
-```
-
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, commit conventions, and PR process.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for project layout, development setup, commit conventions, and PR process.
 
 ## License
 
