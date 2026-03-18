@@ -11,7 +11,9 @@ export interface StoredSession {
 }
 
 export function getSessionsDir(vaultRoot: string): string {
-  return join(vaultRoot, '.obsidian', 'plugins', 'cortex', '.claude', 'sessions');
+  // Stored outside the plugin directory so symlinked dev installs don't
+  // cause multiple vaults to share the same physical sessions folder.
+  return join(vaultRoot, '.obsidian', 'cortex', 'sessions');
 }
 
 export function saveSession(vaultRoot: string, session: StoredSession): void {
