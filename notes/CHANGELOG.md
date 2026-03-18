@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/ScottKirvan/Cortex/compare/v0.4.0...v0.5.0) (2026-03-18)
+
+
+### Features
+
+* BRAT/publication compatible build ([ba0229a](https://github.com/ScottKirvan/Cortex/commit/ba0229a1a6389989bf49a4381204b98dbd1d1041))
+
 ## [0.4.0](https://github.com/ScottKirvan/Cortex/compare/v0.3.1...v0.4.0) (2026-03-17)
 
 
