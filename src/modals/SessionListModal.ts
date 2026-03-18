@@ -7,6 +7,7 @@ export class SessionListModal extends Modal {
   vaultRoot: string;
   onSelect: (session: StoredSession) => void;
   onNewSession: () => void;
+  onDismiss: () => void;
   listContainer: HTMLElement | null = null;
 
   constructor(
@@ -15,6 +16,7 @@ export class SessionListModal extends Modal {
     sessions: StoredSession[],
     onSelect: (s: StoredSession) => void,
     onNewSession: () => void,
+    onDismiss: () => void = () => {},
   ) {
     super(app);
     this.vaultRoot = vaultRoot;
@@ -22,6 +24,7 @@ export class SessionListModal extends Modal {
     this.filteredSessions = sessions;
     this.onSelect = onSelect;
     this.onNewSession = onNewSession;
+    this.onDismiss = onDismiss;
   }
 
   onOpen() {
@@ -134,7 +137,10 @@ export class SessionListModal extends Modal {
       input.focus();
       input.select();
 
+      let committed = false;
       const commit = () => {
+        if (committed) return;
+        committed = true;
         const newTitle = input.value.trim();
         if (newTitle && newTitle !== session.title) {
           session.title = newTitle;
@@ -157,5 +163,6 @@ export class SessionListModal extends Modal {
 
   onClose() {
     this.contentEl.empty();
+    this.onDismiss();
   }
 }

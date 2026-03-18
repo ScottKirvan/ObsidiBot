@@ -214,6 +214,8 @@ export class ClaudeView extends ItemView {
       this.loadSession(session);
     }, () => {
       this.startNewSession();
+    }, () => {
+      this.inputEl?.focus();
     }).open();
   }
 
@@ -445,6 +447,7 @@ export class ClaudeView extends ItemView {
 
           if (this.placeholderSessionId) {
             this.currentSessionId = sessionId;
+            if (firstPrompt) this.currentSessionTitle = titleFromPrompt(firstPrompt);
             saveSession(vaultRoot, {
               id: this.placeholderSessionId,
               title: this.currentSessionTitle ?? 'Untitled session',
@@ -452,8 +455,9 @@ export class ClaudeView extends ItemView {
               updatedAt: now,
               claudeSessionId: sessionId,
             });
+            const placeholderId = this.placeholderSessionId;
             this.placeholderSessionId = undefined;
-            log('Placeholder session updated:', this.placeholderSessionId, '→', sessionId);
+            log('Placeholder session updated:', placeholderId, '→', sessionId);
           } else if (isNewSession && firstPrompt) {
             this.currentSessionId = sessionId;
             this.currentSessionTitle = titleFromPrompt(firstPrompt);
