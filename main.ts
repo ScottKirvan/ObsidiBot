@@ -4,6 +4,7 @@ import { CortexSettings, DEFAULT_SETTINGS, CortexSettingsTab } from './src/setti
 import { findClaudeBinary } from './src/ClaudeProcess';
 import { resolveShellEnv } from './src/utils/shellEnv';
 import { initLogger, log } from './src/utils/logger';
+import { AboutModal } from './src/modals/AboutModal';
 
 export default class CortexPlugin extends Plugin {
   settings: CortexSettings;
@@ -106,6 +107,30 @@ export default class CortexPlugin extends Plugin {
       }
     });
 
+    this.addCommand({
+      id: 'focus-cortex-input',
+      name: 'Focus chat input',
+      callback: () => {
+        this.focusChatInput();
+      }
+    });
+
+    this.addCommand({
+      id: 'open-cortex-context-file',
+      name: 'Open context file',
+      callback: () => {
+        this.openContextFile();
+      }
+    });
+
+    this.addCommand({
+      id: 'show-cortex-about',
+      name: 'About Cortex',
+      callback: () => {
+        this.showAbout();
+      }
+    });
+
     this.addSettingTab(new CortexSettingsTab(this.app, this));
   }
 
@@ -196,6 +221,34 @@ export default class CortexPlugin extends Plugin {
       const view = existing[0].view as ClaudeView;
       view.copyLastResponse();
     }
+  }
+
+  focusChatInput() {
+    const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
+    if (existing.length) {
+      this.app.workspace.revealLeaf(existing[0]);
+      const view = existing[0].view as ClaudeView;
+      view.focusInput();
+    } else {
+      this.activateView().then(() => {
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
+        if (leaves.length) (leaves[0].view as ClaudeView).focusInput();
+      });
+    }
+  }
+
+  openContextFile() {
+    const contextPath = this.settings.contextFilePath || '_claude-context.md';
+    const file = this.app.vault.getAbstractFileByPath(contextPath);
+    if (file) {
+      this.app.workspace.openLinkText(contextPath, '', false);
+    } else {
+      new Notice(`Context file not found: ${contextPath}`);
+    }
+  }
+
+  showAbout() {
+    new AboutModal(this.app, this).open();
   }
 
   async loadSettings() {

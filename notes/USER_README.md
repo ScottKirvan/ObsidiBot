@@ -190,6 +190,9 @@ Cortex provides a full command palette for quick access to all features. Press *
 | **Cortex: Export conversation** | `export-cortex-conversation` | Copy the current conversation as markdown to the clipboard.      |
 | **Cortex: Copy last response**  | `copy-cortex-last-response`  | Copy Claude's last response to the clipboard in markdown format. |
 | **Cortex: Open settings**       | `open-cortex-settings`       | Jump directly to the Cortex settings panel.                      |
+| **Cortex: Focus chat input**    | `focus-cortex-input`         | Open the Cortex panel (if closed) and place the cursor in the chat input. Useful for binding to a hotkey. |
+| **Cortex: Open context file**   | `open-cortex-context-file`   | Open the context file (`_claude-context.md` by default) in Obsidian for editing. |
+| **Cortex: About Cortex**        | `show-cortex-about`          | Show the About panel with version info and links.                |
 
 ---
 

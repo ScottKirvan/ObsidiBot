@@ -275,6 +275,10 @@ export class ClaudeView extends ItemView {
     log('Last response copied to clipboard');
   }
 
+  focusInput() {
+    this.inputEl?.focus();
+  }
+
   private async loadSession(session: StoredSession) {
     this.placeholderSessionId = undefined;
     this.currentSessionId = session.claudeSessionId || undefined;
