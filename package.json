@@ -1,6 +1,6 @@
 {
   "name": "cortex",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Claude Code agentic file management for Obsidian vaults",
   "main": "main.js",
   "scripts": {

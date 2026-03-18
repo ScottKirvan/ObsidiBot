@@ -1,7 +1,7 @@
 {
   "id": "cortex",
   "name": "Cortex",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "minAppVersion": "1.4.0",
   "description": "Claude Code agentic file management for Obsidian vaults",
   "author": "Scott Kirvan",

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.6.0](https://github.com/ScottKirvan/Cortex/compare/v0.5.0...v0.6.0) (2026-03-18)
+
+
+### Features
+
+* add Focus input, Open context file, and About commands ([3dcd5c1](https://github.com/ScottKirvan/Cortex/commit/3dcd5c1f36d8a6bee909b30e6aa8edc249038b56))
+* gracefully handle and walk the user through setting up a broken claude CLI setup ([c507df8](https://github.com/ScottKirvan/Cortex/commit/c507df806d4f18e1c999ab949e3b27a4c1cca880))
+
+
+### Bug Fixes
+
+* better, but not great, handling of logged-out users ([19102b9](https://github.com/ScottKirvan/Cortex/commit/19102b91a14869d6d3fc87a11ab3ed5ecf62f536))
+* move session history out of the plugin folder to fix symlink dev conflicts ([bcc42f2](https://github.com/ScottKirvan/Cortex/commit/bcc42f2f062ea4c844b114a4382b246b41c1f873))
+* session focus/renaming issues ([b40c069](https://github.com/ScottKirvan/Cortex/commit/b40c069c097c22102c8ab1246265a53c32eabcb4))
+
 ## [0.5.0](https://github.com/ScottKirvan/Cortex/compare/v0.4.0...v0.5.0) (2026-03-18)
 
 
