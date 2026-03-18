@@ -1,4 +1,4 @@
-import { Plugin, Notice, WorkspaceLeaf } from 'obsidian';
+import { Plugin, Notice, WorkspaceLeaf, addIcon } from 'obsidian';
 import { ClaudeView, VIEW_TYPE_CLAUDE } from './src/ClaudeView';
 import { CortexSettings, DEFAULT_SETTINGS, CortexSettingsTab } from './src/settings';
 import { findClaudeBinary } from './src/ClaudeProcess';
@@ -24,9 +24,20 @@ export default class CortexPlugin extends Plugin {
       new Notice('Cortex: claude binary not found. Check plugin settings.');
     }
 
+    // Register custom icon — three S-curves suggesting cortex folds (gyri).
+    // Replace the path data here when the final logo SVG is ready.
+    addIcon('cortex', `
+      <path d="M10,32 C24,12 38,12 50,32 C62,52 76,52 90,32"
+            stroke="currentColor" fill="none" stroke-width="8" stroke-linecap="round"/>
+      <path d="M10,50 C24,30 38,30 50,50 C62,70 76,70 90,50"
+            stroke="currentColor" fill="none" stroke-width="8" stroke-linecap="round"/>
+      <path d="M10,68 C24,48 38,48 50,68 C62,88 76,88 90,68"
+            stroke="currentColor" fill="none" stroke-width="8" stroke-linecap="round"/>
+    `);
+
     this.registerView(VIEW_TYPE_CLAUDE, (leaf) => new ClaudeView(leaf, this));
 
-    this.addRibbonIcon('sprout', 'Open Cortex agent', () => {
+    this.addRibbonIcon('cortex', 'Open Cortex agent', () => {
       this.activateView();
     });
 

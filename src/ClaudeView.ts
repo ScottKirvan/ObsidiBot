@@ -41,7 +41,7 @@ export class ClaudeView extends ItemView {
 
   getViewType(): string { return VIEW_TYPE_CLAUDE; }
   getDisplayText(): string { return 'Cortex'; }
-  getIcon(): string { return 'sprout'; }
+  getIcon(): string { return 'cortex'; }
 
   async onOpen() {
     const root = this.containerEl.children[1] as HTMLElement;
