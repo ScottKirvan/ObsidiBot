@@ -1,4 +1,5 @@
 import { App, Modal, Plugin } from 'obsidian';
+import logoDataUrl from '../../assets/media/logo.jpg';
 
 export class AboutModal extends Modal {
   private plugin: Plugin;
@@ -12,11 +13,10 @@ export class AboutModal extends Modal {
     const { contentEl } = this;
     contentEl.addClass('cortex-about-modal');
 
-    // Logo — use manifest.dir (vault-relative plugin folder) + adapter.getResourcePath
+    // Logo — embedded as base64 data URL at build time (portable across all install methods)
     const logoWrap = contentEl.createDiv({ cls: 'cortex-about-logo' });
     const logo = logoWrap.createEl('img');
-    const logoVaultPath = `${(this.plugin as any).manifest.dir}/assets/media/logo.jpg`;
-    logo.src = (this.app.vault.adapter as any).getResourcePath(logoVaultPath);
+    logo.src = logoDataUrl;
     logo.alt = 'Cortex logo';
 
     // Name + version

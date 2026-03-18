@@ -45,12 +45,15 @@ jobs:
         run: |
           mkdir -p dist/cortex
           cp main.js manifest.json styles.css dist/cortex/
-          cp -r assets dist/cortex/
           cd dist
           zip -r cortex-${{ needs.release-please.outputs.tag_name }}.zip cortex/
 
-      - name: Upload zip to GitHub release
+      - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.release-please.outputs.tag_name }}
-          files: dist/cortex-${{ needs.release-please.outputs.tag_name }}.zip
+          files: |
+            main.js
+            manifest.json
+            styles.css
+            dist/cortex-${{ needs.release-please.outputs.tag_name }}.zip
