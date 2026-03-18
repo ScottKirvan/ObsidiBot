@@ -1,6 +1,6 @@
 import { ItemView, WorkspaceLeaf, MarkdownRenderer, Notice, setIcon } from 'obsidian';
 import type CortexPlugin from '../main';
-import { spawnClaude, parseStreamOutput, killProcess } from './ClaudeProcess';
+import { spawnClaude, parseStreamOutput, killProcess, findClaudeBinary } from './ClaudeProcess';
 import { extractActions, executeAction } from './UIBridge';
 import { ContextManager } from './ContextManager';
 import { log, estimateTokens } from './utils/logger';
@@ -149,6 +149,12 @@ export class ClaudeView extends ItemView {
       }
     });
 
+    // If Claude binary is missing, show setup guide and stop here
+    if (!this.plugin.claudeBinaryPath) {
+      this.renderSetupPanel();
+      return;
+    }
+
     if (this.plugin.settings.resumeLastSession) {
       const vaultRoot = (this.app.vault.adapter as any).basePath;
       const sessions = loadAllSessions(vaultRoot);
@@ -160,7 +166,6 @@ export class ClaudeView extends ItemView {
     // Show context file setup modal if the configured file doesn't exist and user hasn't skipped
     if (
       !this.plugin.settings.skipContextFilePrompt &&
-      this.plugin.claudeBinaryPath &&
       !this.app.vault.getFileByPath(this.plugin.settings.contextFilePath)
     ) {
       const vaultRoot = (this.app.vault.adapter as any).basePath;
@@ -491,6 +496,109 @@ export class ClaudeView extends ItemView {
     proc.on('error', (err) => {
       assistantEl.setText(`Process error: ${err.message}`);
       unlock();
+    });
+  }
+
+  private renderSetupPanel() {
+    this.inputEl.disabled = true;
+    this.inputEl.placeholder = 'Complete setup above to start chatting…';
+    this.sendBtn.disabled = true;
+
+    const isWin = process.platform === 'win32';
+    const card = this.messagesEl.createDiv({ cls: 'cortex-setup-card' });
+
+    card.createEl('h3', { text: 'ERROR: Claude Code not found', cls: 'cortex-setup-title' });
+    card.createEl('p', {
+      text: 'Cortex requires the Claude Code CLI (included with Claude Pro/Max). ' +
+        'Follow the steps below, then click Check again.',
+      cls: 'cortex-setup-intro',
+    });
+
+    // Step 1 — Install
+    const step1 = card.createDiv({ cls: 'cortex-setup-step' });
+    step1.createEl('p', { text: 'Step 1 — Install Claude Code', cls: 'cortex-setup-step-title' });
+    if (isWin) {
+      step1.createEl('p', { text: 'Open PowerShell (not WSL, not Command Prompt) and run:', cls: 'cortex-setup-note' });
+      this.renderCodeRow(step1, 'irm https://claude.ai/install.ps1 | iex');
+    } else {
+      step1.createEl('p', { text: 'Run in your terminal:', cls: 'cortex-setup-note' });
+      this.renderCodeRow(step1, 'curl -fsSL https://claude.ai/install.sh | bash');
+    }
+
+    // Step 2 — Verify
+    const step2 = card.createDiv({ cls: 'cortex-setup-step' });
+    step2.createEl('p', {
+      text: `Step 2 — Verify (run in ${isWin ? 'PowerShell' : 'terminal'})`,
+      cls: 'cortex-setup-step-title',
+    });
+    this.renderCodeRow(step2, 'claude --version');
+
+    // Step 3 — Authenticate
+    const step3 = card.createDiv({ cls: 'cortex-setup-step' });
+    step3.createEl('p', { text: 'Step 3 — Log in', cls: 'cortex-setup-step-title' });
+    step3.createEl('p', {
+      text: 'This opens a browser window to authenticate with your Claude account (Pro or Max required):',
+      cls: 'cortex-setup-note',
+    });
+    this.renderCodeRow(step3, 'claude login');
+
+    // Already installed? Override path
+    const pathSection = card.createDiv({ cls: 'cortex-setup-step' });
+    pathSection.createEl('p', {
+      text: 'Already installed and still seeing this?',
+      cls: 'cortex-setup-step-title',
+    });
+    pathSection.createEl('p', {
+      text: 'Claude Code may not be on the auto-detected PATH. Enter the full path to your claude binary below, then click Check again.',
+      cls: 'cortex-setup-note',
+    });
+    const pathRow = pathSection.createDiv({ cls: 'cortex-setup-code-row' });
+    const pathInput = pathRow.createEl('input', { cls: 'cortex-setup-path-input' });
+    pathInput.type = 'text';
+    pathInput.placeholder = isWin ? 'C:\\Users\\you\\AppData\\Local\\Programs\\claude\\claude.exe' : '/usr/local/bin/claude';
+    pathInput.value = this.plugin.settings.binaryPath ?? '';
+    pathInput.addEventListener('change', async () => {
+      this.plugin.settings.binaryPath = pathInput.value.trim();
+      await this.plugin.saveSettings();
+    });
+
+    // Action buttons
+    const btnRow = card.createDiv({ cls: 'cortex-setup-btn-row' });
+
+    const docsLink = btnRow.createEl('a', {
+      text: 'Claude Code install guide ↗',
+      href: 'https://code.claude.com/docs/en/overview#native-install-recommended',
+      cls: 'cortex-setup-docs-link',
+    });
+    docsLink.setAttr('target', '_blank');
+    docsLink.setAttr('rel', 'noopener');
+
+    const checkBtn = btnRow.createEl('button', { text: 'Check again', cls: 'mod-cta cortex-setup-check-btn' });
+    checkBtn.addEventListener('click', async () => {
+      this.plugin.claudeBinaryPath = findClaudeBinary(this.plugin.settings.binaryPath);
+      if (this.plugin.claudeBinaryPath) {
+        await this.onOpen();
+      } else {
+        const err = card.createEl('p', {
+          text: isWin
+            ? 'Still not found. Ensure you installed in PowerShell (not WSL), then restart Obsidian.'
+            : 'Still not found. Make sure claude is on your PATH, then restart Obsidian.',
+          cls: 'cortex-setup-error',
+        });
+        setTimeout(() => err.remove(), 6000);
+      }
+    });
+  }
+
+  private renderCodeRow(parent: HTMLElement, code: string) {
+    const row = parent.createDiv({ cls: 'cortex-setup-code-row' });
+    row.createEl('code', { text: code, cls: 'cortex-setup-code' });
+    const copyBtn = row.createEl('button', { text: 'Copy', cls: 'cortex-setup-copy-btn' });
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(code).then(() => {
+        copyBtn.setText('Copied!');
+        setTimeout(() => copyBtn.setText('Copy'), 2000);
+      });
     });
   }
 

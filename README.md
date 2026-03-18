@@ -50,7 +50,7 @@
 
 Cortex is an Obsidian plugin that puts a Claude Code agent inside your vault. You chat with Claude in a side panel; Claude can read, write, create, move, and organize your notes — the same way Claude Code works in a code project, applied to your Obsidian vault.
 
-**No API key required.** Cortex runs the `claude` CLI binary as a subprocess, riding your existing Claude Pro or Max subscription. The same approach used by Cline and Zed.
+**No API key required.** Cortex is powered by Claude Code, Anthropic's desktop CLI tool included with Claude Pro and Max subscriptions — no separate API key needed.
 
 ## Features
 
@@ -65,9 +65,9 @@ Cortex is an Obsidian plugin that puts a Claude Code agent inside your vault. Yo
 ## Requirements
 
 - Obsidian desktop (Windows, Mac, or Linux — **desktop only**, no mobile)
-- [Claude Code CLI](https://claude.ai/code) installed and authenticated (included in Claude Pro/Max subscriptions)
-  - **Windows users:** Claude Code must be installed natively in **PowerShell**
-  - Verify: Type `claude --version` in PowerShell
+- [Claude Code CLI](https://code.claude.com/docs/en/overview#native-install-recommended) installed and authenticated (included in Claude Pro/Max subscriptions)
+  - **Windows users:** Claude Code must be installed natively in **PowerShell** — a WSL-only install will not work
+  - Verify: `claude --version` in PowerShell should return a version number
 
 ## Installation
 

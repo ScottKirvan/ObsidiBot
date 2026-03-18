@@ -16,7 +16,8 @@ export function findClaudeBinary(settingsOverride?: string): string | null {
   if (settingsOverride) {
     LOG('  trying settings override:', settingsOverride);
     if (existsSync(settingsOverride)) return settingsOverride;
-    WARN('  settings override not found');
+    WARN('  settings override path not found — not falling back to auto-detect');
+    return null;
   }
 
   // On Windows, use 'where'; on Mac/Linux use 'which'

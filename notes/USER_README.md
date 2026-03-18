@@ -20,7 +20,7 @@ Cortex is an Obsidian plugin that puts a Claude Code agent inside your vault. Th
 ## Requirements
 
 - **Obsidian desktop** (Windows, Mac, or Linux) — mobile is not supported
-- **Claude Code CLI** installed and authenticated
+- **Claude Code CLI** installed and authenticated ([full install guide](https://code.claude.com/docs/en/overview#native-install-recommended))
   - **Windows:** must be installed natively in PowerShell — a WSL-only install will not work
     ```powershell
     winget install Anthropic.ClaudeCode
@@ -29,7 +29,7 @@ Cortex is an Obsidian plugin that puts a Claude Code agent inside your vault. Th
     ```
   - **Mac/Linux:**
     ```bash
-    npm install -g @anthropic-ai/claude-code
+    curl -fsSL https://claude.ai/install.sh | bash
     ```
   - Verify the install: `claude --version` should return a version number in your terminal
   - **Log in:** `claude login` — this opens a browser for OAuth authentication (one-time per environment)

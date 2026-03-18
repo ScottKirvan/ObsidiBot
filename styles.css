@@ -316,3 +316,125 @@
 /* Markdown content inside assistant messages */
 .cortex-assistant p:last-child { margin-bottom: 0; }
 .cortex-assistant pre { overflow-x: auto; }
+
+/* ── Setup / onboarding card ── */
+.cortex-setup-card {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cortex-setup-title {
+  margin: 0;
+  font-size: 1em;
+  color: var(--text-warning);
+}
+
+.cortex-setup-intro {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9em;
+}
+
+.cortex-setup-step {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 12px;
+  border-left: 2px solid var(--background-modifier-border);
+}
+
+.cortex-setup-step-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.9em;
+}
+
+.cortex-setup-note {
+  margin: 0;
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+
+.cortex-setup-code-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cortex-setup-code {
+  flex: 1;
+  font-family: var(--font-monospace);
+  font-size: 0.85em;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  color: var(--text-normal);
+  white-space: nowrap;
+  overflow-x: auto;
+}
+
+.cortex-setup-copy-btn {
+  font-size: 0.75em;
+  padding: 3px 8px;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 4px;
+  background: var(--background-modifier-hover);
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.cortex-setup-copy-btn:hover {
+  color: var(--text-normal);
+}
+
+.cortex-setup-path-input {
+  flex: 1;
+  font-family: var(--font-monospace);
+  font-size: 0.85em;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  color: var(--text-normal);
+}
+
+.cortex-setup-path-input:focus {
+  outline: none;
+  border-color: var(--interactive-accent);
+}
+
+.cortex-setup-btn-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.cortex-setup-docs-link {
+  font-size: 0.85em;
+  color: var(--text-accent);
+  text-decoration: none;
+  flex: 1;
+}
+
+.cortex-setup-docs-link:hover {
+  text-decoration: underline;
+}
+
+.cortex-setup-check-btn {
+  flex-shrink: 0;
+}
+
+.cortex-setup-error {
+  margin: 4px 0 0;
+  font-size: 0.85em;
+  color: var(--text-error);
+}
