@@ -169,16 +169,11 @@ export class CortexSettingsTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Permission mode')
-      .setDesc(
-        'Controls which operations Claude is allowed to perform. ' +
-        '"Standard" allows file reads/writes and web access but blocks shell commands. ' +
-        '"Read only" blocks all writes — safe for shared or sensitive vaults. ' +
-        '"Full access" allows everything including Bash (original behaviour).'
-      )
+      .setDesc('Controls which vault operations Claude is allowed to perform.')
       .addDropdown((drop) =>
         drop
           .addOption('standard', 'Standard — files + web, no Bash (recommended)')
-          .addOption('readonly', 'Read only — no writes or commands')
+          .addOption('readonly', 'Read only — no writes or shell commands')
           .addOption('full', 'Full access — everything including Bash')
           .setValue(this.plugin.settings.permissionMode)
           .onChange(async (value) => {

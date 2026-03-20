@@ -13,6 +13,7 @@ Cortex is an Obsidian plugin that puts a Claude Code agent inside your vault. Th
 - [Context System](#context-system)
 - [Commands](#commands)
 - [Settings](#settings)
+- [Permissions](#permissions)
 - [Known Limitations](#known-limitations)
 
 ---
@@ -209,6 +210,27 @@ Open **Settings → Cortex** to configure:
 | Send on Enter                  | On                   | Press Enter to send a message. Shift+Enter always inserts a newline.                                                                                    |
 | Resume last session on startup | On                   | Automatically resume the most recent session when the Cortex panel opens.                                                                               |
 | Autonomous memory              | On                   | Claude will autonomously update the context file as it learns about your vault. Disable if you prefer to manage it manually or if your vault is shared. |
+| Permission mode                | Standard             | Controls which vault operations Claude is allowed to perform. See [Permissions](#permissions) below.                                                    |
+
+---
+
+## Permissions
+
+Cortex runs Claude Code as a subprocess and controls what it's allowed to do via Claude Code's permission flags. The permission mode is set **per session** before any message is sent — it cannot change mid-response.
+
+| Mode | What Claude can do |
+|---|---|
+| **Standard** *(recommended)* | Read and write files, use web search/fetch — Bash/shell commands blocked |
+| **Read only** | Read files, search, fetch web — no writes or shell commands |
+| **Full access** | Everything including shell commands (Bash, git, etc.) |
+
+### Permission denials
+
+When Claude attempts a blocked operation, a denial card appears in the chat after the response completes, listing what was blocked. You can click **Allow full access for this session** to upgrade to Full access and automatically retry the last message.
+
+> **Note:** Permission granularity is at the **tool level**, not the command level. "Allow full access" unlocks all shell commands for the rest of the session — there is no way to approve `git status` while still blocking `rm`. This is a constraint of how Claude Code works in non-interactive (streaming) mode. If you need Bash access regularly, set Permission mode to **Full access** in settings rather than upgrading per-session each time.
+
+The session override is cleared when you start a new session.
 
 ---
 
