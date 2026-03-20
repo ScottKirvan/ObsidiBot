@@ -15,7 +15,11 @@ export default class CortexPlugin extends Plugin {
     await this.loadSettings();
 
     const vaultRoot = (this.app.vault.adapter as any).basePath;
-    initLogger(vaultRoot);
+    initLogger(vaultRoot, {
+      enabled: this.settings.logEnabled,
+      filePath: this.settings.logFilePath,
+      verbosity: this.settings.logVerbosity,
+    });
     log('Cortex loading — vault root:', vaultRoot);
 
     this.shellEnv = resolveShellEnv();
@@ -281,5 +285,15 @@ export default class CortexPlugin extends Plugin {
 
   async saveSettings() {
     await this.saveData(this.settings);
+  }
+
+  reconfigureLogger() {
+    const vaultRoot = (this.app.vault.adapter as any).basePath;
+    initLogger(vaultRoot, {
+      enabled: this.settings.logEnabled,
+      filePath: this.settings.logFilePath,
+      verbosity: this.settings.logVerbosity,
+    });
+    log('Logger reconfigured — enabled:', this.settings.logEnabled, 'verbosity:', this.settings.logVerbosity);
   }
 }

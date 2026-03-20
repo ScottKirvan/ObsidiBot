@@ -17,6 +17,12 @@ export interface CortexSettings {
   uiBridgeEnabled: boolean;
   /** Which operations Claude is allowed to perform. */
   permissionMode: PermissionMode;
+  /** Write a debug log file to the vault. */
+  logEnabled: boolean;
+  /** Vault-relative path for the log file. */
+  logFilePath: string;
+  /** How much detail to log. 'verbose' includes raw stream chunks and token breakdowns. */
+  logVerbosity: 'normal' | 'verbose';
 }
 
 export const DEFAULT_SETTINGS: CortexSettings = {
@@ -29,6 +35,9 @@ export const DEFAULT_SETTINGS: CortexSettings = {
   skipContextFilePrompt: false,
   uiBridgeEnabled: true,
   permissionMode: 'standard',
+  logEnabled: true,
+  logFilePath: '_cortex-debug.log',
+  logVerbosity: 'normal',
 };
 
 export class CortexSettingsTab extends PluginSettingTab {
@@ -191,6 +200,51 @@ export class CortexSettingsTab extends PluginSettingTab {
           .onChange(async (value) => {
             this.plugin.settings.skipContextFilePrompt = !value;
             await this.plugin.saveSettings();
+          })
+      );
+
+    // ── Logging ────────────────────────────────────────────────────────────
+    containerEl.createEl('h3', { text: 'Logging' });
+
+    new Setting(containerEl)
+      .setName('Enable debug log')
+      .setDesc('Write a debug log file to your vault. Useful for troubleshooting. Takes effect on next Obsidian restart.')
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.logEnabled)
+          .onChange(async (value) => {
+            this.plugin.settings.logEnabled = value;
+            await this.plugin.saveSettings();
+            this.plugin.reconfigureLogger();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName('Log file path')
+      .setDesc('Vault-relative path for the log file.')
+      .addText((text) =>
+        text
+          .setPlaceholder('_cortex-debug.log')
+          .setValue(this.plugin.settings.logFilePath)
+          .onChange(async (value) => {
+            this.plugin.settings.logFilePath = value || '_cortex-debug.log';
+            await this.plugin.saveSettings();
+            this.plugin.reconfigureLogger();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName('Log verbosity')
+      .setDesc('Normal logs session events and errors. Verbose adds raw stream data and token breakdowns — useful for deep debugging but produces large log files.')
+      .addDropdown((drop) =>
+        drop
+          .addOption('normal', 'Normal')
+          .addOption('verbose', 'Verbose')
+          .setValue(this.plugin.settings.logVerbosity)
+          .onChange(async (value) => {
+            this.plugin.settings.logVerbosity = value as 'normal' | 'verbose';
+            await this.plugin.saveSettings();
+            this.plugin.reconfigureLogger();
           })
       );
   }

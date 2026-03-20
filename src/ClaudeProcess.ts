@@ -4,7 +4,7 @@ import { join } from 'path';
 import * as os from 'os';
 import { execSync } from 'child_process';
 import { spawn, ChildProcess } from 'child_process';
-import { log as LOG, warn as WARN } from './utils/logger';
+import { log as LOG, warn as WARN, logv as LOGV } from './utils/logger';
 export type PermissionMode = 'standard' | 'readonly' | 'full';
 
 export interface PermissionDenial {
@@ -183,7 +183,7 @@ export function parseStreamOutput(proc: ChildProcess, cb: StreamCallbacks): void
 
   proc.stdout?.on('data', (chunk: Buffer) => {
     const raw = chunk.toString();
-    LOG('stdout chunk:', raw.substring(0, 200));
+    LOGV('stdout chunk:', raw.substring(0, 200));
     buffer += raw;
     const lines = buffer.split('\n');
     buffer = lines.pop() ?? '';
@@ -192,10 +192,10 @@ export function parseStreamOutput(proc: ChildProcess, cb: StreamCallbacks): void
       if (!line.trim()) continue;
       try {
         const msg = JSON.parse(line) as Record<string, unknown>;
-        LOG('  parsed msg type:', msg.type);
+        LOGV('  parsed msg type:', msg.type);
         handleMessage(msg, cb, (id) => { sessionId = id; });
       } catch {
-        LOG('  non-JSON line:', line.substring(0, 100));
+        LOGV('  non-JSON line:', line.substring(0, 100));
       }
     }
   });
