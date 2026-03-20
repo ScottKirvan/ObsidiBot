@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.0](https://github.com/ScottKirvan/Cortex/compare/v1.0.0...v1.1.0) (2026-03-20)
+
+
+### Features
+
+* Attachment button: open up the paperclip to add files, URLs, and other content to the context stack ([d644f89](https://github.com/ScottKirvan/Cortex/commit/d644f892381c6b8c2956df3f2a5bcd1db22b7b05))
+* current note is pre-selected in @ mention context injection & additional file types (pdf, fountain - configurable) are now supported ([a107623](https://github.com/ScottKirvan/Cortex/commit/a10762312bda06474977309e1e9a832f8ad1832f))
+* frontmatter context injection and active note awareness ([#15](https://github.com/ScottKirvan/Cortex/issues/15)) ([c12aeea](https://github.com/ScottKirvan/Cortex/commit/c12aeea19d392eb40a64651883b559f7bd963e77))
+* logginpg settings, verbosity settings, start/stop, file location, etc. ([169084e](https://github.com/ScottKirvan/Cortex/commit/169084e59f88b8ebe321e2c91f3c9b91a57b2d42))
+* session context gas gauge added - warns about auto compaction ([6efa27b](https://github.com/ScottKirvan/Cortex/commit/6efa27b87c5fbc5268cae310692ad8b17688c2e0))
+* Session-scoped pins: add a 📌 pin button next to the × on pending context items so pinned items survive send and stay in the stack for every subsequent message (see [#16](https://github.com/ScottKirvan/Cortex/issues/16)) ([83503c4](https://github.com/ScottKirvan/Cortex/commit/83503c4afd78b4e0224813ff71fe47b896ce8c8e))
+* when using the @ mention context injection, pre-select the current note ([4b4775a](https://github.com/ScottKirvan/Cortex/commit/4b4775a6c2e4ffee764101c1cf9d7fa3635d6015))
+
 ## [1.0.0](https://github.com/ScottKirvan/Cortex/compare/v0.6.0...v1.0.0) (2026-03-20)
 
 
