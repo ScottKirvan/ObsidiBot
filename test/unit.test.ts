@@ -19,7 +19,7 @@ import { EventEmitter } from 'node:events';
 
 import { titleFromPrompt, saveSession, loadAllSessions, deleteSession, loadSessionMessages, getSessionsDir } from '../src/utils/sessionStorage';
 import { estimateTokens } from '../src/utils/logger';
-import { parseStreamOutput } from '../src/ClaudeProcess';
+import { parseStreamOutput, permissionArgs } from '../src/ClaudeProcess';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -182,6 +182,32 @@ describe('loadSessionMessages', () => {
     assert.equal(msgs[1].content, 'Hi there');
   });
 
+  test('handles array-format user message content', () => {
+    const sessionId = makeJsonlSession([
+      {
+        type: 'user',
+        message: { content: [{ type: 'text', text: 'Hello from array' }] },
+        timestamp: '2024-01-01T00:00:00Z',
+      },
+    ]);
+    const msgs = loadSessionMessages(sessionId);
+    if (msgs.length === 0) return;
+    assert.equal(msgs[0].content, 'Hello from array');
+  });
+
+  test('strips vault_context from array-format first user message', () => {
+    const sessionId = makeJsonlSession([
+      {
+        type: 'user',
+        message: { content: [{ type: 'text', text: '<vault_context>injected</vault_context>\nArray question' }] },
+        timestamp: '2024-01-01T00:00:00Z',
+      },
+    ]);
+    const msgs = loadSessionMessages(sessionId);
+    if (msgs.length === 0) return;
+    assert.equal(msgs[0].content, 'Array question');
+  });
+
   test('strips vault_context from first user message', () => {
     const sessionId = makeJsonlSession([
       {
@@ -200,11 +226,41 @@ describe('loadSessionMessages', () => {
 // parseStreamOutput — stream-json parsing (no real Claude process)
 // ---------------------------------------------------------------------------
 
+describe('permissionArgs', () => {
+  test('standard → acceptEdits', () => {
+    const args = permissionArgs('standard');
+    assert.ok(args.includes('acceptEdits'));
+    assert.ok(!args.some(a => a.includes('bypass') || a.includes('dangerously')));
+  });
+
+  test('readonly → default mode + allowedTools', () => {
+    const args = permissionArgs('readonly');
+    assert.ok(args.includes('default'));
+    const idx = args.indexOf('--allowedTools');
+    assert.ok(idx !== -1);
+    assert.ok(args[idx + 1].includes('Read'));
+    assert.ok(!args[idx + 1].includes('Write'));
+    assert.ok(!args[idx + 1].includes('Bash'));
+  });
+
+  test('full → bypassPermissions', () => {
+    const args = permissionArgs('full');
+    assert.ok(args.includes('bypassPermissions'));
+  });
+
+  test('no mode ever includes dangerously-skip-permissions', () => {
+    for (const mode of ['standard', 'readonly', 'full'] as const) {
+      assert.ok(!permissionArgs(mode).some(a => a.includes('dangerously')));
+    }
+  });
+});
+
 describe('parseStreamOutput', () => {
-  function emit(proc: any, chunks: string[], stderrChunks: string[] = []): Promise<{ texts: string[], tools: string[], sessionId?: string, errors: string[] }> {
+  function emit(proc: any, chunks: string[], stderrChunks: string[] = []): Promise<{ texts: string[], tools: string[], denials: Array<{tool: string}>, sessionId?: string, errors: string[] }> {
     return new Promise((resolve) => {
       const texts: string[] = [];
       const tools: string[] = [];
+      const denials: Array<{tool: string}> = [];
       const errors: string[] = [];
       let sessionId: string | undefined;
 
@@ -212,7 +268,8 @@ describe('parseStreamOutput', () => {
         onText: (t) => texts.push(t),
         onAction: () => { /* tests don't exercise UI bridge */ },
         onToolCall: (name) => tools.push(name),
-        onDone: (id) => { sessionId = id; resolve({ texts, tools, sessionId, errors }); },
+        onPermissionDenied: (d) => denials.push(...d),
+        onDone: (id) => { sessionId = id; resolve({ texts, tools, denials, sessionId, errors }); },
         onError: (e) => errors.push(e),
       });
 
@@ -313,5 +370,41 @@ describe('parseStreamOutput', () => {
     ];
     const result = await emit(proc, chunks);
     assert.deepEqual(result.texts, []);
+  });
+
+  test('fires onPermissionDenied when result contains permission_denials', async () => {
+    const proc = mockProc();
+    const chunks = [
+      JSON.stringify({
+        type: 'result',
+        session_id: 'sess-perm',
+        permission_denials: [
+          { tool_name: 'Write', tool_use_id: 'tu_1', tool_input: { file_path: 'notes/test.md', content: 'hello' } },
+          { tool_name: 'Bash', tool_use_id: 'tu_2', tool_input: { command: 'rm -rf /' } },
+        ],
+      }) + '\n',
+    ];
+    const result = await emit(proc, chunks);
+    assert.equal(result.denials.length, 2);
+    assert.equal(result.denials[0].tool, 'Write');
+    assert.equal(result.denials[1].tool, 'Bash');
+  });
+
+  test('does not fire onPermissionDenied when permission_denials is empty', async () => {
+    const proc = mockProc();
+    const chunks = [
+      JSON.stringify({ type: 'result', session_id: 'sess-ok', permission_denials: [] }) + '\n',
+    ];
+    const result = await emit(proc, chunks);
+    assert.equal(result.denials.length, 0);
+  });
+
+  test('does not fire onPermissionDenied when permission_denials is absent', async () => {
+    const proc = mockProc();
+    const chunks = [
+      JSON.stringify({ type: 'result', session_id: 'sess-no-field' }) + '\n',
+    ];
+    const result = await emit(proc, chunks);
+    assert.equal(result.denials.length, 0);
   });
 });

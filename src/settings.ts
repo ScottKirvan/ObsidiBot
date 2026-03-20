@@ -1,5 +1,7 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import type CortexPlugin from '../main';
+import type { PermissionMode } from './ClaudeProcess';
+export type { PermissionMode };
 
 export interface CortexSettings {
   binaryPath: string;
@@ -13,6 +15,8 @@ export interface CortexSettings {
   skipContextFilePrompt: boolean;
   /** Allow Claude to trigger Obsidian UI actions (open files, show notices, etc.) */
   uiBridgeEnabled: boolean;
+  /** Which operations Claude is allowed to perform. */
+  permissionMode: PermissionMode;
 }
 
 export const DEFAULT_SETTINGS: CortexSettings = {
@@ -24,6 +28,7 @@ export const DEFAULT_SETTINGS: CortexSettings = {
   vaultTreeDepth: 3,
   skipContextFilePrompt: false,
   uiBridgeEnabled: true,
+  permissionMode: 'standard',
 };
 
 export class CortexSettingsTab extends PluginSettingTab {
@@ -155,6 +160,24 @@ export class CortexSettingsTab extends PluginSettingTab {
           .setValue(this.plugin.settings.uiBridgeEnabled)
           .onChange(async (value) => {
             this.plugin.settings.uiBridgeEnabled = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    // ── Permissions ────────────────────────────────────────────────────────
+    containerEl.createEl('h3', { text: 'Permissions' });
+
+    new Setting(containerEl)
+      .setName('Permission mode')
+      .setDesc('Controls which vault operations Claude is allowed to perform.')
+      .addDropdown((drop) =>
+        drop
+          .addOption('standard', 'Standard — files + web, no Bash (recommended)')
+          .addOption('readonly', 'Read only — no writes or shell commands')
+          .addOption('full', 'Full access — everything including Bash')
+          .setValue(this.plugin.settings.permissionMode)
+          .onChange(async (value) => {
+            this.plugin.settings.permissionMode = value as PermissionMode;
             await this.plugin.saveSettings();
           })
       );

@@ -1,7 +1,7 @@
 import { ItemView, WorkspaceLeaf, MarkdownRenderer, Notice, setIcon, TFile } from 'obsidian';
 import { spawn } from 'child_process';
 import type CortexPlugin from '../main';
-import { spawnClaude, parseStreamOutput, killProcess, findClaudeBinary } from './ClaudeProcess';
+import { spawnClaude, parseStreamOutput, killProcess, findClaudeBinary, PermissionDenial, PermissionMode } from './ClaudeProcess';
 import { extractActions, executeAction } from './UIBridge';
 import { ContextManager } from './ContextManager';
 import { log, estimateTokens } from './utils/logger';
@@ -98,6 +98,8 @@ export class ClaudeView extends ItemView {
   private activeProc: ReturnType<typeof spawnClaude> | null = null;
   private pendingContexts: Array<{ text: string; source: string }> = [];
   private pendingContextZone: HTMLElement;
+  /** Overrides settings.permissionMode for the current session only. Cleared on new session. */
+  private sessionPermissionOverride: PermissionMode | null = null;
   private atDropdownEl: HTMLElement;
   private atDropdownItems: TFile[] = [];
   private atDropdownIndex = -1;
@@ -275,6 +277,7 @@ export class ClaudeView extends ItemView {
   async onClose() { /* nothing to clean up yet */ }
 
   startNewSession() {
+    this.sessionPermissionOverride = null;
     const vaultRoot = (this.app.vault.adapter as any).basePath;
     const now = new Date().toISOString();
     const sessionId = now.replace(/[:.]/g, '-');
@@ -526,6 +529,7 @@ export class ClaudeView extends ItemView {
         vaultRoot: (this.app.vault.adapter as any).basePath,
         env: this.plugin.shellEnv,
         resumeSessionId: this.currentSessionId,
+        permissionMode: this.sessionPermissionOverride ?? this.plugin.settings.permissionMode,
       });
       this.activeProc = proc;
     } catch (e) {
@@ -570,6 +574,9 @@ export class ClaudeView extends ItemView {
         const detail = extractToolDetail(key, input);
         row.createSpan({ cls: 'cortex-tool-event-label', text: detail ? `${tool}: ${detail}` : tool });
         this.scrollToBottom();
+      },
+      onPermissionDenied: (denials) => {
+        this.renderPermissionDenials(denials, responseGroupEl, prompt);
       },
       onDone: (sessionId) => {
         statusEl.remove();
@@ -794,6 +801,44 @@ export class ClaudeView extends ItemView {
         await this.onOpen();
       });
     });
+  }
+
+  private renderPermissionDenials(denials: PermissionDenial[], container: HTMLElement, retryPrompt: string) {
+    const card = container.createDiv({ cls: 'cortex-permission-card' });
+    card.createEl('p', { cls: 'cortex-permission-title', text: `⚠ ${denials.length} operation${denials.length !== 1 ? 's' : ''} blocked by permission settings` });
+
+    const list = card.createEl('ul', { cls: 'cortex-permission-list' });
+    for (const d of denials) {
+      const detail = extractToolDetail(d.tool.toLowerCase(), d.input);
+      list.createEl('li', { text: detail ? `${d.tool}: ${detail}` : d.tool });
+    }
+
+    const currentMode = this.sessionPermissionOverride ?? this.plugin.settings.permissionMode;
+    if (currentMode !== 'full') {
+      const btnRow = card.createDiv({ cls: 'cortex-permission-btn-row' });
+      const upgradeBtn = btnRow.createEl('button', {
+        cls: 'mod-cta',
+        text: 'Allow full access for this session',
+      });
+      upgradeBtn.addEventListener('click', () => {
+        this.sessionPermissionOverride = 'full';
+        upgradeBtn.setText('↺ Retrying…');
+        upgradeBtn.disabled = true;
+        log('Session permission override set to full');
+        this.inputEl.value = retryPrompt;
+        this.handleSend();
+      });
+      btnRow.createEl('a', {
+        cls: 'cortex-permission-settings-link',
+        text: 'Change default in settings',
+        href: '#',
+      }).addEventListener('click', (e) => {
+        e.preventDefault();
+        (this.app as any).setting.open();
+        (this.app as any).setting.openTabById('cortex');
+      });
+    }
+    this.scrollToBottom();
   }
 
   private renderCodeRow(parent: HTMLElement, code: string) {

@@ -1,10 +1,32 @@
 import { existsSync } from 'fs';
-import { ACTION_PREFIX } from './UIBridge';
+import { ACTION_PREFIX } from './constants';
 import { join } from 'path';
 import * as os from 'os';
 import { execSync } from 'child_process';
 import { spawn, ChildProcess } from 'child_process';
 import { log as LOG, warn as WARN } from './utils/logger';
+export type PermissionMode = 'standard' | 'readonly' | 'full';
+
+export interface PermissionDenial {
+  tool: string;
+  input: unknown;
+}
+
+/** Maps Cortex permissionMode to Claude CLI args. */
+export function permissionArgs(mode: PermissionMode): string[] {
+  switch (mode) {
+    case 'readonly':
+      return [
+        '--permission-mode', 'default',
+        '--allowedTools', 'Read,Glob,Grep,WebFetch,WebSearch',
+      ];
+    case 'full':
+      return ['--permission-mode', 'bypassPermissions'];
+    case 'standard':
+    default:
+      return ['--permission-mode', 'acceptEdits'];
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Binary detection
@@ -66,6 +88,7 @@ export interface SpawnOptions {
   vaultRoot: string;
   env: Record<string, string>;
   resumeSessionId?: string;
+  permissionMode?: PermissionMode;
 }
 
 export function spawnClaude(opts: SpawnOptions): ChildProcess {
@@ -73,7 +96,7 @@ export function spawnClaude(opts: SpawnOptions): ChildProcess {
     '--output-format', 'stream-json',
     '--verbose',
     '--print',
-    '--dangerously-skip-permissions',
+    ...permissionArgs(opts.permissionMode ?? 'standard'),
   ];
 
   if (opts.resumeSessionId) {
@@ -149,6 +172,7 @@ export interface StreamCallbacks {
   onText: (delta: string) => void;
   onAction: (line: string) => void;
   onToolCall: (tool: string, input: unknown) => void;
+  onPermissionDenied: (denials: PermissionDenial[]) => void;
   onDone: (sessionId?: string) => void;
   onError: (err: string) => void;
 }
@@ -224,8 +248,17 @@ function handleMessage(
       break;
     }
     case 'result':
-      // Final result message — session_id is also here
       if (msg.session_id) setSessionId(msg.session_id as string);
+      {
+        const raw = msg.permission_denials as Array<Record<string, unknown>> | undefined;
+        if (raw?.length) {
+          const denials: PermissionDenial[] = raw.map(d => ({
+            tool: d.tool_name as string,
+            input: d.tool_input,
+          }));
+          cb.onPermissionDenied(denials);
+        }
+      }
       break;
   }
 }

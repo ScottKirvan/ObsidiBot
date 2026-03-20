@@ -1,8 +1,7 @@
 import { App, Notice } from 'obsidian';
 import { log, warn } from './utils/logger';
-
-// Prefix Claude emits to signal a UI action
-export const ACTION_PREFIX = '@@CORTEX_ACTION ';
+import { ACTION_PREFIX } from './constants';
+export { ACTION_PREFIX } from './constants';
 
 export interface CortexAction {
   action: string;
