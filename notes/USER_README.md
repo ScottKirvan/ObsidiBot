@@ -85,7 +85,17 @@ Claude has access to your full vault — it can read, write, create, move, and o
 
 ### Attaching context to a message
 
-You can attach additional context to your next message in two ways. Attached items appear in a bar above the input field; click **×** on any item to remove it before sending. All attached context is prepended to your message automatically when you send.
+Attached items appear in a bar above the input field. Click **×** to remove an item, or click the **pin icon** to keep it attached for every subsequent message in the session (useful for a reference note you want always present). All attached context is prepended to your message when you send.
+
+**Attachment button (paperclip)**
+
+Click the paperclip icon in the input bar to open the attach menu:
+
+| Option | What it does |
+|---|---|
+| **Attach file** | Opens your system file picker — attach any file from anywhere on your drive. Text-based files (`.md`, `.txt`, `.fountain`, `.js`, etc.) are read and their content included inline. All other file types (images, PDFs, Word docs, etc.) are referenced by path so Claude can use its Read tool to access them. |
+| **Attach URL** | Enter any URL — it is passed to Claude as-is. Claude decides what to do with it based on your message (fetch the content, analyse the address, store it as a reference, etc.). |
+| **@ Add note** | Opens the same vault note search as the `@` shortcut below. |
 
 **@-mention a note**
 
@@ -153,6 +163,8 @@ The context file path is configurable in **Settings → Cortex**.
 ### 4. Active Note
 
 The path of the currently open note is automatically prepended to every message you send — e.g. `[Active note: 06_Spaces/Projects/Alpha.md]`. This means Claude always knows which note you're looking at without you having to say so. If no note is open, nothing is added.
+
+**Split-pane awareness:** When you have multiple notes open side by side, Cortex detects the split layout and injects all visible file paths instead — e.g. `[Open in split view: Notes/A.md | Projects/B.md]`. In stacked tabs (multiple tabs in the same pane), only the active tab is included. This behaviour is on by default and can be toggled in Settings → **Inject split-pane files as context**.
 
 ### 5. Per-note Frontmatter Context
 
@@ -275,6 +287,7 @@ Open **Settings → Cortex** to configure:
 | Log file path                  | `_cortex-debug.log`    | Vault-relative path for the log file. The file is appended to — delete it manually to start fresh.                                                      |
 | Log verbosity                  | Normal                 | Normal logs session events and errors. Verbose adds raw stream data and token breakdowns.                                                                |
 | @-mention file types           | `md, fountain, txt`    | Comma-separated file extensions included in the `@` autocomplete dropdown. Add any text-based format your vault uses.                                    |
+| Inject split-pane files        | On                     | When Obsidian is in split-pane view, include all visible file paths in the active note context. In stacked tabs, only the focused note is included.       |
 
 ---
 
