@@ -19,64 +19,67 @@ import { AboutModal } from './modals/AboutModal';
 
 export const VIEW_TYPE_CLAUDE = 'cortex-chat';
 
-const TOOL_LABELS: Record<string, string> = {
-  read_file:    'Read',
-  write_file:   'Write',
-  edit_file:    'Edit',
-  list_files:   'List',
-  search_files: 'Search',
-  bash:         'Bash',
-  web_fetch:    'Fetch',
-  web_search:   'Web search',
-};
-
+// Maps from lowercase tool name to display values.
+// Claude Code sends PascalCase names (Read, Write, Bash…) so we normalise to lowercase for lookup.
 const TOOL_STATUS: Record<string, string> = {
-  read_file:    'Reading…',
-  write_file:   'Writing…',
-  edit_file:    'Editing…',
-  list_files:   'Scanning vault…',
-  search_files: 'Searching…',
-  bash:         'Running command…',
-  web_fetch:    'Fetching…',
-  web_search:   'Searching the web…',
+  read:       'Reading…',
+  write:      'Writing…',
+  edit:       'Editing…',
+  multiedit:  'Editing…',
+  bash:       'Running command…',
+  glob:       'Scanning vault…',
+  grep:       'Searching…',
+  ls:         'Listing…',
+  webfetch:   'Fetching…',
+  websearch:  'Searching the web…',
+  todowrite:  'Updating tasks…',
+  todoread:   'Reading tasks…',
 };
 
 const TOOL_ICONS: Record<string, string> = {
-  read_file:    'file-text',
-  write_file:   'file-edit',
-  edit_file:    'file-edit',
-  list_files:   'folder',
-  search_files: 'search',
-  bash:         'terminal',
-  web_fetch:    'globe',
-  web_search:   'globe',
+  read:       'file-text',
+  write:      'file-edit',
+  edit:       'file-edit',
+  multiedit:  'file-edit',
+  bash:       'terminal',
+  glob:       'folder',
+  grep:       'search',
+  ls:         'folder',
+  webfetch:   'globe',
+  websearch:  'globe',
+  todowrite:  'check-square',
+  todoread:   'check-square',
 };
 
 function extractToolDetail(tool: string, input: unknown): string {
   if (!input || typeof input !== 'object') return '';
   const inp = input as Record<string, unknown>;
-  switch (tool) {
-    case 'read_file':
-    case 'write_file':
-    case 'edit_file': {
-      const p = (inp.path as string) ?? '';
-      return p.split(/[\\/]/).pop() ?? p;
+
+  // Try path-like fields first (covers Read, Write, Edit, Glob, Grep, LS…)
+  const pathVal = (inp.file_path ?? inp.path ?? inp.filePath) as string | undefined;
+  if (pathVal) {
+    // For commands that benefit from showing just the filename
+    const key = tool.toLowerCase();
+    if (key !== 'bash' && key !== 'grep' && key !== 'glob') {
+      return pathVal.split(/[\\/]/).pop() ?? pathVal;
     }
-    case 'list_files':
-      return (inp.path as string) || '.';
-    case 'bash': {
-      const cmd = (inp.command as string) ?? '';
-      return cmd.length > 60 ? cmd.substring(0, 60) + '…' : cmd;
-    }
-    case 'search_files':
-      return (inp.pattern as string) ?? (inp.path as string) ?? '';
-    case 'web_fetch':
-      return (inp.url as string) ?? '';
-    case 'web_search':
-      return (inp.query as string) ?? '';
-    default:
-      return '';
+    return pathVal;
   }
+
+  // Bash: show the command
+  if (inp.command) {
+    const cmd = inp.command as string;
+    return cmd.length > 70 ? cmd.substring(0, 70) + '…' : cmd;
+  }
+
+  // Web tools
+  if (inp.url) return inp.url as string;
+  if (inp.query) return inp.query as string;
+
+  // Grep / Glob: show the pattern
+  if (inp.pattern) return inp.pattern as string;
+
+  return '';
 }
 
 export class ClaudeView extends ItemView {
@@ -93,6 +96,8 @@ export class ClaudeView extends ItemView {
   private historyIndex: number = -1;
   private inputDraft: string = '';
   private activeProc: ReturnType<typeof spawnClaude> | null = null;
+  private pendingContexts: Array<{ text: string; source: string }> = [];
+  private pendingContextZone: HTMLElement;
 
   constructor(leaf: WorkspaceLeaf, plugin: CortexPlugin) {
     super(leaf);
@@ -141,6 +146,10 @@ export class ClaudeView extends ItemView {
     this.messagesEl = root.createDiv({ cls: 'cortex-messages' });
 
     const inputArea = root.createDiv({ cls: 'cortex-input-area' });
+
+    this.pendingContextZone = inputArea.createDiv({ cls: 'cortex-pending-context' });
+    this.pendingContextZone.style.display = 'none';
+
     this.inputEl = inputArea.createEl('textarea', {
       cls: 'cortex-input',
       attr: { placeholder: 'Ask Cortex…', rows: '3' },
@@ -340,35 +349,28 @@ export class ClaudeView extends ItemView {
   }
 
   injectSelectionContext(selection: string, sourceName: string) {
-    // Show a visual context block so it's clear what's being attached
-    const ctxEl = this.messagesEl.createDiv({ cls: 'cortex-context-block' });
-    const header = ctxEl.createDiv({ cls: 'cortex-context-header' });
-    header.createSpan({ cls: 'cortex-context-source', text: `Context from: ${sourceName}` });
-    const clearBtn = header.createEl('button', { cls: 'cortex-context-clear', text: '×' });
+    const entry = { text: selection, source: sourceName };
+    this.pendingContexts.push(entry);
+
+    // Append a row to the attachment bar (shown above the textarea)
+    const zone = this.pendingContextZone;
+    zone.style.display = 'flex';
+
+    const row = zone.createDiv({ cls: 'cortex-pending-context-row' });
+    const preview = selection.length > 80 ? selection.substring(0, 80) + '…' : selection;
+    row.createSpan({ cls: 'cortex-pending-context-label', text: `📎 ${sourceName}: ` });
+    row.createSpan({ cls: 'cortex-pending-context-preview', text: preview });
+
+    const clearBtn = row.createEl('button', { cls: 'cortex-context-clear', text: '×' });
     clearBtn.title = 'Remove';
-    const body = ctxEl.createDiv({ cls: 'cortex-context-body', text: selection });
-    body.style.display = 'none'; // collapsed by default; header shows source label
-    const expandBtn = header.createEl('button', { cls: 'cortex-context-expand', text: '▶' });
-    expandBtn.title = 'Expand';
-    expandBtn.addEventListener('click', () => {
-      const shown = body.style.display !== 'none';
-      body.style.display = shown ? 'none' : 'block';
-      expandBtn.setText(shown ? '▶' : '▼');
-    });
-    ctxEl.scrollIntoView({ behavior: 'smooth' });
-
-    // Prepend to input as a blockquote so it's sent with the next message
-    const quote = selection.split('\n').map(l => `> ${l}`).join('\n');
-    const prefix = `**[from ${sourceName}]**\n${quote}\n\n`;
-    this.inputEl.value = prefix + this.inputEl.value;
-    this.inputEl.focus();
-
     clearBtn.addEventListener('click', () => {
-      ctxEl.remove();
-      if (this.inputEl.value.startsWith(prefix)) {
-        this.inputEl.value = this.inputEl.value.substring(prefix.length);
-      }
+      const idx = this.pendingContexts.indexOf(entry);
+      if (idx !== -1) this.pendingContexts.splice(idx, 1);
+      row.remove();
+      if (this.pendingContexts.length === 0) zone.style.display = 'none';
     });
+
+    this.inputEl.focus();
   }
 
   private async loadSession(session: StoredSession) {
@@ -458,10 +460,21 @@ export class ClaudeView extends ItemView {
     const toolEventsEl = responseGroupEl.createDiv({ cls: 'cortex-tool-events' });
     toolEventsEl.style.display = 'none';
     const assistantEl = responseGroupEl.createDiv({ cls: 'cortex-message cortex-assistant' });
-    assistantEl.scrollIntoView({ behavior: 'smooth' });
     const statusEl = assistantEl.createSpan({ cls: 'cortex-status', text: 'Thinking…' });
+    this.scrollToBottom();
 
+    // Attach any pending selection context
     let finalPrompt = prompt;
+    if (this.pendingContexts.length > 0) {
+      const contextBlock = this.pendingContexts
+        .map(c => `**[Context from ${c.source}]**\n${c.text}`)
+        .join('\n\n');
+      finalPrompt = `${contextBlock}\n\n${prompt}`;
+      this.pendingContexts = [];
+      this.pendingContextZone.empty();
+      this.pendingContextZone.style.display = 'none';
+    }
+
     if (isNewSession) {
       const ctx = new ContextManager(
         this.app,
@@ -514,6 +527,7 @@ export class ClaudeView extends ItemView {
           actions.forEach(a => executeAction(this.app, a));
         }
         assistantEl.setText(accumulated);
+        this.scrollToBottom();
       },
       onAction: (line) => {
         if (this.plugin.settings.uiBridgeEnabled) {
@@ -524,15 +538,17 @@ export class ClaudeView extends ItemView {
         }
       },
       onToolCall: (tool, input) => {
-        statusEl.setText(TOOL_STATUS[tool] ?? 'Working…');
+        const key = tool.toLowerCase();
+        statusEl.setText(TOOL_STATUS[key] ?? 'Working…');
+        log('onToolCall —', tool, JSON.stringify(input).substring(0, 120));
         toolCallCount++;
         if (toolEventsEl.style.display === 'none') toolEventsEl.style.display = 'flex';
         const row = toolEventsEl.createDiv({ cls: 'cortex-tool-event' });
         const iconEl = row.createSpan({ cls: 'cortex-tool-event-icon' });
-        setIcon(iconEl, TOOL_ICONS[tool] ?? 'zap');
-        const detail = extractToolDetail(tool, input);
-        const label = TOOL_LABELS[tool] ?? tool;
-        row.createSpan({ cls: 'cortex-tool-event-label', text: detail ? `${label}: ${detail}` : label });
+        setIcon(iconEl, TOOL_ICONS[key] ?? 'zap');
+        const detail = extractToolDetail(key, input);
+        row.createSpan({ cls: 'cortex-tool-event-label', text: detail ? `${tool}: ${detail}` : tool });
+        this.scrollToBottom();
       },
       onDone: (sessionId) => {
         statusEl.remove();
@@ -608,7 +624,7 @@ export class ClaudeView extends ItemView {
           assistantEl.empty();
           MarkdownRenderer.render(this.app, accumulated, assistantEl, '', this);
         }
-        assistantEl.scrollIntoView({ behavior: 'smooth' });
+        this.scrollToBottom();
         unlock();
       },
       onError: (err) => {
@@ -771,10 +787,14 @@ export class ClaudeView extends ItemView {
     });
   }
 
+  private scrollToBottom() {
+    this.messagesEl.scrollTop = this.messagesEl.scrollHeight;
+  }
+
   private appendMessage(role: 'user' | 'assistant' | 'system', text: string): HTMLElement {
     const el = this.messagesEl.createDiv({ cls: `cortex-message cortex-${role}` });
     el.setText(text);
-    el.scrollIntoView({ behavior: 'smooth' });
+    this.scrollToBottom();
     return el;
   }
 }

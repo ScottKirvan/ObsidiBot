@@ -502,54 +502,49 @@
   color: var(--text-muted);
 }
 
-/* ── Selection context block ── */
-.cortex-context-block {
+/* ── Pending selection context bar (above textarea) ── */
+.cortex-pending-context {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 10px;
   background: var(--background-secondary);
-  border: 1px dashed var(--interactive-accent);
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 0.85em;
-  align-self: flex-start;
-  max-width: 95%;
+  border-bottom: 1px solid var(--interactive-accent);
+  font-size: 0.82em;
 }
 
-.cortex-context-header {
+.cortex-pending-context-row {
   display: flex;
   align-items: center;
   gap: 6px;
+  overflow: hidden;
 }
 
-.cortex-context-source {
-  flex: 1;
-  font-size: 0.85em;
+.cortex-pending-context-label {
   color: var(--interactive-accent);
   font-weight: 500;
+  flex-shrink: 0;
 }
 
-.cortex-context-expand,
+.cortex-pending-context-preview {
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
 .cortex-context-clear {
   background: none;
   border: none;
   cursor: pointer;
   color: var(--text-muted);
   padding: 0 2px;
-  font-size: 0.85em;
+  font-size: 1em;
   line-height: 1;
+  flex-shrink: 0;
 }
 
-.cortex-context-expand:hover,
 .cortex-context-clear:hover {
   color: var(--text-normal);
-}
-
-.cortex-context-body {
-  margin-top: 6px;
-  font-family: var(--font-monospace);
-  font-size: 0.85em;
-  white-space: pre-wrap;
-  color: var(--text-muted);
-  max-height: 120px;
-  overflow-y: auto;
-  border-left: 2px solid var(--background-modifier-border);
-  padding-left: 8px;
 }
