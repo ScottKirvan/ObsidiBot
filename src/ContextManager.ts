@@ -1,6 +1,7 @@
 import { App } from 'obsidian';
 import { buildVaultTree } from './utils/fileTree';
 import { log, estimateTokens } from './utils/logger';
+import { scanPinnedFiles, scanFileInstructions } from './FrontmatterGuard';
 
 export class ContextManager {
   constructor(
@@ -93,6 +94,42 @@ export class ContextManager {
         text: memInstruction,
         chars: memInstruction.length,
         tokens: estimateTokens(memInstruction),
+      };
+    }
+
+    // Layer 4: Always-pinned files (claude.context: always)
+    const pinnedFiles = scanPinnedFiles(this.app);
+    if (pinnedFiles.length > 0) {
+      const pinnedParts: string[] = [];
+      for (const file of pinnedFiles) {
+        const content = await this.app.vault.read(file);
+        if (content.trim()) {
+          pinnedParts.push(`### ${file.path}\n${content.trim()}`);
+        }
+      }
+      if (pinnedParts.length > 0) {
+        const pinnedBlock = `## Pinned notes (always included)\n${pinnedParts.join('\n\n')}`;
+        parts.push(pinnedBlock);
+        layerBreakdown['pinned-files'] = {
+          text: pinnedBlock,
+          chars: pinnedBlock.length,
+          tokens: estimateTokens(pinnedBlock),
+        };
+      }
+    }
+
+    // Layer 5: Per-file instructions (claude.instructions)
+    const instructionMap = scanFileInstructions(this.app);
+    if (instructionMap.size > 0) {
+      const rows = Array.from(instructionMap.entries())
+        .map(([path, instr]) => `- **${path}**: ${instr}`)
+        .join('\n');
+      const instrBlock = `## Per-file instructions\nWhen working with the following files, apply these specific instructions:\n\n${rows}`;
+      parts.push(instrBlock);
+      layerBreakdown['file-instructions'] = {
+        text: instrBlock,
+        chars: instrBlock.length,
+        tokens: estimateTokens(instrBlock),
       };
     }
 

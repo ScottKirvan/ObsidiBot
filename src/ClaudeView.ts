@@ -515,7 +515,10 @@ export class ClaudeView extends ItemView {
     const statusEl = assistantEl.createSpan({ cls: 'cortex-status', text: 'Thinking…' });
     this.scrollToBottom();
 
-    // Attach any pending selection context
+    // Prepend active file so Claude always knows what note is open
+    const activeFile = this.app.workspace.getActiveFile();
+    const activeFileNote = activeFile ? `[Active note: ${activeFile.path}]\n\n` : '';
+
     let finalPrompt = prompt;
     if (this.pendingContexts.length > 0) {
       const contextBlock = this.pendingContexts
@@ -548,6 +551,8 @@ export class ClaudeView extends ItemView {
     } else {
       log(`[CONTINUE SESSION ${this.currentSessionId?.substring(0, 8)}] Prompt: ~${estimateTokens(finalPrompt)} tokens`);
     }
+
+    finalPrompt = activeFileNote + finalPrompt;
 
     let proc: ReturnType<typeof spawnClaude>;
     try {
