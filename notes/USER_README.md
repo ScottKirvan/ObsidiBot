@@ -14,6 +14,7 @@ Cortex is an Obsidian plugin that puts a Claude Code agent inside your vault. Th
 - [Commands](#commands)
 - [Settings](#settings)
 - [Permissions](#permissions)
+- [Logging](#logging)
 - [Known Limitations](#known-limitations)
 
 ---
@@ -81,6 +82,22 @@ Claude has access to your full vault — it can read, write, create, move, and o
 - "Find all notes tagged #meeting from last week and create a summary note"
 - "Rename all notes in the 03_Cards folder that start with 'Untitled' based on their content"
 - "Create a new note in 06_Spaces called 'Q2 Goals' with an outline based on my existing goals notes"
+
+### Attaching context to a message
+
+You can attach additional context to your next message in two ways. Attached items appear in a bar above the input field; click **×** on any item to remove it before sending. All attached context is prepended to your message automatically when you send.
+
+**@-mention a note**
+
+Type `@` anywhere in the chat input to open an autocomplete dropdown. Start typing the note name to filter the list. Press **↑ / ↓** to navigate, **Enter** or **Tab** to select, **Escape** to dismiss. The full contents of the selected note are attached as context.
+
+**Send selected text**
+
+Highlight any text in an open note, then run **Cortex: Send selection as context** from the Command Palette (or bind it to a hotkey). The selected text is attached as a labeled snippet. You can attach multiple selections and @-mentions at once — they all send together with your next message.
+
+### Tool call visibility
+
+While Claude is working, tool calls appear above the response bubble — you can see in real time what Claude is reading, writing, or searching. When the response completes, the tool list collapses to a single toggle line to keep the chat readable. Click it to expand or collapse.
 
 ---
 
@@ -202,15 +219,18 @@ Cortex provides a full command palette for quick access to all features. Press *
 
 Open **Settings → Cortex** to configure:
 
-| Setting                        | Default              | Description                                                                                                                                             |
-| ------------------------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Claude binary path             | *(auto-detect)*      | Full path to the `claude` executable. Leave blank to auto-detect from PATH and common install locations.                                                |
-| Context file path              | `_claude-context.md` | Vault-relative path to the context file injected at session start.                                                                                      |
-| Vault tree depth               | 3 levels             | How many levels of folder/file names to inject at session start. 0 = off, 1 = root only, -1 = unlimited. Names only — no file contents are read.        |
-| Send on Enter                  | On                   | Press Enter to send a message. Shift+Enter always inserts a newline.                                                                                    |
-| Resume last session on startup | On                   | Automatically resume the most recent session when the Cortex panel opens.                                                                               |
-| Autonomous memory              | On                   | Claude will autonomously update the context file as it learns about your vault. Disable if you prefer to manage it manually or if your vault is shared. |
-| Permission mode                | Standard             | Controls which vault operations Claude is allowed to perform. See [Permissions](#permissions) below.                                                    |
+| Setting                        | Default                | Description                                                                                                                                             |
+| ------------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude binary path             | *(auto-detect)*        | Full path to the `claude` executable. Leave blank to auto-detect from PATH and common install locations.                                                |
+| Context file path              | `_claude-context.md`   | Vault-relative path to the context file injected at session start.                                                                                      |
+| Vault tree depth               | 3 levels               | How many levels of folder/file names to inject at session start. 0 = off, 1 = root only, -1 = unlimited. Names only — no file contents are read.        |
+| Send on Enter                  | On                     | Press Enter to send a message. Shift+Enter always inserts a newline.                                                                                    |
+| Resume last session on startup | On                     | Automatically resume the most recent session when the Cortex panel opens.                                                                               |
+| Autonomous memory              | On                     | Claude will autonomously update the context file as it learns about your vault. Disable if you prefer to manage it manually or if your vault is shared. |
+| Permission mode                | Standard               | Controls which vault operations Claude is allowed to perform. See [Permissions](#permissions) below.                                                    |
+| Enable debug log               | On                     | Write a debug log file to your vault. See [Logging](#logging) below.                                                                                    |
+| Log file path                  | `_cortex-debug.log`    | Vault-relative path for the log file. The file is appended to — delete it manually to start fresh.                                                      |
+| Log verbosity                  | Normal                 | Normal logs session events and errors. Verbose adds raw stream data and token breakdowns.                                                                |
 
 ---
 
@@ -231,6 +251,23 @@ When Claude attempts a blocked operation, a denial card appears in the chat afte
 > **Note:** Permission granularity is at the **tool level**, not the command level. "Allow full access" unlocks all shell commands for the rest of the session — there is no way to approve `git status` while still blocking `rm`. This is a constraint of how Claude Code works in non-interactive (streaming) mode. If you need Bash access regularly, set Permission mode to **Full access** in settings rather than upgrading per-session each time.
 
 The session override is cleared when you start a new session.
+
+---
+
+## Logging
+
+Cortex can write a debug log to your vault. It is enabled by default and appends to `_cortex-debug.log` at the vault root. Each Obsidian launch (or settings change) appends a `--- Cortex log started ---` marker so you can find session boundaries. Delete the file manually whenever you want to clear it.
+
+**Verbosity levels:**
+
+| Level | What's logged |
+|---|---|
+| **Normal** *(default)* | Session events, tool calls, spawns, errors — useful for everyday troubleshooting |
+| **Verbose** | Everything above plus raw stream chunks and token breakdowns — for deep debugging; produces large files quickly |
+
+All settings take effect immediately without restarting Obsidian.
+
+> **Tip:** Add `_cortex-debug.log` to your vault's `.gitignore` if you don't want it committed.
 
 ---
 
@@ -263,3 +300,6 @@ Click the **Stop** button (the square icon in the input bar, visible while Claud
 
 **Claude seems to be running but nothing is happening**
 If the status indicator has been showing for a long time with no output, Claude may be stuck. Click **Stop** to interrupt, then try again. Make sure Claude Code is installed and authenticated via a terminal — on Windows use PowerShell, on Mac/Linux use Terminal. Run `claude --version` to confirm the install is visible.
+
+**Something unexpected happened and I want to investigate**
+Check `_cortex-debug.log` at your vault root (or the path configured in settings). Each session is separated by a `--- Cortex log started ---` line. For more detail, switch **Log verbosity** to **Verbose** in settings — it takes effect immediately.
