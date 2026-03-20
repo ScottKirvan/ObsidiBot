@@ -150,7 +150,29 @@ Working on Q2 planning. Key notes: [[Q2 Goals]], [[Team Roster]]
 
 The context file path is configurable in **Settings → Cortex**.
 
-### 4. Autonomous Memory Instruction
+### 4. Active Note
+
+The path of the currently open note is automatically prepended to every message you send — e.g. `[Active note: 06_Spaces/Projects/Alpha.md]`. This means Claude always knows which note you're looking at without you having to say so. If no note is open, nothing is added.
+
+### 5. Per-note Frontmatter Context
+
+You can add a `claude` block to any note's frontmatter to control how Cortex treats that file. Add these as flat properties (Obsidian displays them cleanly in the Properties panel):
+
+```yaml
+---
+cortex-context: always
+cortex-instructions: "This is the canonical taxonomy — suggest changes but never apply them directly."
+---
+```
+
+| Property | Value | Effect |
+|---|---|---|
+| `cortex-context` | `always` | Full note content injected at the start of every new session |
+| `cortex-instructions` | any string | Instruction injected at session start telling Claude how to treat this file |
+
+Both properties can be used together or separately. `cortex-context: always` is useful for style guides, project briefs, or any reference note you always want Claude to have. `cortex-instructions` is useful for notes that need special handling — e.g. "never reformat this file" or "always preserve the original structure."
+
+### 6. Autonomous Memory Instruction
 
 When **Autonomous memory** is enabled (on by default), Claude is instructed to actively maintain the context file as it learns about your vault — naming conventions, ongoing projects, your preferences, decisions made. Claude updates the file directly using its file-editing tools; you can inspect and edit it at any time in Obsidian.
 
