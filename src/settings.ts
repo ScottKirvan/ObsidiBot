@@ -27,6 +27,8 @@ export interface CortexSettings {
   atMentionExtensions: string;
   /** Inject all visible files when Obsidian is in split-pane view. */
   injectSplitPaneFiles: boolean;
+  /** Inject all open files when Obsidian is showing stacked tabs. */
+  injectStackedTabFiles: boolean;
 }
 
 export const DEFAULT_SETTINGS: CortexSettings = {
@@ -44,6 +46,7 @@ export const DEFAULT_SETTINGS: CortexSettings = {
   logVerbosity: 'normal',
   atMentionExtensions: 'md, pdf, fountain, txt',
   injectSplitPaneFiles: true,
+  injectStackedTabFiles: false,
 };
 
 export class CortexSettingsTab extends PluginSettingTab {
@@ -99,6 +102,18 @@ export class CortexSettingsTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
+      .setName('UI Bridge')
+      .setDesc('Allow Claude to trigger Obsidian UI actions — open files, show notices, navigate headings. Claude is instructed to use these proactively after completing tasks.')
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.uiBridgeEnabled)
+          .onChange(async (value) => {
+            this.plugin.settings.uiBridgeEnabled = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
       .setName('@-mention file types')
       .setDesc('Comma-separated extensions to include in @-mention search (e.g. md, fountain, txt).')
       .addText((text) =>
@@ -107,18 +122,6 @@ export class CortexSettingsTab extends PluginSettingTab {
           .setValue(this.plugin.settings.atMentionExtensions)
           .onChange(async (value) => {
             this.plugin.settings.atMentionExtensions = value;
-            await this.plugin.saveSettings();
-          })
-      );
-
-    new Setting(containerEl)
-      .setName('Inject split-pane files as context')
-      .setDesc('When Obsidian is in split-pane view, include all visible files in the active note context. In stacked tabs, only the focused note is included.')
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.injectSplitPaneFiles)
-          .onChange(async (value) => {
-            this.plugin.settings.injectSplitPaneFiles = value;
             await this.plugin.saveSettings();
           })
       );
@@ -193,13 +196,25 @@ export class CortexSettingsTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('UI Bridge')
-      .setDesc('Allow Claude to trigger Obsidian UI actions — open files, show notices, navigate headings. Claude is instructed to use these proactively after completing tasks.')
+      .setName('Inject split-pane files as context')
+      .setDesc('When notes are open side by side in split panes, include all visible file paths in the active note context.')
       .addToggle((toggle) =>
         toggle
-          .setValue(this.plugin.settings.uiBridgeEnabled)
+          .setValue(this.plugin.settings.injectSplitPaneFiles)
           .onChange(async (value) => {
-            this.plugin.settings.uiBridgeEnabled = value;
+            this.plugin.settings.injectSplitPaneFiles = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName('Inject stacked tab files as context')
+      .setDesc('When multiple notes are open as stacked tabs in the same pane, include all open tab file paths in the active note context.')
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.injectStackedTabFiles)
+          .onChange(async (value) => {
+            this.plugin.settings.injectStackedTabFiles = value;
             await this.plugin.saveSettings();
           })
       );

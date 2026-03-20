@@ -516,21 +516,24 @@ export class ClaudeView extends ItemView {
 
     // Prepend open file context so Claude knows what note(s) are visible
     let activeFileNote = '';
-    if (this.plugin.settings.injectSplitPaneFiles) {
+    {
       const leaves = this.app.workspace.getLeavesOfType('markdown');
       const parents = new Set(leaves.map(l => l.parent));
       const isSplit = parents.size > 1;
-      if (isSplit && leaves.length > 1) {
+      const isStacked = !isSplit && leaves.length > 1;
+
+      if (isSplit && this.plugin.settings.injectSplitPaneFiles) {
         const paths = leaves.map(l => (l.view as any).file?.path).filter(Boolean) as string[];
         const unique = [...new Set(paths)];
         activeFileNote = `[Open in split view: ${unique.join(' | ')}]\n\n`;
+      } else if (isStacked && this.plugin.settings.injectStackedTabFiles) {
+        const paths = leaves.map(l => (l.view as any).file?.path).filter(Boolean) as string[];
+        const unique = [...new Set(paths)];
+        activeFileNote = `[Open in stacked tabs: ${unique.join(' | ')}]\n\n`;
       } else {
         const activeFile = this.app.workspace.getActiveFile();
         activeFileNote = activeFile ? `[Active note: ${activeFile.path}]\n\n` : '';
       }
-    } else {
-      const activeFile = this.app.workspace.getActiveFile();
-      activeFileNote = activeFile ? `[Active note: ${activeFile.path}]\n\n` : '';
     }
 
     let finalPrompt = prompt;
