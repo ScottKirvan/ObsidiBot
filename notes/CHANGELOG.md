@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.0.0](https://github.com/ScottKirvan/Cortex/compare/v0.6.0...v1.0.0) (2026-03-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* default permission mode is now 'standard' (acceptEdits). Users who relied on unrestricted Bash access should set Permission Mode to "Full access" in settings.
+
+### Features
+
+* [#40](https://github.com/ScottKirvan/Cortex/issues/40) using @ to inject full notes as context ([75f8cf0](https://github.com/ScottKirvan/Cortex/commit/75f8cf025ec9806913520e3c0b1a9777f70288c2))
+* native permission modes, replace --dangerously-skip-permissions ([#18](https://github.com/ScottKirvan/Cortex/issues/18)) ([3c41827](https://github.com/ScottKirvan/Cortex/commit/3c4182799d683a1025ab74e72a0e0db0efde82ab))
+* replace dangerously-skip-permissions with native permission modes ([#18](https://github.com/ScottKirvan/Cortex/issues/18)) ([1e986d8](https://github.com/ScottKirvan/Cortex/commit/1e986d824b1bcbf3edff7d43134dc9581940ea5b))
+* tool call visibility, selection context injection, session replay fix ([#38](https://github.com/ScottKirvan/Cortex/issues/38), [#39](https://github.com/ScottKirvan/Cortex/issues/39), [#17](https://github.com/ScottKirvan/Cortex/issues/17)) ([61d91ef](https://github.com/ScottKirvan/Cortex/commit/61d91ef629d8e0f57ce4ac11bfe0723966a5099a))
+
+
+### Bug Fixes
+
+* fixes to tool use messages and selected text context injection ([54a2384](https://github.com/ScottKirvan/Cortex/commit/54a2384bb4e90fd749dc80d646f2027cb97904e4))
+
 ## [0.6.0](https://github.com/ScottKirvan/Cortex/compare/v0.5.0...v0.6.0) (2026-03-18)
 
 
