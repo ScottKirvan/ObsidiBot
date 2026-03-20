@@ -862,9 +862,17 @@ export class ClaudeView extends ItemView {
     if (!match) { this.atDropdownHide(); return; }
 
     const query = match[1].toLowerCase();
+    const activeFile = this.app.workspace.getActiveFile();
     const files = this.app.vault.getMarkdownFiles()
       .filter(f => !query || f.basename.toLowerCase().includes(query))
-      .sort((a, b) => a.basename.localeCompare(b.basename))
+      .sort((a, b) => {
+        // Active note always sorts first when no query is typed
+        if (!query) {
+          if (a === activeFile) return -1;
+          if (b === activeFile) return 1;
+        }
+        return a.basename.localeCompare(b.basename);
+      })
       .slice(0, 8);
 
     if (files.length === 0) { this.atDropdownHide(); return; }
