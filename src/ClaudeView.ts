@@ -88,7 +88,8 @@ export class ClaudeView extends ItemView {
   private messagesEl: HTMLElement;
   private sendBtn: HTMLButtonElement;
   private sessionStatusEl: HTMLElement;
-  private currentSessionId: string | undefined;
+  private currentSessionId: string | undefined;      // Claude's session ID (used for --resume)
+  private currentSessionFileId: string | undefined;  // JSON file id (may differ from claudeSessionId)
   private currentSessionTitle: string | undefined;
   private currentSessionCreatedAt: string | undefined;
   private placeholderSessionId: string | undefined;
@@ -499,6 +500,7 @@ export class ClaudeView extends ItemView {
   private async loadSession(session: StoredSession) {
     this.placeholderSessionId = undefined;
     this.currentSessionId = session.claudeSessionId || undefined;
+    this.currentSessionFileId = session.id;
     this.currentSessionTitle = session.title;
     this.currentSessionCreatedAt = session.createdAt;
     this.messagesEl.empty();
@@ -720,6 +722,7 @@ export class ClaudeView extends ItemView {
 
           if (this.placeholderSessionId) {
             this.currentSessionId = sessionId;
+            this.currentSessionFileId = this.placeholderSessionId;
             if (firstPrompt) this.currentSessionTitle = titleFromPrompt(firstPrompt);
             saveSession(vaultRoot, {
               id: this.placeholderSessionId,
@@ -733,6 +736,7 @@ export class ClaudeView extends ItemView {
             log('Placeholder session updated:', placeholderId, '→', sessionId);
           } else if (isNewSession && firstPrompt) {
             this.currentSessionId = sessionId;
+            this.currentSessionFileId = sessionId;
             this.currentSessionTitle = titleFromPrompt(firstPrompt);
             this.currentSessionCreatedAt = now;
             saveSession(vaultRoot, {
@@ -744,8 +748,9 @@ export class ClaudeView extends ItemView {
             });
             log('Session saved:', sessionId, this.currentSessionTitle);
           } else if (this.currentSessionId) {
+            const fileId = this.currentSessionFileId ?? this.currentSessionId;
             saveSession(vaultRoot, {
-              id: this.currentSessionId,
+              id: fileId,
               title: this.currentSessionTitle ?? this.currentSessionId.substring(0, 8),
               createdAt: this.currentSessionCreatedAt ?? now,
               updatedAt: now,
