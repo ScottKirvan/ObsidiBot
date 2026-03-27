@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.3.0](https://github.com/ScottKirvan/Cortex/compare/v1.2.0...v1.3.0) (2026-03-27)
+
+
+### Features
+
+* drag-and-drop session manager sorting ([61afdf2](https://github.com/ScottKirvan/Cortex/commit/61afdf2e5de0e8753cee7b78238b981e64d8aed4))
+* new command: "Cortex: Refresh Session" ([b45e2a9](https://github.com/ScottKirvan/Cortex/commit/b45e2a9b615e696060f7deea3cff06930c76fa54))
+* run-command discovery, UI polish, and bug fixes ([b6821dd](https://github.com/ScottKirvan/Cortex/commit/b6821ddbea5dda91615ce4e61f70bfc174e91020))
+* session manager now shows which session is active ([06cce74](https://github.com/ScottKirvan/Cortex/commit/06cce747e71acb71aeadbaf7efe81e3e0620f031))
+* UI Bridge run-command action with settings command browser ([#47](https://github.com/ScottKirvan/Cortex/issues/47)) ([2121ddc](https://github.com/ScottKirvan/Cortex/commit/2121ddc2939bc2c7c354a62fb847d8bea6cc15c6))
+
+
+### Bug Fixes
+
+* renaming a session in the session manager changes the name in the chat panel immediately now ([1740193](https://github.com/ScottKirvan/Cortex/commit/1740193113daf65b3f5f2d6a3f271ebcffb5b986))
+* session duplication after Obsidian restart ([6c2b889](https://github.com/ScottKirvan/Cortex/commit/6c2b8890326c811c8f4a347afc06f6ed78c96403))
+
 ## [1.2.0](https://github.com/ScottKirvan/Cortex/compare/v1.1.0...v1.2.0) (2026-03-20)
 
 
