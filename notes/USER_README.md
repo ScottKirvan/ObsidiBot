@@ -10,6 +10,7 @@ Cortex is an Obsidian plugin that puts a Claude Code agent inside your vault. Th
 - [Installation](#installation)
 - [First Launch](#first-launch)
 - [Using the Chat Panel](#using-the-chat-panel)
+- [Session Manager](#session-manager)
 - [Context System](#context-system)
 - [Commands](#commands)
 - [Settings](#settings)
@@ -145,6 +146,32 @@ Once enabled, you can ask Claude things like:
 ### Tool call visibility
 
 While Claude is working, tool calls appear above the response bubble — you can see in real time what Claude is reading, writing, or searching. When the response completes, the tool list collapses to a single toggle line to keep the chat readable. Click it to expand or collapse.
+
+---
+
+## Session Manager
+
+Open the session manager by clicking the session name in the panel toolbar, or via **Cortex: Show session history** in the Command Palette.
+
+### What you can do
+
+| Action | How |
+|---|---|
+| **Resume a session** | Click any row |
+| **Rename a session** | Click the pencil icon — edit inline, then press Enter or click away to confirm. Clicking the modal X also commits the rename. |
+| **Delete a session** | Click the trash icon — you will be asked to confirm |
+| **Reorder sessions** | Drag the ⠿ grip handle on the left of any row up or down |
+| **Filter sessions** | Type in the search box at the top |
+
+### Active session
+
+The currently open session is marked with an accent-coloured left border and bold title so you can see at a glance where you are.
+
+### Sort order
+
+Sessions are listed most-recent-first by default. Once you drag any row, that order is saved and persists across restarts. New sessions are always inserted at the top of the list, above your manually ordered sessions, so they are easy to find. You can drag them into position afterwards.
+
+Drag handles are hidden and dragging is disabled while the search filter is active — filtering shows a subset of sessions, so reordering would produce confusing results.
 
 ---
 
