@@ -9,6 +9,7 @@ export class SessionListModal extends Modal {
   onSelect: (session: StoredSession) => void;
   onNewSession: () => void;
   onDismiss: () => void;
+  onRename: (session: StoredSession) => void;
   listContainer: HTMLElement | null = null;
 
   constructor(
@@ -19,6 +20,7 @@ export class SessionListModal extends Modal {
     onNewSession: () => void,
     onDismiss: () => void = () => {},
     activeSessionFileId?: string,
+    onRename: (session: StoredSession) => void = () => {},
   ) {
     super(app);
     this.vaultRoot = vaultRoot;
@@ -27,6 +29,7 @@ export class SessionListModal extends Modal {
     this.onSelect = onSelect;
     this.onNewSession = onNewSession;
     this.onDismiss = onDismiss;
+    this.onRename = onRename;
     this.activeSessionFileId = activeSessionFileId;
   }
 
@@ -150,6 +153,7 @@ export class SessionListModal extends Modal {
           session.title = newTitle;
           saveSession(this.vaultRoot, session);
           titleEl.setText(newTitle);
+          this.onRename(session);
         }
         input.remove();
         titleEl.show();

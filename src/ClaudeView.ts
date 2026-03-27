@@ -342,6 +342,7 @@ export class ClaudeView extends ItemView {
     saveSession(vaultRoot, newSession);
     this.placeholderSessionId = sessionId;
     this.currentSessionId = undefined;
+    this.currentSessionFileId = sessionId;
     this.currentSessionTitle = 'Untitled session';
     this.currentSessionCreatedAt = now;
     this.messagesEl.empty();
@@ -358,7 +359,12 @@ export class ClaudeView extends ItemView {
       this.startNewSession();
     }, () => {
       this.inputEl?.focus();
-    }, this.currentSessionFileId).open();
+    }, this.currentSessionFileId, (session) => {
+      if (session.id === this.currentSessionFileId) {
+        this.currentSessionTitle = session.title;
+        this.updateSessionStatus();
+      }
+    }).open();
   }
 
   clearCurrentSession() {
