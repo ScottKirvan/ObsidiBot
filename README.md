@@ -68,6 +68,7 @@ Most Obsidian AI plugins are chatbots — text in, text out, no file access. Oth
 | Session persistence                    | **Yes** | No              | Yes      | No           |
 | Vault-native memory (syncs with vault) | **Yes** | No              | No       | No           |
 | Obsidian UI control                    | **Yes** | No              | No       | No           |
+| Execute any Obsidian command           | **Yes** | No              | No       | No           |
 | Properties/Frontmatter config          | **Yes** | No              | No       | No           |
 | Configurable safety modes              | **Yes** | No              | Yes      | No           |
 | Required API key                       | **No**  | Yes ($14.99/mo) | Optional | No           |
@@ -100,7 +101,21 @@ Cortex doesn't just edit files and leave you to find them. After completing a ta
 
 This is what separates Cortex from terminal-based Claude wrappers — Cortex is operating *inside* Obsidian. It has full read/write access to everything in your vault: notes, frontmatter, tags, templates, plugin config, Obsidian settings, and shell commands that go beyond simple file editing.
 
-### Permission modes
+### Run any Obsidian command — without leaving chat
+
+Claude can execute Obsidian commands directly from the chat panel. Open today's daily note, trigger a Templater template, run the file switcher, refresh a Dataview, invoke any command from any installed plugin — just ask.
+
+```
+"Open today's daily note"
+"Refresh the Dataview on this page"
+"Create a new note from my Weekly Review template"
+```
+
+Three commands are pre-approved by default. You control the rest through a searchable allowlist in Settings. Unapproved commands show a confirmation modal — approve with "Don't ask again" to always allow, deny to permanently block. Claude reads a generated command manifest at startup, so it always uses exact IDs — it never guesses.
+
+No other Obsidian AI plugin does this.
+
+### Configurable safety modes
 
 Three levels — **readonly**, **standard** (default), and **full access** — so Cortex's reach matches what you're comfortable with. If a denied operation blocks a task, an in-chat card shows exactly what was blocked and offers one-click upgrade + auto-retry.
 
@@ -119,7 +134,7 @@ Use Obsidian's Properties panel to configure Cortex's behavior per note — no s
 
 ### Session history and tool call visibility
 
-Named sessions, resume any conversation, rename and delete — browsable at no token cost. As Cortex works, labeled events appear inline — *Reading: notes/archive*, *Writing: Q2-goals.md* — collapsing to a tidy summary when the response is done.
+Named sessions, resume any conversation, rename and delete — browsable at no token cost. Drag sessions into your preferred order; the currently active session is always marked. As Cortex works, labeled events appear inline — *Reading: notes/archive*, *Writing: Q2-goals.md* — collapsing to a tidy summary when the response is done.
 
 ---
 
