@@ -10,7 +10,7 @@ This project is governed by our [Code of Conduct](CODE_OF_CONDUCT.md). By partic
 
 ## Reporting Bugs
 
-Before filing a bug report, check [existing issues](https://github.com/ScottKirvan/Cortex/issues) to avoid duplicates.
+Before filing a bug report, check [existing issues](https://github.com/ScottKirvan/ObsidianCortex/issues) to avoid duplicates.
 
 **Include in your bug report:**
 - Steps to reproduce
@@ -22,7 +22,7 @@ Before filing a bug report, check [existing issues](https://github.com/ScottKirv
 
 ## Suggesting Features
 
-Use the [feature request template](https://github.com/ScottKirvan/Cortex/issues/new?template=feature_request.md). Describe the use case clearly — what problem it solves and how you'd expect it to work.
+Use the [feature request template](https://github.com/ScottKirvan/ObsidianCortex/issues/new?template=feature_request.md). Describe the use case clearly — what problem it solves and how you'd expect it to work.
 
 ---
 
@@ -42,7 +42,7 @@ Use the [feature request template](https://github.com/ScottKirvan/Cortex/issues/
 ### Clone and Build
 
 ```bash
-git clone https://github.com/ScottKirvan/Cortex.git
+git clone https://github.com/ScottKirvan/ObsidianCortex.git
 cd Cortex
 npm install
 npm run build      # one-shot build → main.js

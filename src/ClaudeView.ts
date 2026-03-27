@@ -23,33 +23,33 @@ export const VIEW_TYPE_CLAUDE = 'cortex-chat';
 // Maps from lowercase tool name to display values.
 // Claude Code sends PascalCase names (Read, Write, Bash…) so we normalise to lowercase for lookup.
 const TOOL_STATUS: Record<string, string> = {
-  read:       'Reading…',
-  write:      'Writing…',
-  edit:       'Editing…',
-  multiedit:  'Editing…',
-  bash:       'Running command…',
-  glob:       'Scanning vault…',
-  grep:       'Searching…',
-  ls:         'Listing…',
-  webfetch:   'Fetching…',
-  websearch:  'Searching the web…',
-  todowrite:  'Updating tasks…',
-  todoread:   'Reading tasks…',
+  read: 'Reading…',
+  write: 'Writing…',
+  edit: 'Editing…',
+  multiedit: 'Editing…',
+  bash: 'Running command…',
+  glob: 'Scanning vault…',
+  grep: 'Searching…',
+  ls: 'Listing…',
+  webfetch: 'Fetching…',
+  websearch: 'Searching the web…',
+  todowrite: 'Updating tasks…',
+  todoread: 'Reading tasks…',
 };
 
 const TOOL_ICONS: Record<string, string> = {
-  read:       'file-text',
-  write:      'file-edit',
-  edit:       'file-edit',
-  multiedit:  'file-edit',
-  bash:       'terminal',
-  glob:       'folder',
-  grep:       'search',
-  ls:         'folder',
-  webfetch:   'globe',
-  websearch:  'globe',
-  todowrite:  'check-square',
-  todoread:   'check-square',
+  read: 'file-text',
+  write: 'file-edit',
+  edit: 'file-edit',
+  multiedit: 'file-edit',
+  bash: 'terminal',
+  glob: 'folder',
+  grep: 'search',
+  ls: 'folder',
+  webfetch: 'globe',
+  websearch: 'globe',
+  todowrite: 'check-square',
+  todoread: 'check-square',
 };
 
 function extractToolDetail(tool: string, input: unknown): string {
@@ -149,7 +149,8 @@ export class ClaudeView extends ItemView {
     });
 
     const settingsBtn = toolbarRight.createEl('button', { cls: 'cortex-icon-btn' });
-    setIcon(settingsBtn, 'settings');
+    //setIcon(settingsBtn, 'settings');
+    setIcon(settingsBtn, 'brain-cog');
     settingsBtn.title = 'Open Cortex settings';
     settingsBtn.addEventListener('click', () => {
       (this.app as any).setting.open();
@@ -245,9 +246,9 @@ export class ClaudeView extends ItemView {
       // Dropdown navigation takes priority over everything else
       if (this.atDropdownEl.style.display !== 'none') {
         if (e.key === 'ArrowDown') { e.preventDefault(); this.atDropdownNav(1); return; }
-        if (e.key === 'ArrowUp')   { e.preventDefault(); this.atDropdownNav(-1); return; }
+        if (e.key === 'ArrowUp') { e.preventDefault(); this.atDropdownNav(-1); return; }
         if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); this.atDropdownSelect(); return; }
-        if (e.key === 'Escape')    { this.atDropdownHide(); return; }
+        if (e.key === 'Escape') { this.atDropdownHide(); return; }
       }
 
       if (e.key === 'Enter' && !e.shiftKey && this.plugin.settings.sendOnEnter) {
@@ -1187,7 +1188,7 @@ export class ClaudeView extends ItemView {
   }
 
   private openFilePicker() {
-    const TEXT_EXTS = new Set(['txt','md','fountain','js','ts','jsx','tsx','json','css','html','xml','csv','yaml','yml','py','rb','go','rs','java','c','cpp','h','sh','bat','ps1']);
+    const TEXT_EXTS = new Set(['txt', 'md', 'fountain', 'js', 'ts', 'jsx', 'tsx', 'json', 'css', 'html', 'xml', 'csv', 'yaml', 'yml', 'py', 'rb', 'go', 'rs', 'java', 'c', 'cpp', 'h', 'sh', 'bat', 'ps1']);
     const input = document.createElement('input');
     input.type = 'file';
     input.onchange = async () => {

@@ -1,36 +1,36 @@
-# Cortex [![starline](https://starlines.qoo.monster/assets/ScottKirvan/Cortex)](https://github.com/qoomon/starline)
+# Cortex [![starline](https://starlines.qoo.monster/assets/ScottKirvan/ObsidianCortex)](https://github.com/qoomon/starline)
 <div align="center">
 
   <img src="assets/media/logo.jpg" alt="logo" width="200" height="auto" />
-  <h1><a href="https://github.com/ScottKirvan/Cortex">ScottKirvan/Cortex</a></h1>
+  <h1><a href="https://github.com/ScottKirvan/ObsidianCortex">ScottKirvan/ObsidianCortex</a></h1>
   <h3>Claude agentic file management inside Obsidian</h3>
 
 <!-- Badges -->
 <p>
-  <a href="https://github.com/ScottKirvan/Cortex/graphs/contributors">
-    <img src="https://img.shields.io/github/contributors/ScottKirvan/Cortex" alt="contributors" />
+  <a href="https://github.com/ScottKirvan/ObsidianCortex/graphs/contributors">
+    <img src="https://img.shields.io/github/contributors/ScottKirvan/ObsidianCortex" alt="contributors" />
   </a>
   <a href="">
-    <img src="https://img.shields.io/github/last-commit/ScottKirvan/Cortex" alt="last update" />
+    <img src="https://img.shields.io/github/last-commit/ScottKirvan/ObsidianCortex" alt="last update" />
   </a>
-  <a href="https://github.com/ScottKirvan/Cortex/network/members">
-    <img src="https://img.shields.io/github/forks/ScottKirvan/Cortex" alt="forks" />
+  <a href="https://github.com/ScottKirvan/ObsidianCortex/network/members">
+    <img src="https://img.shields.io/github/forks/ScottKirvan/ObsidianCortex" alt="forks" />
   </a>
-  <a href="https://github.com/ScottKirvan/Cortex/stargazers">
-    <img src="https://img.shields.io/github/stars/ScottKirvan/Cortex" alt="stars" />
+  <a href="https://github.com/ScottKirvan/ObsidianCortex/stargazers">
+    <img src="https://img.shields.io/github/stars/ScottKirvan/ObsidianCortex" alt="stars" />
   </a>
-  <a href="https://github.com/ScottKirvan/Cortex/issues/">
-    <img src="https://img.shields.io/github/issues/ScottKirvan/Cortex" alt="open issues" />
+  <a href="https://github.com/ScottKirvan/ObsidianCortex/issues/">
+    <img src="https://img.shields.io/github/issues/ScottKirvan/ObsidianCortex" alt="open issues" />
   </a>
-  <a href="https://github.com/ScottKirvan/Cortex/blob/main/LICENSE.md">
-    <img src="https://img.shields.io/github/license/ScottKirvan/Cortex.svg" alt="license" />
+  <a href="https://github.com/ScottKirvan/ObsidianCortex/blob/main/LICENSE.md">
+    <img src="https://img.shields.io/github/license/ScottKirvan/ObsidianCortex.svg" alt="license" />
   </a>
 </p>
 
 <h4>
-  <a href="https://github.com/ScottKirvan/Cortex/issues/new?template=bug_report.md">Report Bug</a>
+  <a href="https://github.com/ScottKirvan/ObsidianCortex/issues/new?template=bug_report.md">Report Bug</a>
   <span> · </span>
-  <a href="https://github.com/ScottKirvan/Cortex/issues/new?template=feature_request.md">Request Feature</a>
+  <a href="https://github.com/ScottKirvan/ObsidianCortex/issues/new?template=feature_request.md">Request Feature</a>
   <span> · </span>
   <a href="https://www.scottkirvan.com/Cortex/notes/USER_README.html">User Guide</a>
   <span> · </span>
@@ -42,7 +42,7 @@
 
 ---
 
-> **Status:** Public beta — not yet in the Obsidian community plugin browser. Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat) or from [Releases](https://github.com/ScottKirvan/Cortex/releases). Feedback welcome on [Discord](https://discord.gg/TN6XJSNK5Y) or [GitHub Issues](https://github.com/ScottKirvan/Cortex/issues).
+> **Status:** Public beta — not yet in the Obsidian community plugin browser. Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat) or from [Releases](https://github.com/ScottKirvan/ObsidianCortex/releases). Feedback welcome on [Discord](https://discord.gg/TN6XJSNK5Y) or [GitHub Issues](https://github.com/ScottKirvan/ObsidianCortex/issues).
 
 ---
 
@@ -154,12 +154,12 @@ Cortex is not yet in the Obsidian community plugin browser.
 [BRAT](https://github.com/TfTHacker/obsidian42-brat) installs and auto-updates beta plugins from GitHub.
 
 1. Install **BRAT** from the Obsidian community plugin browser
-2. In BRAT settings → **Add Beta Plugin** → enter: `ScottKirvan/Cortex`
+2. In BRAT settings → **Add Beta Plugin** → enter: `ScottKirvan/ObsidianCortex`
 3. Done — BRAT keeps Cortex updated automatically
 
 ### Manually
 
-1. Download `cortex-<version>.zip` from [Releases](https://github.com/ScottKirvan/Cortex/releases)
+1. Download `cortex-<version>.zip` from [Releases](https://github.com/ScottKirvan/ObsidianCortex/releases)
 2. Extract to get a `cortex/` folder with `main.js`, `manifest.json`, `styles.css`
 3. Move `cortex/` into `<your-vault>/.obsidian/plugins/`
 4. **Settings → Community Plugins** → enable **Cortex**
@@ -192,5 +192,5 @@ MIT — see [LICENSE.md](LICENSE.md)
 
 ---
 
-Project Link: [Cortex](https://github.com/ScottKirvan/Cortex)  
+Project Link: [Cortex](https://github.com/ScottKirvan/ObsidianCortex)  
 [CHANGELOG](notes/CHANGELOG.md) · [TODO](notes/TODO.md) · [User Guide](notes/USER_README.md)

@@ -46,7 +46,7 @@ export default class CortexPlugin extends Plugin {
 
     this.registerView(VIEW_TYPE_CLAUDE, (leaf) => new ClaudeView(leaf, this));
 
-    this.addRibbonIcon('cortex', 'Open Cortex agent', () => {
+    this.addRibbonIcon('brain-circuit', 'Open Cortex agent', () => {
       this.activateView();
     });
 

@@ -45,12 +45,12 @@ Cortex is an Obsidian plugin that puts a Claude Code agent inside your vault. Th
 [BRAT](https://github.com/TfTHacker/obsidian42-brat) installs and auto-updates beta plugins directly from GitHub.
 
 1. Install **BRAT** from the Obsidian community plugin browser
-2. In BRAT settings, click **Add Beta Plugin** and enter: `ScottKirvan/Cortex`
+2. In BRAT settings, click **Add Beta Plugin** and enter: `ScottKirvan/ObsidianCortex`
 3. BRAT installs Cortex and keeps it updated automatically
 
 ### Manually
 
-1. Download `cortex-<version>.zip` from the [Releases page](https://github.com/ScottKirvan/Cortex/releases)
+1. Download `cortex-<version>.zip` from the [Releases page](https://github.com/ScottKirvan/ObsidianCortex/releases)
 2. Extract the zip — you should have a `cortex/` folder containing `main.js`, `manifest.json`, and `styles.css`
 3. Move the `cortex/` folder into `<your-vault>/.obsidian/plugins/`
 4. In Obsidian: **Settings → Community Plugins → disable Safe Mode** (if prompted)
