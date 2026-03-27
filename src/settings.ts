@@ -111,46 +111,6 @@ export class CortexSettingsTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('UI Bridge')
-      .setDesc('Allow Claude to trigger Obsidian UI actions — open files, show notices, navigate headings. Claude is instructed to use these proactively after completing tasks.')
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.uiBridgeEnabled)
-          .onChange(async (value) => {
-            this.plugin.settings.uiBridgeEnabled = value;
-            await this.plugin.saveSettings();
-          })
-      );
-
-    new Setting(containerEl)
-      .setName('Prompt for unlisted commands')
-      .setDesc('When Claude tries to run a command not in the allowlist, show a prompt offering a one-time allow or the option to add it to the allowlist. If off, unlisted commands are hard-blocked with a notice.')
-      .addToggle(toggle =>
-        toggle
-          .setValue(this.plugin.settings.confirmUnlistedCommands)
-          .onChange(async value => {
-            this.plugin.settings.confirmUnlistedCommands = value;
-            await this.plugin.saveSettings();
-          })
-      );
-
-    if (this.plugin.settings.commandDenylist.length > 0) {
-      new Setting(containerEl)
-        .setName('Denied commands')
-        .setDesc(`${this.plugin.settings.commandDenylist.length} command${this.plugin.settings.commandDenylist.length === 1 ? '' : 's'} permanently denied. Add a denied command to the allowlist to re-enable it.`)
-        .addButton(btn =>
-          btn
-            .setButtonText('Clear denylist')
-            .setTooltip('Remove all permanent denials — commands will prompt again')
-            .onClick(async () => {
-              this.plugin.settings.commandDenylist = [];
-              await this.plugin.saveSettings();
-              this.display();
-            })
-        );
-    }
-
-    new Setting(containerEl)
       .setName('@-mention file types')
       .setDesc('Comma-separated extensions to include in @-mention search (e.g. md, fountain, txt).')
       .addText((text) =>
@@ -286,11 +246,52 @@ export class CortexSettingsTab extends PluginSettingTab {
           })
       );
 
-    // ── Command Allowlist ──────────────────────────────────────────────────
-    containerEl.createEl('h3', { text: 'Command Allowlist' });
+    // ── UI Bridge & Commands ───────────────────────────────────────────────
+    containerEl.createEl('h3', { text: 'UI Bridge & Commands' });
+
+    new Setting(containerEl)
+      .setName('UI Bridge')
+      .setDesc('Allow Claude to trigger Obsidian UI actions — open files, show notices, navigate headings. Claude is instructed to use these proactively after completing tasks.')
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.uiBridgeEnabled)
+          .onChange(async (value) => {
+            this.plugin.settings.uiBridgeEnabled = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName('Prompt for unlisted commands')
+      .setDesc('When Claude tries to run a command not in the allowlist, show a prompt offering a one-time allow or the option to add it to the allowlist. If off, unlisted commands are hard-blocked with a notice.')
+      .addToggle(toggle =>
+        toggle
+          .setValue(this.plugin.settings.confirmUnlistedCommands)
+          .onChange(async value => {
+            this.plugin.settings.confirmUnlistedCommands = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    if (this.plugin.settings.commandDenylist.length > 0) {
+      new Setting(containerEl)
+        .setName('Denied commands')
+        .setDesc(`${this.plugin.settings.commandDenylist.length} command${this.plugin.settings.commandDenylist.length === 1 ? '' : 's'} permanently denied. Add a denied command to the allowlist to re-enable it.`)
+        .addButton(btn =>
+          btn
+            .setButtonText('Clear denylist')
+            .setTooltip('Remove all permanent denials — commands will prompt again')
+            .onClick(async () => {
+              this.plugin.settings.commandDenylist = [];
+              await this.plugin.saveSettings();
+              this.display();
+            })
+        );
+    }
+
     containerEl.createEl('p', {
-      text: 'Obsidian commands Claude is allowed to run directly via the UI Bridge. ' +
-            'Search and check commands to enable them. If none are selected, Claude cannot run commands via the bridge.',
+      text: 'Obsidian commands Claude is allowed to run directly. ' +
+            'Search and check commands to enable them. Allowlisted commands run immediately; others prompt for approval.',
       cls: 'setting-item-description',
     });
 
@@ -350,9 +351,15 @@ export class CortexSettingsTab extends PluginSettingTab {
         }
       }
 
-      const filtered = q
+      const filtered = (q
         ? allCommands.filter(c => c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q))
-        : allCommands;
+        : allCommands
+      ).sort((a, b) => {
+        const aOn = this.plugin.settings.commandAllowlist.includes(a.id);
+        const bOn = this.plugin.settings.commandAllowlist.includes(b.id);
+        if (aOn !== bOn) return aOn ? -1 : 1;
+        return 0; // already alphabetical from allCommands sort
+      });
 
       if (filtered.length === 0) {
         commandListEl.createEl('p', { text: 'No commands match your search.', cls: 'cortex-command-empty' });
