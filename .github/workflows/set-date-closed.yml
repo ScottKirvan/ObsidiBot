@@ -1,0 +1,43 @@
+name: Set Date Closed on project item
+
+on:
+  issues:
+    types: [closed]
+
+jobs:
+  set-date:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const projectId = "PVT_kwHOA6hlQs4BSP69";
+            const fieldId = "PVTF_lAHOA6hlQs4BSP69zhAYLKw";
+            const today = new Date().toISOString().split('T')[0];
+
+            // Find the project item for this issue
+            const result = await github.graphql(`
+              query($issueId: ID!) {
+                node(id: $issueId) {
+                  ... on Issue {
+                    projectItems(first: 10) {
+                      nodes { id project { id } }
+                    }
+                  }
+                }
+              }`, { issueId: context.payload.issue.node_id });
+
+            const item = result.node.projectItems.nodes
+              .find(n => n.project.id === projectId);
+            if (!item) return;
+
+            await github.graphql(`
+              mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: Date!) {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: $projectId
+                  itemId: $itemId
+                  fieldId: $fieldId
+                  value: { date: $value }
+                }) { projectV2Item { id } }
+              }`, { projectId, itemId: item.id, fieldId, value: today });
