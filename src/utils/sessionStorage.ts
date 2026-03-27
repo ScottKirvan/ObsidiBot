@@ -8,6 +8,7 @@ export interface StoredSession {
   createdAt: string;
   updatedAt: string;
   claudeSessionId: string;
+  sortOrder?: number;
 }
 
 export function getSessionsDir(vaultRoot: string): string {
@@ -29,10 +30,34 @@ export function loadAllSessions(vaultRoot: string): StoredSession[] {
     return readdirSync(dir)
       .filter(f => f.endsWith('.json'))
       .map(f => JSON.parse(readFileSync(join(dir, f), 'utf8')) as StoredSession)
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+      .sort((a, b) => {
+        const aHas = a.sortOrder !== undefined;
+        const bHas = b.sortOrder !== undefined;
+        if (aHas && bHas) return a.sortOrder! - b.sortOrder!;
+        if (aHas || bHas) return aHas ? -1 : 1;
+        return b.updatedAt.localeCompare(a.updatedAt);
+      });
   } catch {
     return [];
   }
+}
+
+/**
+ * Save a new session at the top of the ordered list.
+ * If any existing sessions have a sortOrder, the new session gets sortOrder=0
+ * and all others are shifted down by 1. Otherwise just saves normally.
+ */
+export function saveSessionAtTop(vaultRoot: string, session: StoredSession): void {
+  const existing = loadAllSessions(vaultRoot);
+  const anyOrdered = existing.some(s => s.sortOrder !== undefined);
+  if (anyOrdered) {
+    existing.forEach(s => {
+      s.sortOrder = (s.sortOrder ?? 0) + 1;
+      writeFileSync(join(getSessionsDir(vaultRoot), `${s.id}.json`), JSON.stringify(s, null, 2));
+    });
+    session.sortOrder = 0;
+  }
+  saveSession(vaultRoot, session);
 }
 
 export function deleteSession(vaultRoot: string, sessionId: string): void {

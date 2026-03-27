@@ -11,6 +11,8 @@ export class SessionListModal extends Modal {
   onDismiss: () => void;
   onRename: (session: StoredSession) => void;
   listContainer: HTMLElement | null = null;
+  private draggedId: string | null = null;
+  private isFiltering = false;
 
   constructor(
     app: App,
@@ -45,9 +47,10 @@ export class SessionListModal extends Modal {
     });
     filterInput.addEventListener('input', (e) => {
       const query = (e.target as HTMLInputElement).value.toLowerCase();
-      this.filteredSessions = this.sessions.filter(s =>
-        s.title.toLowerCase().includes(query)
-      );
+      this.isFiltering = query.length > 0;
+      this.filteredSessions = this.isFiltering
+        ? this.sessions.filter(s => s.title.toLowerCase().includes(query))
+        : this.sessions;
       this.rerenderList();
     });
 
@@ -82,6 +85,17 @@ export class SessionListModal extends Modal {
     for (const session of this.filteredSessions) {
       this.renderSessionItem(list, session);
     }
+    // Drop target for end of list
+    if (!this.isFiltering) {
+      list.addEventListener('dragover', (e) => e.preventDefault());
+    }
+  }
+
+  private saveSortOrder() {
+    this.sessions.forEach((s, i) => {
+      s.sortOrder = i;
+      saveSession(this.vaultRoot, s);
+    });
   }
 
   private renderSessionItem(list: HTMLElement, session: StoredSession) {
@@ -95,6 +109,73 @@ export class SessionListModal extends Modal {
       isActive ? 'cortex-session-active' : '',
     ].filter(Boolean).join(' ');
     const item = list.createEl('li', { cls });
+
+    // Drag handle (hidden while filtering)
+    const grip = item.createEl('span', { cls: 'cortex-session-drag-handle' });
+    setIcon(grip, 'grip-vertical');
+    if (this.isFiltering) grip.style.visibility = 'hidden';
+
+    if (!this.isFiltering) {
+      item.draggable = true;
+
+      item.addEventListener('dragstart', (e) => {
+        this.draggedId = session.id;
+        item.addClass('cortex-session-dragging');
+        if (e.dataTransfer) {
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setDragImage(item, 20, item.offsetHeight / 2);
+        }
+      });
+
+      item.addEventListener('dragend', () => {
+        this.draggedId = null;
+        item.removeClass('cortex-session-dragging');
+        list.querySelectorAll('.cortex-session-dragover-above, .cortex-session-dragover-below')
+          .forEach(el => {
+            el.removeClass('cortex-session-dragover-above');
+            el.removeClass('cortex-session-dragover-below');
+          });
+      });
+
+      item.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (!this.draggedId || this.draggedId === session.id) return;
+        const rect = item.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        list.querySelectorAll('.cortex-session-dragover-above, .cortex-session-dragover-below')
+          .forEach(el => {
+            el.removeClass('cortex-session-dragover-above');
+            el.removeClass('cortex-session-dragover-below');
+          });
+        item.addClass(e.clientY < midY ? 'cortex-session-dragover-above' : 'cortex-session-dragover-below');
+      });
+
+      item.addEventListener('dragleave', () => {
+        item.removeClass('cortex-session-dragover-above');
+        item.removeClass('cortex-session-dragover-below');
+      });
+
+      item.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (!this.draggedId || this.draggedId === session.id) return;
+        const fromIdx = this.sessions.findIndex(s => s.id === this.draggedId);
+        const toIdx = this.sessions.findIndex(s => s.id === session.id);
+        if (fromIdx === -1 || toIdx === -1) return;
+
+        const rect = item.getBoundingClientRect();
+        const insertBefore = e.clientY < rect.top + rect.height / 2;
+        const adjusted = toIdx + (insertBefore ? 0 : 1);
+
+        const reordered = [...this.sessions];
+        const [moved] = reordered.splice(fromIdx, 1);
+        reordered.splice(fromIdx < adjusted ? adjusted - 1 : adjusted, 0, moved);
+
+        this.sessions = reordered;
+        this.filteredSessions = reordered;
+        this.saveSortOrder();
+        this.rerenderList();
+      });
+    }
     const titleEl = item.createEl('span', { text: session.title, cls: 'cortex-session-title' });
     item.createEl('span', {
       text: new Date(session.updatedAt).toLocaleString(),

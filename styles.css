@@ -314,6 +314,27 @@
   font-weight: 600;
 }
 
+.cortex-session-drag-handle {
+  display: flex;
+  align-items: center;
+  color: var(--text-faint);
+  cursor: grab;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.cortex-session-item.cortex-session-dragging {
+  opacity: 0.4;
+}
+
+.cortex-session-item.cortex-session-dragover-above {
+  border-top: 2px solid var(--color-accent);
+}
+
+.cortex-session-item.cortex-session-dragover-below {
+  border-bottom: 2px solid var(--color-accent);
+}
+
 .cortex-session-title {
   flex: 1;
   overflow: hidden;

@@ -8,6 +8,7 @@ import { log, estimateTokens } from './utils/logger';
 import {
   StoredSession,
   saveSession,
+  saveSessionAtTop,
   loadAllSessions,
   titleFromPrompt,
   canResumeLocally,
@@ -339,7 +340,7 @@ export class ClaudeView extends ItemView {
       claudeSessionId: '',
     };
 
-    saveSession(vaultRoot, newSession);
+    saveSessionAtTop(vaultRoot, newSession);
     this.placeholderSessionId = sessionId;
     this.currentSessionId = undefined;
     this.currentSessionFileId = sessionId;
