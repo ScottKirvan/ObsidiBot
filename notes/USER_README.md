@@ -172,6 +172,7 @@ Open the session manager by clicking the session name in the panel toolbar, or v
 | Action | How |
 |---|---|
 | **Resume a session** | Click any row |
+| **Save to vault** | Hover over a row to reveal the action icons, then click the **download icon** — opens the export path prompt, then saves the session as a vault note |
 | **Rename a session** | Click the pencil icon — edit inline, then press Enter or click away to confirm. Clicking the modal X also commits the rename. |
 | **Delete a session** | Click the trash icon — you will be asked to confirm |
 | **Reorder sessions** | Drag the ⠿ grip handle on the left of any row up or down |
@@ -335,6 +336,7 @@ Cortex provides a full command palette for quick access to all features. Press *
 | Command palette name            | ID                           | Description                                                      |
 | ------------------------------- | ---------------------------- | ---------------------------------------------------------------- |
 | **Cortex: Export conversation** | `export-cortex-conversation` | Copy the current conversation as markdown to the clipboard.      |
+| **Cortex: Export session to vault** | `export-cortex-to-vault` | Save the currently visible conversation as a note in the vault. Prompts for a path (defaults to your configured Export folder). To export a past session, use the download icon in the Session Manager. |
 | **Cortex: Copy last response**  | `copy-cortex-last-response`  | Copy Claude's last response to the clipboard in markdown format. |
 | **Cortex: Open settings**       | `open-cortex-settings`       | Jump directly to the Cortex settings panel.                      |
 | **Cortex: Send selection as context** | `send-selection-to-cortex` | Highlight text in any note, then run this command to attach it as context for your next message. |
@@ -353,6 +355,7 @@ Open **Settings → Cortex** to configure:
 | ------------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Claude binary path             | *(auto-detect)*        | Full path to the `claude` executable. Leave blank to auto-detect from PATH and common install locations.                                                |
 | Context file path              | `_claude-context.md`   | Vault-relative path to the context file injected at session start.                                                                                      |
+| Export folder                  | `Cortex Exports`       | Default folder for **Export session to vault**. Created automatically if it doesn't exist. Leave blank to save at the vault root.                       |
 | Vault tree depth               | 3 levels               | How many levels of folder/file names to inject at session start. 0 = off, 1 = root only, -1 = unlimited. Names only — no file contents are read.        |
 | Send on Enter                  | On                     | Press Enter to send a message. Shift+Enter always inserts a newline.                                                                                    |
 | Resume last session on startup | On                     | Automatically resume the most recent session when the Cortex panel opens.                                                                               |
@@ -391,7 +394,7 @@ The session override is cleared when you start a new session.
 
 ## Logging
 
-Cortex can write a debug log to your vault. It is enabled by default and appends to `_cortex-debug.log` at the vault root. Each Obsidian launch (or settings change) appends a `--- Cortex log started ---` marker so you can find session boundaries. Delete the file manually whenever you want to clear it.
+Cortex can write a debug log. It is enabled by default and writes to `.obsidian/plugins/cortex/cortex-debug.log` — inside the plugin folder, not your vault, so it won't appear in Obsidian's file browser or your git history. Each Obsidian launch (or settings change) appends a `--- Cortex log started ---` marker so you can find session boundaries. Delete the file manually whenever you want to clear it.
 
 **Verbosity levels:**
 
@@ -402,7 +405,7 @@ Cortex can write a debug log to your vault. It is enabled by default and appends
 
 All settings take effect immediately without restarting Obsidian.
 
-> **Tip:** Add `_cortex-debug.log` to your vault's `.gitignore` if you don't want it committed.
+> **Tip:** The log file lives inside the plugin folder and is not visible in Obsidian's file browser — no `.gitignore` entry needed.
 
 ---
 
@@ -437,4 +440,4 @@ Click the **Stop** button (the square icon in the input bar, visible while Claud
 If the status indicator has been showing for a long time with no output, Claude may be stuck. Click **Stop** to interrupt, then try again. Make sure Claude Code is installed and authenticated via a terminal — on Windows use PowerShell, on Mac/Linux use Terminal. Run `claude --version` to confirm the install is visible.
 
 **Something unexpected happened and I want to investigate**
-Check `_cortex-debug.log` at your vault root (or the path configured in settings). Each session is separated by a `--- Cortex log started ---` line. For more detail, switch **Log verbosity** to **Verbose** in settings — it takes effect immediately.
+Check `.obsidian/plugins/cortex/cortex-debug.log` (or the path configured in settings). Each session is separated by a `--- Cortex log started ---` line. For more detail, switch **Log verbosity** to **Verbose** in settings — it takes effect immediately.

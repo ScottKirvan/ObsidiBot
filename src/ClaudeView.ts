@@ -17,6 +17,7 @@ import {
   loadSessionMessages,
 } from './utils/sessionStorage';
 import { SessionListModal } from './modals/SessionListModal';
+import { ExportToVaultModal } from './modals/ExportToVaultModal';
 import { ContextGenerationModal } from './ContextGenerationModal';
 import { AboutModal } from './modals/AboutModal';
 
@@ -53,6 +54,7 @@ const TOOL_ICONS: Record<string, string> = {
   todowrite: 'check-square',
   todoread: 'check-square',
 };
+
 
 function extractToolDetail(tool: string, input: unknown): string {
   if (!input || typeof input !== 'object') return '';
@@ -389,6 +391,80 @@ export class ClaudeView extends ItemView {
         this.currentSessionTitle = session.title;
         this.updateSessionStatus();
       }
+    }, (session) => {
+      void this.exportSessionToVault(session);
+    }).open();
+  }
+
+  /** Build export markdown from DOM messages (active session). */
+  private buildExportMarkdown(title: string, sessionId: string, userLabel: string, assistantLabel: string): string {
+    const msgEls = Array.from(
+      this.messagesEl.querySelectorAll('.cortex-message.cortex-user, .cortex-message.cortex-assistant')
+    ) as HTMLElement[];
+    const date = new Date().toISOString().slice(0, 10);
+    let md = `---\ncortex_session: true\ndate: ${date}\nsession_id: ${sessionId}\nmessages: ${msgEls.length}\n---\n\n`;
+    md += `# ${title}\n\n`;
+    for (const el of msgEls) {
+      const label = el.classList.contains('cortex-user') ? userLabel : assistantLabel;
+      const content = (el.dataset.markdown ?? el.textContent ?? '').trim();
+      md += `**${label}:**\n${content}\n\n`;
+    }
+    return md;
+  }
+
+  /** Shared vault-write logic used by both active and history exports. */
+  private async writeExportNote(notePath: string, content: string): Promise<void> {
+    if (!notePath.endsWith('.md')) notePath += '.md';
+    const folder = notePath.includes('/') ? notePath.split('/').slice(0, -1).join('/') : '';
+    if (folder && !this.app.vault.getAbstractFileByPath(folder)) {
+      await this.app.vault.createFolder(folder);
+    }
+    const existing = this.app.vault.getAbstractFileByPath(notePath);
+    if (existing) {
+      await this.app.vault.modify(existing as TFile, content);
+    } else {
+      await this.app.vault.create(notePath, content);
+    }
+    new Notice(`Saved to ${notePath}`, 4000);
+    log('Session exported to vault:', notePath);
+  }
+
+  /** Export the currently visible session to a vault note. */
+  async exportToVault(): Promise<void> {
+    const messages = this.messagesEl.querySelectorAll('.cortex-message');
+    if (messages.length === 0) { new Notice('No conversation to export'); return; }
+    const title = this.currentSessionTitle || 'Cortex Session';
+    const sessionId = this.currentSessionId ?? '';
+    const date = new Date().toISOString().slice(0, 10);
+    const safeName = title.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim();
+    const folder = this.plugin.settings.exportFolder.trim();
+    const defaultPath = folder ? `${folder}/${safeName} ${date}.md` : `${safeName} ${date}.md`;
+    new ExportToVaultModal(this.app, defaultPath, async (notePath) => {
+      const notice = new Notice('Preparing transcript…', 0);
+      const { userLabel, assistantLabel } = await this.queryConversationLabels();
+      notice.hide();
+      const content = this.buildExportMarkdown(title, sessionId, userLabel, assistantLabel);
+      await this.writeExportNote(notePath, content);
+    }).open();
+  }
+
+  /** Export any session (by StoredSession) from the history modal. */
+  private async exportSessionToVault(session: StoredSession): Promise<void> {
+    const messages = loadSessionMessages(session.claudeSessionId);
+    if (messages.length === 0) { new Notice('No messages found for this session'); return; }
+    const date = new Date(session.updatedAt).toISOString().slice(0, 10);
+    const safeName = session.title.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim();
+    const folder = this.plugin.settings.exportFolder.trim();
+    const defaultPath = folder ? `${folder}/${safeName} ${date}.md` : `${safeName} ${date}.md`;
+    new ExportToVaultModal(this.app, defaultPath, async (notePath) => {
+      const dateStr = new Date(session.updatedAt).toISOString().slice(0, 10);
+      let md = `---\ncortex_session: true\ndate: ${dateStr}\nsession_id: ${session.claudeSessionId}\nmessages: ${messages.length}\n---\n\n`;
+      md += `# ${session.title}\n\n`;
+      for (const msg of messages) {
+        const label = msg.role === 'user' ? (session.userLabel ?? 'User') : (session.assistantLabel ?? 'Cortex');
+        md += `**${label}:**\n${msg.content.trim()}\n\n`;
+      }
+      await this.writeExportNote(notePath, md);
     }).open();
   }
 
@@ -413,7 +489,7 @@ export class ClaudeView extends ItemView {
 
     messages.forEach((msgEl) => {
       const role = msgEl.classList.contains('cortex-user') ? 'User' :
-        msgEl.classList.contains('cortex-assistant') ? 'Assistant' : 'System';
+        msgEl.classList.contains('cortex-assistant') ? 'Cortex' : 'System';
       // Use stored raw markdown for assistant messages; textContent for others
       const content = (msgEl as HTMLElement).dataset.markdown ?? msgEl.textContent ?? '';
       markdown += `## ${role}\n\n${content}\n\n`;
@@ -526,6 +602,65 @@ export class ClaudeView extends ItemView {
     parts.push(']');
     this.pendingSystemMessage = parts.join('\n');
     this.appendMessage('system', 'Context refresh queued — will be sent with your next message.');
+  }
+
+  /** Ask Claude to identify the human and AI names from the visible conversation. */
+  private queryConversationLabels(): Promise<{ userLabel: string; assistantLabel: string }> {
+    const defaults = { userLabel: 'User', assistantLabel: 'Cortex' };
+    if (!this.plugin.claudeBinaryPath) return Promise.resolve(defaults);
+
+    const msgEls = Array.from(
+      this.messagesEl.querySelectorAll('.cortex-message.cortex-user, .cortex-message.cortex-assistant')
+    ) as HTMLElement[];
+    if (msgEls.length === 0) return Promise.resolve(defaults);
+
+    const sample = msgEls.slice(0, 8).map(el => {
+      const role = el.classList.contains('cortex-user') ? 'Human' : 'AI';
+      const content = (el.dataset.markdown ?? el.textContent ?? '').trim().substring(0, 300);
+      return `${role}: ${content}`;
+    }).join('\n\n');
+
+    const prompt =
+      `What are the real names (if any) used for the human and the AI in this conversation?\n` +
+      `Respond with exactly two lines — substitute the actual names from the conversation:\n` +
+      `user: Sally\n` +
+      `assistant: Banana\n` +
+      `If the human has no name use "User"; if the AI has no name use "Cortex". No other text.\n\n` +
+      sample;
+
+    return new Promise((resolve) => {
+      try {
+        const proc = spawnClaude({
+          binaryPath: this.plugin.claudeBinaryPath!,
+          prompt,
+          vaultRoot: (this.app.vault.adapter as any).basePath,
+          env: this.plugin.shellEnv,
+          permissionMode: 'readonly',
+        });
+
+        let responseText = '';
+        parseStreamOutput(proc, {
+          onText: (delta) => { responseText += delta; },
+          onAction: () => {},
+          onToolCall: () => {},
+          onPermissionDenied: () => {},
+          onUsage: () => {},
+          onError: () => {},
+          onDone: () => {
+            const userMatch = /^user:\s*(.+)$/mi.exec(responseText);
+            const assistantMatch = /^assistant:\s*(.+)$/mi.exec(responseText);
+            resolve({
+              userLabel: userMatch?.[1]?.trim() ?? 'User',
+              assistantLabel: assistantMatch?.[1]?.trim() ?? 'Cortex',
+            });
+          },
+        });
+
+        proc.on('error', () => resolve(defaults));
+      } catch {
+        resolve(defaults);
+      }
+    });
   }
 
   private async loadSession(session: StoredSession) {

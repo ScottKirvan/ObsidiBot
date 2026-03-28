@@ -10,6 +10,7 @@ export class SessionListModal extends Modal {
   onNewSession: () => void;
   onDismiss: () => void;
   onRename: (session: StoredSession) => void;
+  onExportToVault: (session: StoredSession) => void;
   listContainer: HTMLElement | null = null;
   private draggedId: string | null = null;
   private isFiltering = false;
@@ -23,6 +24,7 @@ export class SessionListModal extends Modal {
     onDismiss: () => void = () => {},
     activeSessionFileId?: string,
     onRename: (session: StoredSession) => void = () => {},
+    onExportToVault: (session: StoredSession) => void = () => {},
   ) {
     super(app);
     this.vaultRoot = vaultRoot;
@@ -32,6 +34,7 @@ export class SessionListModal extends Modal {
     this.onNewSession = onNewSession;
     this.onDismiss = onDismiss;
     this.onRename = onRename;
+    this.onExportToVault = onExportToVault;
     this.activeSessionFileId = activeSessionFileId;
   }
 
@@ -188,6 +191,9 @@ export class SessionListModal extends Modal {
     }
 
     const actionsDiv = item.createEl('div', { cls: 'cortex-session-actions' });
+    const exportBtn = actionsDiv.createEl('button', { cls: 'cortex-export-btn' });
+    setIcon(exportBtn, 'download');
+    exportBtn.title = 'Save to vault';
     const renameBtn = actionsDiv.createEl('button', { cls: 'cortex-rename-btn' });
     setIcon(renameBtn, 'pencil');
     renameBtn.title = 'Rename session';
@@ -195,10 +201,13 @@ export class SessionListModal extends Modal {
     setIcon(deleteBtn, 'trash-2');
     deleteBtn.title = 'Delete session';
 
+    exportBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.onExportToVault(session);
+    });
+
     item.addEventListener('click', (e) => {
-      if (e.target === renameBtn || e.target === deleteBtn || (e.target as HTMLElement).closest('.cortex-session-actions')) {
-        return;
-      }
+      if ((e.target as HTMLElement).closest('.cortex-session-actions')) return;
       this.onSelect(session);
       this.close();
     });

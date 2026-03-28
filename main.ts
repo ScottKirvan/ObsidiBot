@@ -108,6 +108,14 @@ export default class CortexPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: 'export-cortex-to-vault',
+      name: 'Export session to vault',
+      callback: () => {
+        this.exportToVault();
+      }
+    });
+
+    this.addCommand({
       id: 'copy-cortex-last-response',
       name: 'Copy last response',
       callback: () => {
@@ -257,6 +265,18 @@ export default class CortexPlugin extends Plugin {
     if (existing.length) {
       const view = existing[0].view as ClaudeView;
       view.exportConversation();
+    }
+  }
+
+  exportToVault() {
+    const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
+    if (existing.length) {
+      void (existing[0].view as ClaudeView).exportToVault();
+    } else {
+      this.activateView().then(() => {
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
+        if (leaves.length) void (leaves[0].view as ClaudeView).exportToVault();
+      });
     }
   }
 

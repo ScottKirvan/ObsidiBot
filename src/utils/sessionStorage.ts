@@ -9,6 +9,8 @@ export interface StoredSession {
   updatedAt: string;
   claudeSessionId: string;
   sortOrder?: number;
+  userLabel?: string;
+  assistantLabel?: string;
 }
 
 export function getSessionsDir(vaultRoot: string): string {

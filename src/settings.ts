@@ -35,6 +35,8 @@ export interface CortexSettings {
   injectSplitPaneFiles: boolean;
   /** Inject all open files when Obsidian is showing stacked tabs. */
   injectStackedTabFiles: boolean;
+  /** Vault-relative folder where "Export session to vault" saves notes. */
+  exportFolder: string;
 }
 
 export const DEFAULT_SETTINGS: CortexSettings = {
@@ -56,6 +58,7 @@ export const DEFAULT_SETTINGS: CortexSettings = {
   atMentionExtensions: 'md, pdf, fountain, txt',
   injectSplitPaneFiles: true,
   injectStackedTabFiles: false,
+  exportFolder: 'Cortex Exports',
 };
 
 export class CortexSettingsTab extends PluginSettingTab {
@@ -212,6 +215,19 @@ export class CortexSettingsTab extends PluginSettingTab {
           .setValue(this.plugin.settings.injectStackedTabFiles)
           .onChange(async (value) => {
             this.plugin.settings.injectStackedTabFiles = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName('Export folder')
+      .setDesc('Vault-relative folder where "Export session to vault" saves notes. Created automatically if it does not exist.')
+      .addText((text) =>
+        text
+          .setPlaceholder('Cortex Exports')
+          .setValue(this.plugin.settings.exportFolder)
+          .onChange(async (value) => {
+            this.plugin.settings.exportFolder = value;
             await this.plugin.saveSettings();
           })
       );
