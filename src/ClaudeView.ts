@@ -1,5 +1,7 @@
 import { ItemView, WorkspaceLeaf, MarkdownRenderer, Notice, setIcon, TFile, Modal, App } from 'obsidian';
 import { spawn } from 'child_process';
+import { writeFileSync, mkdirSync, existsSync } from 'fs';
+import { join } from 'path';
 import type CortexPlugin from '../main';
 import { spawnClaude, parseStreamOutput, killProcess, findClaudeBinary, PermissionDenial, PermissionMode } from './ClaudeProcess';
 import { extractActions, executeAction } from './UIBridge';
@@ -98,7 +100,7 @@ export class ClaudeView extends ItemView {
   private historyIndex: number = -1;
   private inputDraft: string = '';
   private activeProc: ReturnType<typeof spawnClaude> | null = null;
-  private pendingContexts: Array<{ text: string; source: string; pinned: boolean; type?: 'text' | 'url' }> = [];
+  private pendingContexts: Array<{ text: string; source: string; pinned: boolean; type?: 'text' | 'url' | 'image' | 'pdf' }> = [];
   private pendingContextZone: HTMLElement;
   /** Overrides settings.permissionMode for the current session only. Cleared on new session. */
   private sessionPermissionOverride: PermissionMode | null = null;
@@ -287,6 +289,27 @@ export class ClaudeView extends ItemView {
         const len = this.inputEl.value.length;
         this.inputEl.setSelectionRange(len, len);
       }
+    });
+
+    this.inputEl.addEventListener('paste', (e: ClipboardEvent) => {
+      void this.handlePaste(e);
+    });
+
+    root.addEventListener('dragover', (e: DragEvent) => {
+      if (!e.dataTransfer?.types.includes('Files')) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      root.classList.add('cortex-drag-over');
+    });
+    root.addEventListener('dragleave', (e: DragEvent) => {
+      // Only clear highlight when leaving the panel entirely (relatedTarget is outside root)
+      if (!root.contains(e.relatedTarget as Node)) root.classList.remove('cortex-drag-over');
+    });
+    root.addEventListener('drop', (e: DragEvent) => {
+      root.classList.remove('cortex-drag-over');
+      if (!e.dataTransfer?.files.length) return;
+      e.preventDefault();
+      void this.handleDroppedFiles(e.dataTransfer.files);
     });
 
     // If Claude binary is missing, show setup guide and stop here
@@ -621,9 +644,12 @@ export class ClaudeView extends ItemView {
     let finalPrompt = prompt;
     if (this.pendingContexts.length > 0) {
       const contextBlock = this.pendingContexts
-        .map(c => c.type === 'url'
-          ? `**[URL: ${c.text}]**`
-          : `**[Context from ${c.source}]**\n${c.text}`)
+        .map(c => {
+          if (c.type === 'url') return `**[URL: ${c.text}]**`;
+          if (c.type === 'image') return `**[Attached image: ${c.source}]**\nRead this file to view the image: ${c.text}`;
+          if (c.type === 'pdf') return `**[Attached PDF: ${c.source}]**\nRead this file to view the document: ${c.text}`;
+          return `**[Context from ${c.source}]**\n${c.text}`;
+        })
         .join('\n\n');
       finalPrompt = `${contextBlock}\n\n${prompt}`;
       this.pendingContexts = this.pendingContexts.filter(c => c.pinned);
@@ -639,14 +665,13 @@ export class ClaudeView extends ItemView {
         this.plugin.settings.commandAllowlist,
       );
       const context = await ctx.buildSessionContext();
-      finalPrompt = ctx.injectContext(context, prompt);
+      const promptTokens = estimateTokens(finalPrompt);
+      finalPrompt = ctx.injectContext(context, finalPrompt);
       if (context) {
         const contextTokens = estimateTokens(context);
-        const promptTokens = estimateTokens(prompt);
         const totalTokens = estimateTokens(finalPrompt);
         log(`[NEW SESSION] Context: ~${contextTokens} tokens, Prompt: ~${promptTokens} tokens, Total: ~${totalTokens} tokens`);
       } else {
-        const promptTokens = estimateTokens(prompt);
         log(`[NEW SESSION] No context injected, Prompt: ~${promptTokens} tokens`);
       }
     } else {
@@ -1099,8 +1124,13 @@ export class ClaudeView extends ItemView {
     for (const entry of this.pendingContexts) {
       const row = zone.createDiv({ cls: 'cortex-pending-context-row' + (entry.pinned ? ' cortex-context-pinned' : '') });
       const preview = entry.text.length > 80 ? entry.text.substring(0, 80) + '…' : entry.text;
-      row.createSpan({ cls: 'cortex-pending-context-label', text: `📎 ${entry.source}: ` });
-      row.createSpan({ cls: 'cortex-pending-context-preview', text: preview });
+      const iconName = entry.type === 'image' ? 'image' : entry.type === 'pdf' ? 'file-text' : entry.type === 'url' ? 'link' : 'paperclip';
+      const iconEl = row.createSpan({ cls: 'cortex-pending-context-icon' });
+      setIcon(iconEl, iconName);
+      row.createSpan({ cls: 'cortex-pending-context-label', text: `${entry.source}: ` });
+      if (entry.type !== 'image' && entry.type !== 'pdf') {
+        row.createSpan({ cls: 'cortex-pending-context-preview', text: preview });
+      }
       const pinBtn = row.createEl('button', { cls: 'cortex-context-pin' });
       setIcon(pinBtn, entry.pinned ? 'pin-off' : 'pin');
       pinBtn.title = entry.pinned ? 'Unpin (remove after send)' : 'Pin (keep after send)';
@@ -1189,24 +1219,116 @@ export class ClaudeView extends ItemView {
 
   private openFilePicker() {
     const TEXT_EXTS = new Set(['txt', 'md', 'fountain', 'js', 'ts', 'jsx', 'tsx', 'json', 'css', 'html', 'xml', 'csv', 'yaml', 'yml', 'py', 'rb', 'go', 'rs', 'java', 'c', 'cpp', 'h', 'sh', 'bat', 'ps1']);
+    const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico', 'tiff', 'heic', 'heif', 'avif']);
     const input = document.createElement('input');
     input.type = 'file';
     input.onchange = async () => {
       const f = input.files?.[0];
       if (!f) return;
-      const path: string = (f as any).path ?? f.name;
       const ext = f.name.split('.').pop()?.toLowerCase() ?? '';
-      let text: string;
-      if (TEXT_EXTS.has(ext)) {
-        text = await f.text();
+      if (IMAGE_EXTS.has(ext) || ext === 'pdf') {
+        // file.path is undefined in Obsidian's sandboxed renderer — read binary
+        // data and save to vault tmp so Claude always gets a readable path.
+        const filePath = this.saveBinaryToTmp(f.name, await f.arrayBuffer());
+        const type = IMAGE_EXTS.has(ext) ? 'image' : 'pdf';
+        this.pendingContexts.push({ text: filePath, source: f.name, pinned: false, type });
       } else {
-        text = path; // Claude can use its Read tool for binary files
+        const text = TEXT_EXTS.has(ext) ? await f.text() : f.name;
+        this.pendingContexts.push({ text, source: f.name, pinned: false });
       }
-      this.pendingContexts.push({ text, source: f.name, pinned: false });
       this.renderContextZone();
       this.inputEl.focus();
     };
     input.click();
+  }
+
+  private async handlePaste(e: ClipboardEvent): Promise<void> {
+    const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico', 'tiff', 'heic', 'heif', 'avif']);
+
+    // Use Electron's clipboard API to get real file paths when a file was
+    // copied from Explorer. Works even with context isolation unlike file.path.
+    try {
+      const { clipboard } = require('electron') as { clipboard: { readFilePaths(): string[] } };
+      const filePaths = clipboard.readFilePaths();
+      if (filePaths.length > 0) {
+        let handled = false;
+        for (const filePath of filePaths) {
+          const name = filePath.replace(/\\/g, '/').split('/').pop() ?? filePath;
+          const ext = name.split('.').pop()?.toLowerCase() ?? '';
+          if (IMAGE_EXTS.has(ext) || ext === 'pdf') {
+            e.preventDefault();
+            const type = IMAGE_EXTS.has(ext) ? 'image' : 'pdf';
+            this.pendingContexts.push({ text: filePath, source: name, pinned: false, type });
+            handled = true;
+          }
+        }
+        if (handled) { this.renderContextZone(); return; }
+      }
+    } catch { /* Electron API unavailable — fall through */ }
+
+    // clipboardData.files has the real filename even when readFilePaths() fails.
+    // file.path is unavailable (context isolation) so save binary data to tmp.
+    const files = e.clipboardData?.files;
+    if (files?.length) {
+      for (const f of Array.from(files)) {
+        const ext = f.name.split('.').pop()?.toLowerCase() ?? '';
+        if (IMAGE_EXTS.has(ext) || ext === 'pdf') {
+          e.preventDefault();
+          const type = IMAGE_EXTS.has(ext) ? 'image' : 'pdf';
+          const filePath = this.saveBinaryToTmp(f.name, await f.arrayBuffer());
+          this.pendingContexts.push({ text: filePath, source: f.name, pinned: false, type });
+          this.renderContextZone();
+          return;
+        }
+      }
+    }
+
+    // Last resort: raw image data from clipboard (screenshots have no filename)
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const blob = item.getAsFile();
+        if (!blob) continue;
+        const ext = item.type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'png';
+        const filename = `paste-${Date.now()}.${ext}`;
+        const filePath = this.saveBinaryToTmp(filename, await blob.arrayBuffer());
+        this.pendingContexts.push({ text: filePath, source: filename, pinned: false, type: 'image' });
+        this.renderContextZone();
+        return;
+      }
+    }
+  }
+
+  private async handleDroppedFiles(files: FileList): Promise<void> {
+    const TEXT_EXTS = new Set(['txt', 'md', 'fountain', 'js', 'ts', 'jsx', 'tsx', 'json', 'css', 'html', 'xml', 'csv', 'yaml', 'yml', 'py', 'rb', 'go', 'rs', 'java', 'c', 'cpp', 'h', 'sh', 'bat', 'ps1']);
+    const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico', 'tiff', 'heic', 'heif', 'avif']);
+    for (const f of Array.from(files)) {
+      const ext = f.name.split('.').pop()?.toLowerCase() ?? '';
+      if (IMAGE_EXTS.has(ext) || ext === 'pdf') {
+        const type = IMAGE_EXTS.has(ext) ? 'image' : 'pdf';
+        const filePath = this.saveBinaryToTmp(f.name, await f.arrayBuffer());
+        this.pendingContexts.push({ text: filePath, source: f.name, pinned: false, type });
+      } else if (TEXT_EXTS.has(ext)) {
+        const text = await f.text();
+        this.pendingContexts.push({ text, source: f.name, pinned: false });
+      } else {
+        // Unknown binary — pass filename; Claude can attempt to read it
+        this.pendingContexts.push({ text: f.name, source: f.name, pinned: false });
+      }
+    }
+    this.renderContextZone();
+    this.inputEl.focus();
+  }
+
+  private saveBinaryToTmp(filename: string, data: ArrayBuffer): string {
+    const vaultRoot = (this.app.vault.adapter as any).basePath;
+    const tmpDir = join(vaultRoot, '.obsidian', 'plugins', 'cortex', 'tmp');
+    if (!existsSync(tmpDir)) mkdirSync(tmpDir, { recursive: true });
+    const filePath = join(tmpDir, filename);
+    writeFileSync(filePath, Buffer.from(data));
+    return filePath;
   }
 
   private attachUrl(url: string) {

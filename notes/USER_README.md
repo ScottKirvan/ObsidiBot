@@ -94,9 +94,23 @@ Click the paperclip icon in the input bar to open the attach menu:
 
 | Option | What it does |
 |---|---|
-| **Attach file** | Opens your system file picker — attach any file from anywhere on your drive. Text-based files (`.md`, `.txt`, `.fountain`, `.js`, etc.) are read and their content included inline. All other file types (images, PDFs, Word docs, etc.) are referenced by path so Claude can use its Read tool to access them. |
+| **Attach file** | Opens your system file picker — attach any file from anywhere on your drive. Text-based files (`.md`, `.txt`, `.fountain`, `.js`, etc.) are read and their content included inline. Images (`.png`, `.jpg`, `.gif`, `.webp`, etc.) and PDFs are copied to a temporary folder inside your vault so Claude can read them with its Read tool. |
 | **Attach URL** | Enter any URL — it is passed to Claude as-is. Claude decides what to do with it based on your message (fetch the content, analyse the address, store it as a reference, etc.). |
 | **@ Add note** | Opens the same vault note search as the `@` shortcut below. |
+
+**Paste images from clipboard**
+
+Paste an image directly into the chat input with **Ctrl+V** (or **Cmd+V**). This works for:
+- **Screenshots** — take a screenshot, then paste into Cortex. The image is saved to a temporary folder inside your vault and attached automatically.
+- **Files copied from Explorer/Finder** — copy a `.png`, `.jpg`, `.gif`, `.webp`, or `.pdf` file and paste it into the input.
+
+Pasted images appear in the context bar with an image icon (PDFs show a file icon). They are attached for your next message only, unless you pin them.
+
+> **Note:** Pasted and attached binary files are saved to `.obsidian/plugins/cortex/tmp/` and are not automatically cleaned up. You can delete them manually when no longer needed.
+
+**Drag and drop**
+
+Drag any file from your file system and drop it anywhere onto the Cortex panel. The panel highlights with a dashed border while you're dragging over it. Images and PDFs are handled the same way as the file picker — copied to the tmp folder and attached with their original filename. Text-based files are read inline.
 
 **@-mention a note**
 

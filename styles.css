@@ -8,6 +8,11 @@
   overflow: hidden;
 }
 
+.cortex-view.cortex-drag-over {
+  outline: 2px dashed var(--interactive-accent);
+  outline-offset: -3px;
+}
+
 .cortex-toolbar {
   display: flex;
   align-items: center;
@@ -774,6 +779,18 @@
   align-items: center;
   gap: 6px;
   overflow: hidden;
+}
+
+.cortex-pending-context-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--interactive-accent);
+}
+
+.cortex-pending-context-icon svg {
+  width: 12px;
+  height: 12px;
 }
 
 .cortex-pending-context-label {

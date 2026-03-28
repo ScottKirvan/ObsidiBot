@@ -5,6 +5,8 @@ _cortex-debug.log
 # Generated at runtime when plugin dev folder is opened directly as a vault
 commands.md
 cortex-debug.log
+# Pasted images saved by Cortex clipboard paste feature
+tmp/
 
 # Obsidian plugin runtime data (machine-specific)
 data.json
