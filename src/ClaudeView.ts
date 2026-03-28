@@ -1432,6 +1432,7 @@ export class ClaudeView extends ItemView {
 
     // clipboardData.files has the real filename even when readFilePaths() fails.
     // file.path is unavailable (context isolation) so save binary data to tmp.
+    // Always generate a unique paste name — Windows names every screenshot "image.jpg".
     const files = e.clipboardData?.files;
     if (files?.length) {
       for (const f of Array.from(files)) {
@@ -1439,8 +1440,9 @@ export class ClaudeView extends ItemView {
         if (IMAGE_EXTS.has(ext) || ext === 'pdf') {
           e.preventDefault();
           const type = IMAGE_EXTS.has(ext) ? 'image' : 'pdf';
-          const filePath = this.saveBinaryToTmp(f.name, await f.arrayBuffer());
-          this.pendingContexts.push({ text: filePath, source: f.name, pinned: false, type });
+          const uniqueName = `paste-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+          const filePath = this.saveBinaryToTmp(uniqueName, await f.arrayBuffer());
+          this.pendingContexts.push({ text: filePath, source: uniqueName, pinned: false, type });
           this.renderContextZone();
           return;
         }
@@ -1456,7 +1458,7 @@ export class ClaudeView extends ItemView {
         const blob = item.getAsFile();
         if (!blob) continue;
         const ext = item.type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'png';
-        const filename = `paste-${Date.now()}.${ext}`;
+        const filename = `paste-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
         const filePath = this.saveBinaryToTmp(filename, await blob.arrayBuffer());
         this.pendingContexts.push({ text: filePath, source: filename, pinned: false, type: 'image' });
         this.renderContextZone();
