@@ -755,12 +755,14 @@ export class ClaudeView extends ItemView {
     setSendState(true);
     this.appendMessage('user', prompt);
 
-    // Response group: tool events (above) + assistant bubble (below)
+    // Response group: tool events (above) + assistant bubble + token stats (below)
     const responseGroupEl = this.messagesEl.createDiv({ cls: 'cortex-response-group' });
     const toolEventsEl = responseGroupEl.createDiv({ cls: 'cortex-tool-events' });
     toolEventsEl.style.display = 'none';
     const assistantEl = responseGroupEl.createDiv({ cls: 'cortex-message cortex-assistant' });
     const statusEl = assistantEl.createSpan({ cls: 'cortex-status', text: 'Thinking…' });
+    const tokenStatsEl = responseGroupEl.createDiv({ cls: 'cortex-token-stats' });
+    tokenStatsEl.style.display = 'none';
     this.scrollToBottom();
 
     // Prepend open file context so Claude knows what note(s) are visible
@@ -848,6 +850,9 @@ export class ClaudeView extends ItemView {
     let toolCallCount = 0;
     let accumulated = '';
     let uiBridgeActionCount = 0;
+    let turnInputTokens = 0;
+    let turnCacheTokens = 0;
+    let turnOutputTokens = 0;
 
     parseStreamOutput(proc, {
       onText: (delta) => {
@@ -977,6 +982,21 @@ export class ClaudeView extends ItemView {
         this.sessionContextTokens = total;
         this.tokenGaugeEl.style.display = '';
         this.updateTokenGauge(total);
+
+        // Output tokens arrive as 1 per streaming delta — accumulate.
+        // Input and cache tokens are reported in full on the first event — take max.
+        turnOutputTokens += usage.outputTokens;
+        turnInputTokens = Math.max(turnInputTokens, usage.inputTokens);
+        turnCacheTokens = Math.max(turnCacheTokens, usage.cacheReadTokens);
+
+        const fmt = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+        const parts = [
+          `${fmt(turnOutputTokens)} out`,
+          `${fmt(turnInputTokens)} in`,
+        ];
+        if (turnCacheTokens > 0) parts.push(`${fmt(turnCacheTokens)} cached`);
+        tokenStatsEl.setText(parts.join(' · '));
+        tokenStatsEl.style.display = '';
       },
       onError: (err) => {
         this.appendMessage('system', `stderr: ${err.trim()}`);
