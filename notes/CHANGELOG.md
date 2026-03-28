@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.4.0](https://github.com/ScottKirvan/ObsidianCortex/compare/v1.3.0...v1.4.0) (2026-03-28)
+
+
+### Features
+
+* image and PDF support — attach via file picker, paste, or drag-and-drop ([1efcb5c](https://github.com/ScottKirvan/ObsidianCortex/commit/1efcb5ca1bb00a2c89e0cdd1d214f41a4579f87b))
+* image/PDF attachments, drag-and-drop, export session to vault, transcript format ([48feb43](https://github.com/ScottKirvan/ObsidianCortex/commit/48feb4378575f853d09c0621b49a2fb0a880ebbf))
+* show per-turn token usage stats below each response ([#43](https://github.com/ScottKirvan/ObsidianCortex/issues/43)) ([d478504](https://github.com/ScottKirvan/ObsidianCortex/commit/d4785040b6f6091c55c6c6a4fd62f2e975654a87))
+
+
+### Bug Fixes
+
+* copy/paste of screenshots wasn't using unique names, so multiple screenshots were overwriting each other ([5b825b6](https://github.com/ScottKirvan/ObsidianCortex/commit/5b825b65dc58c5fdf7e320b2b3ca15da7d449518))
+* expanding the name change search - it was pretty easy to miss it before. ([2620880](https://github.com/ScottKirvan/ObsidianCortex/commit/262088024ddb2df376bf435c4d278aac4e0aab1f))
+
 ## [1.3.0](https://github.com/ScottKirvan/ObsidianCortex/compare/v1.2.0...v1.3.0) (2026-03-27)
 
 
