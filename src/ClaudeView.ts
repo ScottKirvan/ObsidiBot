@@ -5,6 +5,8 @@ import { join } from 'path';
 import type CortexPlugin from '../main';
 import { spawnClaude, parseStreamOutput, killProcess, findClaudeBinary, PermissionDenial, PermissionMode } from './ClaudeProcess';
 import { extractActions, executeAction } from './UIBridge';
+import { VaultQuery, VaultQueryResult, resolveQuery, queryLabel, buildInjectMessage } from './QueryHandler';
+import { QUERY_PREFIX } from './constants';
 import { ContextManager } from './ContextManager';
 import { log, estimateTokens } from './utils/logger';
 import {
@@ -583,31 +585,15 @@ export class ClaudeView extends ItemView {
       return;
     }
 
-    const parts: string[] = ['[System: Session context refreshed at user request. Current state:\n'];
-
-    const allowlist = this.plugin.settings.commandAllowlist;
-    if (allowlist.length > 0) {
-      const rows = allowlist
-        .map(id => {
-          const name = (this.app as any).commands.commands[id]?.name ?? id;
-          return `| "${name}" | ${id} |`;
-        })
-        .join('\n');
-      parts.push(`## Command allowlist\n${rows}\n`);
-    } else {
-      parts.push('## Command allowlist\nNo commands currently enabled via run-command.\n');
-    }
-
-    const contextFile = this.app.vault.getFileByPath(this.plugin.settings.contextFilePath);
-    if (contextFile) {
-      const content = await this.app.vault.read(contextFile);
-      if (content.trim()) {
-        parts.push(`## Vault context (${this.plugin.settings.contextFilePath})\n${content.trim()}\n`);
-      }
-    }
-
-    parts.push(']');
-    this.pendingSystemMessage = parts.join('\n');
+    const ctx = new ContextManager(
+      this.app,
+      this.plugin.settings.contextFilePath,
+      this.plugin.settings.autonomousMemory,
+      this.plugin.settings.vaultTreeDepth,
+      this.plugin.settings.commandAllowlist,
+    );
+    const context = await ctx.buildSessionContext();
+    this.pendingSystemMessage = `[System: Session context refreshed at user request.]\n\n${context}`;
     this.appendMessage('system', 'Context refresh queued — will be sent with your next message.');
   }
 
@@ -738,6 +724,13 @@ export class ClaudeView extends ItemView {
     }
   }
 
+  private setSendState(running: boolean) {
+    this.sendBtn.dataset.state = running ? 'running' : '';
+    this.sendBtn.disabled = false;
+    setIcon(this.sendBtn, running ? 'square' : 'arrow-up');
+    this.sendBtn.title = running ? 'Stop' : 'Send message';
+  }
+
   private async handleSend() {
     const prompt = this.inputEl.value.trim();
     if (!prompt) return;
@@ -747,13 +740,7 @@ export class ClaudeView extends ItemView {
       return;
     }
 
-    const setSendState = (running: boolean) => {
-      this.sendBtn.dataset.state = running ? 'running' : '';
-      this.sendBtn.disabled = false;
-      setIcon(this.sendBtn, running ? 'square' : 'arrow-up');
-      this.sendBtn.title = running ? 'Stop' : 'Send message';
-    };
-    const unlock = () => setSendState(false);
+    const unlock = () => this.setSendState(false);
     const isNewSession = !this.currentSessionId;
     const firstPrompt = isNewSession ? prompt : undefined;
     log('handleSend — session:', this.currentSessionId ?? 'new', '— prompt:', prompt.substring(0, 60));
@@ -762,7 +749,7 @@ export class ClaudeView extends ItemView {
     this.historyIndex = -1;
     this.inputDraft = '';
     this.inputEl.value = '';
-    setSendState(true);
+    this.setSendState(true);
     this.appendMessage('user', prompt);
 
     // Response group: tool events (above) + assistant bubble + token stats (below)
@@ -863,6 +850,7 @@ export class ClaudeView extends ItemView {
     let turnInputTokens = 0;
     let turnCacheTokens = 0;
     let turnOutputTokens = 0;
+    const pendingQueries: VaultQuery[] = [];
 
     parseStreamOutput(proc, {
       onText: (delta) => {
@@ -886,6 +874,13 @@ export class ClaudeView extends ItemView {
             actions.forEach(a => executeAction(this.app, a, this.bridgeOptions()));
           } catch { /* malformed — already logged in extractActions */ }
         }
+      },
+      onQuery: (line) => {
+        try {
+          const q = JSON.parse(line.slice(QUERY_PREFIX.length)) as VaultQuery;
+          pendingQueries.push(q);
+          log('onQuery — queued:', q.query, q.mode, q.path ?? '');
+        } catch { log('onQuery — malformed line:', line.substring(0, 100)); }
       },
       onToolCall: (tool, input) => {
         const key = tool.toLowerCase();
@@ -983,6 +978,22 @@ export class ClaudeView extends ItemView {
           MarkdownRenderer.render(this.app, accumulated, assistantEl, '', this);
         }
         this.scrollToBottom();
+
+        // Handle vault queries collected during this turn
+        const showQueries = pendingQueries.filter(q => q.mode === 'show');
+        const injectQueries = pendingQueries.filter(q => q.mode === 'inject');
+
+        for (const q of showQueries) {
+          const result = resolveQuery(this.app, q);
+          this.renderQueryResultCard(responseGroupEl, result);
+        }
+
+        if (injectQueries.length > 0) {
+          // Stay locked — handleVaultInject will call unlock when done
+          this.handleVaultInject(injectQueries, responseGroupEl, unlock);
+          return;
+        }
+
         unlock();
       },
       onUsage: (usage) => {
@@ -1512,6 +1523,196 @@ export class ClaudeView extends ItemView {
     this.pendingContexts.push({ text: url, source: label, pinned: false, type: 'url' });
     this.renderContextZone();
     this.inputEl.focus();
+  }
+
+  /** Render a vault query result card inside a response group (mode: show). */
+  private renderQueryResultCard(containerEl: HTMLElement, result: VaultQueryResult) {
+    const card = containerEl.createDiv({ cls: 'cortex-vault-query-card' });
+    const header = card.createDiv({ cls: 'cortex-vault-query-header' });
+    const iconEl = header.createSpan({ cls: 'cortex-vault-query-icon' });
+    setIcon(iconEl, 'git-branch');
+    header.createSpan({ cls: 'cortex-vault-query-label', text: queryLabel(result.query) });
+
+    const body = card.createDiv({ cls: 'cortex-vault-query-body' });
+    if (result.error) {
+      body.createSpan({ cls: 'cortex-vault-query-error', text: `Error: ${result.error}` });
+      return;
+    }
+
+    const r = result.result as Record<string, unknown>;
+    const items: string[] = Array.isArray(r.backlinks) ? r.backlinks as string[]
+      : Array.isArray(r.outlinks) ? r.outlinks as string[]
+      : Array.isArray(r.tags) ? r.tags as string[]
+      : Array.isArray(r.files) ? r.files as string[]
+      : [];
+
+    if (items.length === 0) {
+      body.createSpan({ cls: 'cortex-vault-query-empty', text: 'No results.' });
+    } else {
+      const list = body.createEl('ul', { cls: 'cortex-vault-query-list' });
+      for (const item of items) {
+        list.createEl('li', { text: item });
+      }
+    }
+    this.scrollToBottom();
+  }
+
+  /** Auto-fire a --resume turn injecting vault query results, then call unlock when done. */
+  private handleVaultInject(queries: VaultQuery[], prevGroupEl: HTMLElement, unlock: () => void) {
+    const results = queries.map(q => resolveQuery(this.app, q));
+
+    // Render a compact card for each inject query so the user can see what was queried
+    for (const r of results) {
+      this.renderQueryResultCard(prevGroupEl, r);
+    }
+
+    const injectPrompt = buildInjectMessage(results);
+
+    // New response group for Claude's continuation (no user message bubble)
+    const responseGroupEl = this.messagesEl.createDiv({ cls: 'cortex-response-group' });
+    const toolEventsEl = responseGroupEl.createDiv({ cls: 'cortex-tool-events' });
+    toolEventsEl.style.display = 'none';
+    const assistantEl = responseGroupEl.createDiv({ cls: 'cortex-message cortex-assistant' });
+    const statusEl = assistantEl.createSpan({ cls: 'cortex-status', text: 'Processing vault data…' });
+    const tokenStatsEl = responseGroupEl.createDiv({ cls: 'cortex-token-stats' });
+    tokenStatsEl.style.display = 'none';
+    this.setSendState(true);
+    this.scrollToBottom();
+
+    let proc: ReturnType<typeof spawnClaude>;
+    try {
+      proc = spawnClaude({
+        binaryPath: this.plugin.claudeBinaryPath!,
+        prompt: injectPrompt,
+        vaultRoot: (this.app.vault.adapter as any).basePath,
+        env: this.plugin.shellEnv,
+        resumeSessionId: this.currentSessionId,
+        permissionMode: this.sessionPermissionOverride ?? this.plugin.settings.permissionMode,
+      });
+      this.activeProc = proc;
+    } catch (e) {
+      assistantEl.setText(`Failed to resume after vault query: ${e}`);
+      unlock();
+      return;
+    }
+
+    let toolCallCount = 0;
+    let accumulated = '';
+    let uiBridgeActionCount = 0;
+    let turnInputTokens = 0;
+    let turnCacheTokens = 0;
+    let turnOutputTokens = 0;
+
+    parseStreamOutput(proc, {
+      onText: (delta) => {
+        statusEl.remove();
+        accumulated += delta;
+        if (this.plugin.settings.uiBridgeEnabled) {
+          const { clean, actions } = extractActions(accumulated);
+          accumulated = clean;
+          uiBridgeActionCount += actions.length;
+          actions.forEach(a => executeAction(this.app, a, this.bridgeOptions()));
+        }
+        assistantEl.setText(accumulated);
+        this.scrollToBottom();
+      },
+      onAction: (line) => {
+        if (this.plugin.settings.uiBridgeEnabled) {
+          try {
+            const { actions } = extractActions(line + '\n');
+            uiBridgeActionCount += actions.length;
+            actions.forEach(a => executeAction(this.app, a, this.bridgeOptions()));
+          } catch { /* malformed */ }
+        }
+      },
+      onToolCall: (tool, input) => {
+        const key = tool.toLowerCase();
+        statusEl.setText(TOOL_STATUS[key] ?? 'Working…');
+        toolCallCount++;
+        if (toolEventsEl.style.display === 'none') toolEventsEl.style.display = 'flex';
+        const row = toolEventsEl.createDiv({ cls: 'cortex-tool-event' });
+        const iconEl = row.createSpan({ cls: 'cortex-tool-event-icon' });
+        setIcon(iconEl, TOOL_ICONS[key] ?? 'zap');
+        const detail = extractToolDetail(key, input);
+        row.createSpan({ cls: 'cortex-tool-event-label', text: detail ? `${tool}: ${detail}` : tool });
+        this.scrollToBottom();
+      },
+      onPermissionDenied: (denials) => {
+        this.renderPermissionDenials(denials, responseGroupEl, injectPrompt);
+      },
+      onUsage: (usage) => {
+        const total = Math.max(usage.cacheReadTokens, this.sessionContextTokens)
+          + usage.inputTokens + usage.outputTokens;
+        this.sessionContextTokens = total;
+        this.updateTokenGauge(total);
+
+        turnOutputTokens += usage.outputTokens;
+        turnInputTokens = Math.max(turnInputTokens, usage.inputTokens);
+        turnCacheTokens = Math.max(turnCacheTokens, usage.cacheReadTokens);
+
+        const fmt = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+        const parts = [`${fmt(turnOutputTokens)} out`, `${fmt(turnInputTokens)} in`];
+        if (turnCacheTokens > 0) parts.push(`${fmt(turnCacheTokens)} cached`);
+        tokenStatsEl.setText(parts.join(' · '));
+        tokenStatsEl.style.display = '';
+      },
+      onError: (err) => {
+        this.appendMessage('system', `stderr: ${err.trim()}`);
+      },
+      onDone: (sessionId) => {
+        statusEl.remove();
+        this.activeProc = null;
+
+        if (sessionId && this.currentSessionId) {
+          const vaultRoot = (this.app.vault.adapter as any).basePath;
+          const now = new Date().toISOString();
+          const fileId = this.currentSessionFileId ?? this.currentSessionId;
+          saveSession(vaultRoot, {
+            id: fileId,
+            title: this.currentSessionTitle ?? this.currentSessionId.substring(0, 8),
+            createdAt: this.currentSessionCreatedAt ?? now,
+            updatedAt: now,
+            claudeSessionId: this.currentSessionId,
+          });
+        }
+
+        if (toolCallCount > 0) {
+          const rows = Array.from(toolEventsEl.querySelectorAll('.cortex-tool-event')) as HTMLElement[];
+          rows.forEach(r => { r.style.display = 'none'; });
+          const s = toolCallCount === 1 ? '' : 's';
+          const toggle = toolEventsEl.createEl('button', {
+            cls: 'cortex-tool-toggle',
+            text: `${toolCallCount} tool call${s} ▶`,
+          });
+          toolEventsEl.insertBefore(toggle, toolEventsEl.firstChild);
+          let expanded = false;
+          toggle.addEventListener('click', () => {
+            expanded = !expanded;
+            rows.forEach(r => { r.style.display = expanded ? 'flex' : 'none'; });
+            toggle.setText(`${toolCallCount} tool call${s} ${expanded ? '▼' : '▶'}`);
+          });
+        }
+
+        if (!accumulated && uiBridgeActionCount) {
+          assistantEl.remove();
+        } else if (!accumulated) {
+          assistantEl.setText('(no response)');
+        } else if (this.isAuthError(accumulated)) {
+          this.renderAuthError(assistantEl);
+        } else {
+          assistantEl.dataset.markdown = accumulated;
+          assistantEl.empty();
+          MarkdownRenderer.render(this.app, accumulated, assistantEl, '', this);
+        }
+        this.scrollToBottom();
+        unlock();
+      },
+    });
+
+    proc.on('error', (err) => {
+      assistantEl.setText(`Process error: ${err.message}`);
+      unlock();
+    });
   }
 
   private appendMessage(role: 'user' | 'assistant' | 'system', text: string): HTMLElement {
