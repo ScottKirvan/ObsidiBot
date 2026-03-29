@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.2](https://github.com/ScottKirvan/ObsidianCortex/compare/v1.4.1...v1.4.2) (2026-03-29)
+
+
+### Bug Fixes
+
+* refreshSessionContext now re-injects full orientation ([#69](https://github.com/ScottKirvan/ObsidianCortex/issues/69)) ([ce70f88](https://github.com/ScottKirvan/ObsidianCortex/commit/ce70f88858b9ed633cfc307ad529cdd50b914a19))
+* refreshSessionContext re-injects full orientation ([#69](https://github.com/ScottKirvan/ObsidianCortex/issues/69)) ([18ea92f](https://github.com/ScottKirvan/ObsidianCortex/commit/18ea92f6505183976ccc71b41ded32b7c21dfec6))
+
 ## [1.4.1](https://github.com/ScottKirvan/ObsidianCortex/compare/v1.4.0...v1.4.1) (2026-03-29)
 
 
