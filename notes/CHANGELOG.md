@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.5.1](https://github.com/ScottKirvan/ObsidianCortex/compare/v1.5.0...v1.5.1) (2026-03-29)
+
+
+### Bug Fixes
+
+* **ui:** add visual separation between sequential tool call events ([73ff0ab](https://github.com/ScottKirvan/ObsidianCortex/commit/73ff0abd91565b92b93eed8553d33d0d31705471))
+* **ui:** add visual separation between sequential tool call events ([0bd9be6](https://github.com/ScottKirvan/ObsidianCortex/commit/0bd9be6933f7841f04899ed6e7a0cc51bdc67fba)), closes [#68](https://github.com/ScottKirvan/ObsidianCortex/issues/68)
+* **ui:** suppress misleading "Interrupted." on clean UI-bridge-only turns ([9180ef0](https://github.com/ScottKirvan/ObsidianCortex/commit/9180ef027870faf11f4f0599b006b89f2fcf78cd))
+* **ui:** suppress misleading Interrupted message on clean UI-bridge-only turns ([3ba0e68](https://github.com/ScottKirvan/ObsidianCortex/commit/3ba0e68ec94dbd44303429afde448d44092397b3)), closes [#76](https://github.com/ScottKirvan/ObsidianCortex/issues/76)
+
 ## [1.5.0](https://github.com/ScottKirvan/ObsidianCortex/compare/v1.4.3...v1.5.0) (2026-03-29)
 
 
