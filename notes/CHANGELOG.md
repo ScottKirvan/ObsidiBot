@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.4.1](https://github.com/ScottKirvan/ObsidianCortex/compare/v1.4.0...v1.4.1) (2026-03-29)
+
+
+### Bug Fixes
+
+* bug [#57](https://github.com/ScottKirvan/ObsidianCortex/issues/57): code blocks in assistant messages render as copy icon only ([b7d8069](https://github.com/ScottKirvan/ObsidianCortex/commit/b7d80691a02d9b32b1384f7319272b1f9dd5f0ec))
+* bug [#63](https://github.com/ScottKirvan/ObsidianCortex/issues/63):  restore last active session on startup instead of top-of-stack ([7e8e53c](https://github.com/ScottKirvan/ObsidianCortex/commit/7e8e53ccd0d51aee7ba1abf7d552fc5113f4727d))
+* correct release asset upload and project date-closed workflow ([e6728a3](https://github.com/ScottKirvan/ObsidianCortex/commit/e6728a39d7d5520cffec4daf916270d1e5310390))
+* correct release asset upload and project token for workflows ([7cca123](https://github.com/ScottKirvan/ObsidianCortex/commit/7cca1233bd06e4c68dfd6cb1afe94c89d9b935f6))
+
 ## [1.4.0](https://github.com/ScottKirvan/ObsidianCortex/compare/v1.3.0...v1.4.0) (2026-03-28)
 
 
