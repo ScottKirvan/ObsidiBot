@@ -408,4 +408,64 @@ describe('parseStreamOutput', () => {
     const result = await emit(proc, chunks);
     assert.equal(result.denials.length, 0);
   });
+
+  // -------------------------------------------------------------------------
+  // UI bridge action routing — needed for #76 fix
+  // -------------------------------------------------------------------------
+
+  test('routes @@CORTEX_ACTION lines to onAction, not onText', async () => {
+    const proc = mockProc();
+    const actions: string[] = [];
+    const texts: string[] = [];
+    const ACTION_LINE = '@@CORTEX_ACTION {"action":"open-file","path":"notes/test.md"}';
+    const chunks = [
+      JSON.stringify({
+        type: 'assistant',
+        message: { content: [{ type: 'text', text: ACTION_LINE }] },
+      }) + '\n',
+      JSON.stringify({ type: 'result', session_id: 'sess-action' }) + '\n',
+    ];
+    await new Promise<void>((resolve) => {
+      parseStreamOutput(proc, {
+        onText: (t) => texts.push(t),
+        onAction: (line) => actions.push(line),
+        onToolCall: () => {},
+        onPermissionDenied: () => {},
+        onUsage: () => {},
+        onDone: () => resolve(),
+        onError: () => {},
+      });
+      for (const chunk of chunks) proc.stdout.emit('data', Buffer.from(chunk));
+      proc.emit('close', 0);
+    });
+    assert.equal(actions.length, 1, 'onAction should fire once');
+    assert.ok(actions[0].startsWith('@@CORTEX_ACTION'), 'action line should be passed verbatim');
+    assert.equal(texts.length, 0, 'onText should not receive action lines');
+  });
+
+  test('action-only response still delivers sessionId in onDone', async () => {
+    const proc = mockProc();
+    const ACTION_LINE = '@@CORTEX_ACTION {"action":"show-notice","message":"Done"}';
+    const chunks = [
+      JSON.stringify({ type: 'system', session_id: 'sess-action-only' }) + '\n',
+      JSON.stringify({
+        type: 'assistant',
+        message: { content: [{ type: 'text', text: ACTION_LINE }] },
+      }) + '\n',
+      JSON.stringify({ type: 'result', session_id: 'sess-action-only' }) + '\n',
+    ];
+    const result = await emit(proc, chunks);
+    assert.equal(result.sessionId, 'sess-action-only', 'sessionId must be available in onDone for action-only responses');
+    assert.equal(result.texts.length, 0, 'no text should be emitted for action-only responses');
+  });
+
+  test('interrupted process has no sessionId in onDone', async () => {
+    const proc = mockProc();
+    // No result message — simulates process killed before completing
+    const chunks = [
+      JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'partial' }] } }) + '\n',
+    ];
+    const result = await emit(proc, chunks);
+    assert.equal(result.sessionId, undefined, 'interrupted process should have no sessionId');
+  });
 });

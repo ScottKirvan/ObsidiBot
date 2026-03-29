@@ -901,7 +901,7 @@ export class ClaudeView extends ItemView {
       onDone: (sessionId) => {
         statusEl.remove();
         this.activeProc = null;
-        if (!accumulated && !uiBridgeActionCount) this.appendMessage('system', 'Interrupted.');
+        if (!accumulated && !uiBridgeActionCount && !sessionId) this.appendMessage('system', 'Interrupted.');
 
         if (sessionId) {
           const vaultRoot = (this.app.vault.adapter as any).basePath;
