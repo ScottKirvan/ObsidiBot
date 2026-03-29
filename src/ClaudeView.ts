@@ -96,7 +96,7 @@ export class ClaudeView extends ItemView {
 
   getViewType(): string { return VIEW_TYPE_CLAUDE; }
   getDisplayText(): string { return 'Cortex'; }
-  getIcon(): string { return 'cortex'; }
+  getIcon(): string { return 'brain-circuit'; }
 
   async onOpen() {
     const root = this.containerEl.children[1] as HTMLElement;
@@ -614,11 +614,11 @@ export class ClaudeView extends ItemView {
         let responseText = '';
         parseStreamOutput(proc, {
           onText: (delta) => { responseText += delta; },
-          onAction: () => {},
-          onToolCall: () => {},
-          onPermissionDenied: () => {},
-          onUsage: () => {},
-          onError: () => {},
+          onAction: () => { },
+          onToolCall: () => { },
+          onPermissionDenied: () => { },
+          onUsage: () => { },
+          onError: () => { },
           onDone: () => {
             const userMatch = /^user:\s*(.+)$/mi.exec(responseText);
             const assistantMatch = /^assistant:\s*(.+)$/mi.exec(responseText);
@@ -1513,9 +1513,9 @@ export class ClaudeView extends ItemView {
     const r = result.result as Record<string, unknown>;
     const items: string[] = Array.isArray(r.backlinks) ? r.backlinks as string[]
       : Array.isArray(r.outlinks) ? r.outlinks as string[]
-      : Array.isArray(r.tags) ? r.tags as string[]
-      : Array.isArray(r.files) ? r.files as string[]
-      : [];
+        : Array.isArray(r.tags) ? r.tags as string[]
+          : Array.isArray(r.files) ? r.files as string[]
+            : [];
 
     if (items.length === 0) {
       body.createSpan({ cls: 'cortex-vault-query-empty', text: 'No results.' });
