@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/ScottKirvan/ObsidianCortex/compare/v1.4.3...v1.5.0) (2026-03-29)
+
+
+### Features
+
+* vault query protocol — Claude can query live vault state ([#58](https://github.com/ScottKirvan/ObsidianCortex/issues/58)) ([98dad7e](https://github.com/ScottKirvan/ObsidianCortex/commit/98dad7eb08c4c41f39c426a1de27f5d7c3eb2c65))
+
 ## [1.4.3](https://github.com/ScottKirvan/ObsidianCortex/compare/v1.4.2...v1.4.3) (2026-03-29)
 
 
