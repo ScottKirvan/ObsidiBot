@@ -7,7 +7,7 @@ let verbosity: 'normal' | 'verbose' = 'normal';
 
 export interface LoggerConfig {
   enabled: boolean;
-  /** Vault-relative path, e.g. "_cortex-debug.log" */
+  /** Vault-relative path, e.g. ".obsidian/plugins/cortex/cortex-debug.log" */
   filePath: string;
   verbosity: 'normal' | 'verbose';
 }
