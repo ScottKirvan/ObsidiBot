@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.3](https://github.com/ScottKirvan/ObsidianCortex/compare/v1.4.2...v1.4.3) (2026-03-29)
+
+
+### Bug Fixes
+
+* correct stale log path comment in LoggerConfig ([22fc52b](https://github.com/ScottKirvan/ObsidianCortex/commit/22fc52bc503c47d5ef073d1212dbf2ecd8e9330b))
+* correct stale log path comment in LoggerConfig ([d19b6db](https://github.com/ScottKirvan/ObsidianCortex/commit/d19b6db040a96ef0f2de1753cb51d08473bf16ec))
+
 ## [1.4.2](https://github.com/ScottKirvan/ObsidianCortex/compare/v1.4.1...v1.4.2) (2026-03-29)
 
 
