@@ -9,6 +9,7 @@ import { VaultQuery, VaultQueryResult, resolveQuery, queryLabel, buildInjectMess
 import { QUERY_PREFIX } from './constants';
 import { ContextManager } from './ContextManager';
 import { log, estimateTokens } from './utils/logger';
+import { extractToolDetail } from './utils/toolFormatting';
 import {
   StoredSession,
   saveSession,
@@ -58,36 +59,6 @@ const TOOL_ICONS: Record<string, string> = {
 };
 
 
-function extractToolDetail(tool: string, input: unknown): string {
-  if (!input || typeof input !== 'object') return '';
-  const inp = input as Record<string, unknown>;
-
-  // Try path-like fields first (covers Read, Write, Edit, Glob, Grep, LS…)
-  const pathVal = (inp.file_path ?? inp.path ?? inp.filePath) as string | undefined;
-  if (pathVal) {
-    // For commands that benefit from showing just the filename
-    const key = tool.toLowerCase();
-    if (key !== 'bash' && key !== 'grep' && key !== 'glob') {
-      return pathVal.split(/[\\/]/).pop() ?? pathVal;
-    }
-    return pathVal;
-  }
-
-  // Bash: show the command
-  if (inp.command) {
-    const cmd = inp.command as string;
-    return cmd.length > 70 ? cmd.substring(0, 70) + '…' : cmd;
-  }
-
-  // Web tools
-  if (inp.url) return inp.url as string;
-  if (inp.query) return inp.query as string;
-
-  // Grep / Glob: show the pattern
-  if (inp.pattern) return inp.pattern as string;
-
-  return '';
-}
 
 export class ClaudeView extends ItemView {
   plugin: CortexPlugin;

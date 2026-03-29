@@ -573,7 +573,7 @@
 .cortex-tool-events {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
   padding: 4px 8px;
   background: var(--background-secondary);
   border: 1px solid var(--background-modifier-border);
@@ -586,7 +586,11 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 2px 0;
+  padding: 4px 0;
+}
+
+.cortex-tool-event + .cortex-tool-event {
+  border-top: 1px solid var(--background-modifier-border);
 }
 
 .cortex-tool-event-icon {

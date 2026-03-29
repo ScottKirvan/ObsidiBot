@@ -20,6 +20,7 @@ import { EventEmitter } from 'node:events';
 import { titleFromPrompt, saveSession, loadAllSessions, deleteSession, loadSessionMessages, getSessionsDir } from '../src/utils/sessionStorage';
 import { estimateTokens } from '../src/utils/logger';
 import { parseStreamOutput, permissionArgs } from '../src/ClaudeProcess';
+import { extractToolDetail } from '../src/utils/toolFormatting';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -467,5 +468,82 @@ describe('parseStreamOutput', () => {
     ];
     const result = await emit(proc, chunks);
     assert.equal(result.sessionId, undefined, 'interrupted process should have no sessionId');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// extractToolDetail — label text for tool call events in chat panel
+// ---------------------------------------------------------------------------
+
+describe('extractToolDetail', () => {
+  test('returns empty string for null/non-object input', () => {
+    assert.equal(extractToolDetail('read', null), '');
+    assert.equal(extractToolDetail('read', 'string'), '');
+    assert.equal(extractToolDetail('read', 42), '');
+  });
+
+  test('returns empty string for empty object', () => {
+    assert.equal(extractToolDetail('read', {}), '');
+  });
+
+  test('returns filename only (not full path) for read/write/edit', () => {
+    const input = { file_path: '/vault/notes/my-note.md' };
+    assert.equal(extractToolDetail('read', input), 'my-note.md');
+    assert.equal(extractToolDetail('write', input), 'my-note.md');
+    assert.equal(extractToolDetail('edit', input), 'my-note.md');
+  });
+
+  test('returns full path for grep (not just filename)', () => {
+    const input = { path: '/vault/notes' };
+    assert.equal(extractToolDetail('grep', input), '/vault/notes');
+  });
+
+  test('returns full path for glob (not just filename)', () => {
+    const input = { path: '/vault' };
+    assert.equal(extractToolDetail('glob', input), '/vault');
+  });
+
+  test('returns bash command for bash tool', () => {
+    const input = { command: 'git status' };
+    assert.equal(extractToolDetail('bash', input), 'git status');
+  });
+
+  test('truncates long bash commands at 70 chars with ellipsis', () => {
+    const long = 'x'.repeat(80);
+    const result = extractToolDetail('bash', { command: long });
+    assert.equal(result.length, 71); // 70 chars + '…'
+    assert.ok(result.endsWith('…'));
+  });
+
+  test('returns url for web fetch/search tools', () => {
+    assert.equal(extractToolDetail('webfetch', { url: 'https://example.com' }), 'https://example.com');
+  });
+
+  test('returns query for search tools', () => {
+    assert.equal(extractToolDetail('websearch', { query: 'obsidian plugins' }), 'obsidian plugins');
+  });
+
+  test('returns pattern for grep/glob pattern field', () => {
+    assert.equal(extractToolDetail('grep', { pattern: '*.md' }), '*.md');
+  });
+
+  test('prefers file_path over path over filePath', () => {
+    const input = { file_path: 'a.md', path: 'b/', filePath: 'c.md' };
+    assert.equal(extractToolDetail('read', input), 'a.md');
+  });
+
+  test('falls back to path when file_path absent', () => {
+    const input = { path: '/vault/notes/x.md' };
+    assert.equal(extractToolDetail('read', input), 'x.md');
+  });
+
+  test('falls back to filePath when file_path and path absent', () => {
+    const input = { filePath: '/vault/notes/y.md' };
+    assert.equal(extractToolDetail('read', input), 'y.md');
+  });
+
+  test('handles Windows-style backslash paths', () => {
+    const input = { file_path: 'C:\\vault\\notes\\my-note.md' };
+    assert.equal(extractToolDetail('read', input), 'my-note.md');
   });
 });
