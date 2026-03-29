@@ -1,0 +1,122 @@
+import { App } from 'obsidian';
+import { log, warn } from './utils/logger';
+
+export type VaultQueryType = 'backlinks' | 'outlinks' | 'tags' | 'file-list';
+export type VaultQueryMode = 'show' | 'inject';
+
+export interface VaultQuery {
+  id?: string;
+  query: VaultQueryType;
+  /** Required for backlinks, outlinks, and per-file tags. */
+  path?: string;
+  /** For tags query: find all files with this tag. */
+  tag?: string;
+  /** For file-list: restrict to this folder prefix. */
+  folder?: string;
+  mode: VaultQueryMode;
+}
+
+export interface VaultQueryResult {
+  query: VaultQuery;
+  result: unknown;
+  error?: string;
+}
+
+export function resolveQuery(app: App, query: VaultQuery): VaultQueryResult {
+  log('QueryHandler: resolving', query.query, query.path ?? query.tag ?? query.folder ?? '');
+  try {
+    switch (query.query) {
+
+      case 'backlinks': {
+        if (!query.path) return { query, result: null, error: 'path required' };
+        const file = app.vault.getFileByPath(query.path);
+        if (!file) return { query, result: null, error: `file not found: ${query.path}` };
+        // Use public resolvedLinks (source → {target → count}) and invert for backlinks
+        const backlinks = Object.entries(app.metadataCache.resolvedLinks)
+          .filter(([, targets]) => file.path in targets)
+          .map(([sourcePath]) => sourcePath);
+        log('QueryHandler: backlinks result —', backlinks.length, 'links');
+        return { query, result: { backlinks } };
+      }
+
+      case 'outlinks': {
+        if (!query.path) return { query, result: null, error: 'path required' };
+        const file = app.vault.getFileByPath(query.path);
+        if (!file) return { query, result: null, error: `file not found: ${query.path}` };
+        const cache = app.metadataCache.getFileCache(file);
+        const outlinks = (cache?.links ?? []).map(l => l.link);
+        log('QueryHandler: outlinks result —', outlinks.length, 'links');
+        return { query, result: { outlinks } };
+      }
+
+      case 'tags': {
+        if (query.path) {
+          // Tags on a specific file
+          const file = app.vault.getFileByPath(query.path);
+          if (!file) return { query, result: null, error: `file not found: ${query.path}` };
+          const cache = app.metadataCache.getFileCache(file);
+          const inlineTags = (cache?.tags ?? []).map(t => t.tag);
+          const fmTags: string[] = Array.isArray(cache?.frontmatter?.tags)
+            ? cache!.frontmatter!.tags
+            : [];
+          const tags = [...new Set([...inlineTags, ...fmTags])];
+          log('QueryHandler: tags on file —', tags.length, 'tags');
+          return { query, result: { tags } };
+        } else if (query.tag) {
+          // Files with a specific tag
+          const needle = query.tag.startsWith('#') ? query.tag : `#${query.tag}`;
+          const files: string[] = [];
+          for (const f of app.vault.getMarkdownFiles()) {
+            const cache = app.metadataCache.getFileCache(f);
+            const fileTags = [
+              ...(cache?.tags ?? []).map(t => t.tag),
+              ...(Array.isArray(cache?.frontmatter?.tags) ? cache!.frontmatter!.tags.map((t: string) => t.startsWith('#') ? t : `#${t}`) : []),
+            ];
+            if (fileTags.includes(needle)) files.push(f.path);
+          }
+          log('QueryHandler: files with tag', needle, '—', files.length, 'files');
+          return { query, result: { tag: query.tag, files } };
+        }
+        return { query, result: null, error: 'provide path (tags on a file) or tag (files with a tag)' };
+      }
+
+      case 'file-list': {
+        const prefix = query.folder ? query.folder.replace(/\/?$/, '/') : '';
+        const files = app.vault.getMarkdownFiles()
+          .filter(f => prefix ? f.path.startsWith(prefix) : true)
+          .map(f => f.path)
+          .sort();
+        log('QueryHandler: file-list —', files.length, 'files');
+        return { query, result: { files } };
+      }
+
+      default:
+        warn('QueryHandler: unknown query type:', (query as VaultQuery).query);
+        return { query, result: null, error: `unknown query type: ${(query as VaultQuery).query}` };
+    }
+  } catch (err) {
+    warn('QueryHandler: error resolving query:', err);
+    return { query, result: null, error: String(err) };
+  }
+}
+
+/** Build a human-readable label for display in the UI. */
+export function queryLabel(query: VaultQuery): string {
+  switch (query.query) {
+    case 'backlinks': return `Backlinks for "${query.path}"`;
+    case 'outlinks':  return `Outlinks for "${query.path}"`;
+    case 'tags':      return query.path ? `Tags on "${query.path}"` : `Files tagged #${query.tag}`;
+    case 'file-list': return query.folder ? `Files in "${query.folder}"` : 'All vault files';
+    default:          return query.query;
+  }
+}
+
+/** Serialize results for injection back to Claude as a structured message. */
+export function buildInjectMessage(results: VaultQueryResult[]): string {
+  const parts = results.map(r => {
+    const label = queryLabel(r.query);
+    const body = r.error ? `Error: ${r.error}` : JSON.stringify(r.result, null, 2);
+    return `Query: ${label}\nResult:\n${body}`;
+  });
+  return `[CORTEX_VAULT_RESPONSE]\n${parts.join('\n\n')}\n[/CORTEX_VAULT_RESPONSE]`;
+}

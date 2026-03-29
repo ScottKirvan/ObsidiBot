@@ -1,5 +1,5 @@
 import { existsSync } from 'fs';
-import { ACTION_PREFIX } from './constants';
+import { ACTION_PREFIX, QUERY_PREFIX } from './constants';
 import { join } from 'path';
 import * as os from 'os';
 import { execSync } from 'child_process';
@@ -177,6 +177,8 @@ export interface TokenUsage {
 export interface StreamCallbacks {
   onText: (delta: string) => void;
   onAction: (line: string) => void;
+  /** Called for each @@CORTEX_QUERY line. Optional — existing callers unaffected. */
+  onQuery?: (line: string) => void;
   onToolCall: (tool: string, input: unknown) => void;
   onPermissionDenied: (denials: PermissionDenial[]) => void;
   onUsage: (usage: TokenUsage) => void;
@@ -244,11 +246,13 @@ function handleMessage(
         for (const block of content) {
           if (block.type === 'text') {
             const raw = (block.text as string) ?? '';
-            // Route @@CORTEX_ACTION lines to onAction; pass the rest to onText
+            // Route @@CORTEX_ACTION / @@CORTEX_QUERY lines; pass the rest to onText
             const textLines: string[] = [];
             for (const line of raw.split('\n')) {
               if (line.startsWith(ACTION_PREFIX)) {
                 cb.onAction(line);
+              } else if (line.startsWith(QUERY_PREFIX)) {
+                cb.onQuery?.(line);
               } else {
                 textLines.push(line);
               }

@@ -55,7 +55,24 @@ export class ContextManager {
       `The vault file system is always available.\n\n` +
       `## Command discovery\n` +
       `A complete, searchable list of all available Obsidian command IDs is at \`.obsidian/plugins/cortex/commands.md\`. ` +
-      `Always read this file before using \`run-command\` — never guess a command ID.`;
+      `Always read this file before using \`run-command\` — never guess a command ID.\n\n` +
+      `## Vault query protocol\n` +
+      `You can query live vault state by emitting a specially prefixed JSON line anywhere in your response:\n\n` +
+      `@@CORTEX_QUERY {"query": "<query-type>", ...params, "mode": "show"|"inject"}\n\n` +
+      `These lines are intercepted by Cortex — never shown to the user raw. Available queries:\n\n` +
+      `| Query | Required params | Optional params | Description |\n` +
+      `|---|---|---|---|\n` +
+      `| \`backlinks\` | \`path\` | — | Files that link to \`path\` |\n` +
+      `| \`outlinks\` | \`path\` | — | Files that \`path\` links to |\n` +
+      `| \`tags\` | \`path\` OR \`tag\` | — | Tags on a file, or files with a given tag |\n` +
+      `| \`file-list\` | — | \`folder\` | Markdown files in the vault (or a subfolder) |\n\n` +
+      `**Modes:**\n` +
+      `- \`mode: "show"\` — result is displayed to the user as a card. Use when you want to present vault info directly.\n` +
+      `- \`mode: "inject"\` — result is injected back to you automatically so you can continue reasoning. Use when you need vault info to complete a task.\n\n` +
+      `Example — find all backlinks for the active note and continue working:\n` +
+      `@@CORTEX_QUERY {"query": "backlinks", "path": "Notes/MyNote.md", "mode": "inject"}\n\n` +
+      `Example — show the user all files tagged #project:\n` +
+      `@@CORTEX_QUERY {"query": "tags", "tag": "project", "mode": "show"}`;
 
     if (this.commandAllowlist.length > 0) {
       const rows = this.commandAllowlist

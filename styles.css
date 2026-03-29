@@ -877,3 +877,57 @@
 .cortex-context-clear:hover {
   color: var(--text-normal);
 }
+
+/* Vault query result card (show + inject modes) */
+.cortex-vault-query-card {
+  margin: 4px 0 2px 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 0.85em;
+}
+
+.cortex-vault-query-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  font-size: 0.9em;
+}
+
+.cortex-vault-query-icon {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: var(--color-accent);
+}
+
+.cortex-vault-query-label {
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+.cortex-vault-query-body {
+  padding: 6px 10px;
+  background: var(--background-primary);
+}
+
+.cortex-vault-query-list {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.cortex-vault-query-list li {
+  font-family: var(--font-monospace);
+  font-size: 0.9em;
+}
+
+.cortex-vault-query-empty,
+.cortex-vault-query-error {
+  color: var(--text-faint);
+  font-style: italic;
+}
