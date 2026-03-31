@@ -730,6 +730,9 @@ export class ClaudeView extends ItemView {
     toolEventsEl.style.display = 'none';
     const assistantEl = responseGroupEl.createDiv({ cls: 'cortex-message cortex-assistant' });
     const statusEl = assistantEl.createSpan({ cls: 'cortex-status', text: 'Thinking…' });
+    // Separate span for streaming text so statusEl is preserved as a sibling and can be
+    // re-appended when tool calls fire after text has already been streamed (fix for #67).
+    const streamingTextEl = assistantEl.createSpan({ cls: 'cortex-streaming-text' });
     const tokenStatsEl = responseGroupEl.createDiv({ cls: 'cortex-token-stats' });
     tokenStatsEl.style.display = 'none';
     this.scrollToBottom();
@@ -835,7 +838,7 @@ export class ClaudeView extends ItemView {
           uiBridgeActionCount += actions.length;
           actions.forEach(a => executeAction(this.app, a, this.bridgeOptions()));
         }
-        assistantEl.setText(accumulated);
+        streamingTextEl.textContent = accumulated;
         this.scrollToBottom();
       },
       onAction: (line) => {
@@ -856,6 +859,7 @@ export class ClaudeView extends ItemView {
       },
       onToolCall: (tool, input) => {
         const key = tool.toLowerCase();
+        if (!statusEl.isConnected) assistantEl.appendChild(statusEl);
         statusEl.setText(TOOL_STATUS[key] ?? 'Working…');
         log('onToolCall —', tool, JSON.stringify(input).substring(0, 120));
         toolCallCount++;
@@ -1546,6 +1550,7 @@ export class ClaudeView extends ItemView {
     toolEventsEl.style.display = 'none';
     const assistantEl = responseGroupEl.createDiv({ cls: 'cortex-message cortex-assistant' });
     const statusEl = assistantEl.createSpan({ cls: 'cortex-status', text: 'Processing vault data…' });
+    const streamingTextEl = assistantEl.createSpan({ cls: 'cortex-streaming-text' });
     const tokenStatsEl = responseGroupEl.createDiv({ cls: 'cortex-token-stats' });
     tokenStatsEl.style.display = 'none';
     this.setSendState(true);
@@ -1585,7 +1590,7 @@ export class ClaudeView extends ItemView {
           uiBridgeActionCount += actions.length;
           actions.forEach(a => executeAction(this.app, a, this.bridgeOptions()));
         }
-        assistantEl.setText(accumulated);
+        streamingTextEl.textContent = accumulated;
         this.scrollToBottom();
       },
       onAction: (line) => {
@@ -1599,6 +1604,7 @@ export class ClaudeView extends ItemView {
       },
       onToolCall: (tool, input) => {
         const key = tool.toLowerCase();
+        if (!statusEl.isConnected) assistantEl.appendChild(statusEl);
         statusEl.setText(TOOL_STATUS[key] ?? 'Working…');
         toolCallCount++;
         if (toolEventsEl.style.display === 'none') toolEventsEl.style.display = 'flex';

@@ -469,6 +469,44 @@ describe('parseStreamOutput', () => {
     const result = await emit(proc, chunks);
     assert.equal(result.sessionId, undefined, 'interrupted process should have no sessionId');
   });
+
+  // -------------------------------------------------------------------------
+  // Multi-step sequence (fix for #67: status indicator lost after first text)
+  // -------------------------------------------------------------------------
+
+  test('fires onText then onToolCall then onText in multi-step response', async () => {
+    // This sequence is the root cause of #67: text arrives first (causing statusEl removal),
+    // then tool calls fire. The DOM fix in ClaudeView.ts re-appends statusEl on onToolCall
+    // if it is no longer connected. This test documents that parseStreamOutput fires callbacks
+    // in the correct order so the fix can rely on it.
+    const proc = mockProc();
+    const eventLog: string[] = [];
+    const chunks = [
+      JSON.stringify({ type: 'system', session_id: 'seq-sess' }) + '\n',
+      JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'I will read the file.' }] } }) + '\n',
+      JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Read', input: { file_path: 'note.md' } }] } }) + '\n',
+      JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: ' Done.' }] } }) + '\n',
+      JSON.stringify({ type: 'result', session_id: 'seq-sess' }) + '\n',
+    ];
+    await new Promise<void>((resolve) => {
+      parseStreamOutput(proc, {
+        onText: (t) => eventLog.push(`text:${t}`),
+        onAction: () => {},
+        onToolCall: (name) => eventLog.push(`tool:${name}`),
+        onPermissionDenied: () => {},
+        onUsage: () => {},
+        onDone: () => resolve(),
+        onError: () => {},
+      });
+      for (const chunk of chunks) proc.stdout.emit('data', Buffer.from(chunk));
+      proc.emit('close', 0);
+    });
+    assert.deepEqual(eventLog, [
+      'text:I will read the file.',
+      'tool:Read',
+      'text: Done.',
+    ], 'callbacks must fire in stream order: text → tool → text');
+  });
 });
 
 // ---------------------------------------------------------------------------
