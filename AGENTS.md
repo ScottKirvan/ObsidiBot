@@ -187,25 +187,26 @@ a known state.
 - Prefer the `Glob` tool for finding files by pattern and the `Grep` tool for searching file contents over `find | xargs grep` bash patterns — they require no extra permissions and avoid compound command prompts
 - **Never use `cd && <command>` compound patterns** — they trigger a security prompt that blocks autonomous operation. Always use full paths or command-specific flags instead:
 
-  | Instead of | Use |
-  |---|---|
-  | `cd ~/ObsidianCortex && git <cmd>` | `git -C ~/ObsidianCortex <cmd>` |
+  | Instead of                         | Use                                   |
+  | ---------------------------------- | ------------------------------------- |
+  | `cd ~/ObsidianCortex && git <cmd>` | `git -C ~/ObsidianCortex <cmd>`       |
   | `cd ~/ObsidianCortex && npm <cmd>` | `npm --prefix ~/ObsidianCortex <cmd>` |
-  | `cd ~/ObsidianCortex && ls <path>` | `ls ~/ObsidianCortex/<path>` |
+  | `cd ~/ObsidianCortex && ls <path>` | `ls ~/ObsidianCortex/<path>`          |
   | `cd ~/ObsidianCortex && npx <cmd>` | `npx --prefix ~/ObsidianCortex <cmd>` |
 - Branch naming: `feat/short-description`, `fix/short-description`, `docs/short-description`
 - One issue per branch. Branch from your fork’s `main` (after syncing upstream). PR targets upstream `main`.
 - **Commit messages must follow Conventional Commits** — release-please depends on this:
 
-|Prefix     |When to use                        |
-|-----------|-----------------------------------|
-|`feat:`    |New user-visible feature           |
-|`fix:`     |Bug fix                            |
-|`docs:`    |Documentation only                 |
-|`test:`    |Adding or fixing tests             |
-|`refactor:`|Code change with no behavior change|
-|`chore:`   |Build, deps, config                |
+| Prefix      | When to use                         |
+| ----------- | ----------------------------------- |
+| `feat:`     | New user-visible feature            |
+| `fix:`      | Bug fix                             |
+| `docs:`     | Documentation only                  |
+| `test:`     | Adding or fixing tests              |
+| `refactor:` | Code change with no behavior change |
+| `chore:`    | Build, deps, config                 |
 
+- Write commit message to temp file (use Write tool or echo): `git -C ~/ObsidianCortex commit -F /tmp/commit-msg.txt`
 - Breaking changes: add `!` after prefix (`feat!:`) and include `BREAKING CHANGE:` in footer.
 - Scope is optional but encouraged: `feat(session):`, `fix(ui):`, `docs(readme):`
 
@@ -397,3 +398,4 @@ Do not attempt workarounds. Log the blocker clearly and wait for instruction.
 - Do not leave the repo checked out on a feature branch — always `git checkout main` when done
 - Do not `git push --force` or `git push --force-with-lease` to any branch without explicit user approval
 - Do not close, reopen, or delete issues — only comment, assign, and label
+- Do not use `$()` command substitution in bash commands — use the `Write` tool to create a temp file (e.g. `/tmp/commit-msg.txt`) and reference it instead (e.g. `git commit -F /tmp/commit-msg.txt`)
