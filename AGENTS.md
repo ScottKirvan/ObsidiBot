@@ -184,6 +184,7 @@ a known state.
 
 ## Branching and Commits
 
+- Prefer the `Glob` tool for finding files by pattern and the `Grep` tool for searching file contents over `find | xargs grep` bash patterns — they require no extra permissions and avoid compound command prompts
 - **Never use `cd && <command>` compound patterns** — they trigger a security prompt that blocks autonomous operation. Always use full paths or command-specific flags instead:
 
   | Instead of | Use |
