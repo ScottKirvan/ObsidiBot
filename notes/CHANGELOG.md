@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.5.3](https://github.com/ScottKirvan/ObsidianCortex/compare/v1.5.2...v1.5.3) (2026-03-31)
+
+
+### Bug Fixes
+
+* strip @@CORTEX_ACTION lines when replaying session history ([8043700](https://github.com/ScottKirvan/ObsidianCortex/commit/8043700352082d53c919eae06b754e7e50b41930))
+* strip @@CORTEX_ACTION lines when replaying session history ([aaef64c](https://github.com/ScottKirvan/ObsidianCortex/commit/aaef64cc77b2c99361ec2d91f206860c8e9c5753)), closes [#83](https://github.com/ScottKirvan/ObsidianCortex/issues/83)
+* **ui:** ArrowDown no longer blocks cursor movement in recalled multiline messages ([433d633](https://github.com/ScottKirvan/ObsidianCortex/commit/433d633aed28fbfa212b2ce69ded7c1a47d3cec6))
+* **ui:** prevent ArrowDown from blocking cursor movement in recalled multiline messages ([8775c9e](https://github.com/ScottKirvan/ObsidianCortex/commit/8775c9e55e30f6cebc75c08414501edc0249f554)), closes [#82](https://github.com/ScottKirvan/ObsidianCortex/issues/82)
+
 ## [1.5.2](https://github.com/ScottKirvan/ObsidianCortex/compare/v1.5.1...v1.5.2) (2026-03-29)
 
 
