@@ -1,7 +1,7 @@
 {
   "id": "obsidibot",
   "name": "ObsidiBot",
-  "version": "1.5.4",
+  "version": "2.0.0",
   "minAppVersion": "1.4.0",
   "description": "Claude Code agentic file management for Obsidian vaults",
   "author": "Scott Kirvan",

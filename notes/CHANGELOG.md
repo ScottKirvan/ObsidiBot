@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/ScottKirvan/ObsidiBot/compare/v1.5.4...v2.0.0) (2026-04-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* API BREAKING CHANGE: Rename project and all APIs
+
+### Features
+
+* API BREAKING CHANGE: Rename project and all APIs ([4748f72](https://github.com/ScottKirvan/ObsidiBot/commit/4748f722fc3167e711f49197c2495c2db6a2546a))
+
 ## [1.5.4](https://github.com/ScottKirvan/ObsidiBot/compare/v1.5.3...v1.5.4) (2026-03-31)
 
 
