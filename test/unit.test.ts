@@ -585,3 +585,51 @@ describe('extractToolDetail', () => {
     assert.equal(extractToolDetail('read', input), 'my-note.md');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Export button disabled state logic
+// ---------------------------------------------------------------------------
+
+describe('export button disabled state', () => {
+  /** Minimal stand-in for the messagesEl + exportBtn interaction in updateExportBtn(). */
+  function makeContext(messageCount: number) {
+    const mockMessages = Array.from({ length: messageCount }, () => ({}));
+    const messagesEl = { querySelectorAll: (_: string) => mockMessages };
+    const exportBtn = { disabled: messageCount === 0 };
+    return { messagesEl, exportBtn };
+  }
+
+  function updateExportBtn(ctx: ReturnType<typeof makeContext>) {
+    const hasMessages = ctx.messagesEl.querySelectorAll('.obsidibot-message').length > 0;
+    ctx.exportBtn.disabled = !hasMessages;
+  }
+
+  test('button is disabled when there are no messages', () => {
+    const ctx = makeContext(0);
+    updateExportBtn(ctx);
+    assert.equal(ctx.exportBtn.disabled, true);
+  });
+
+  test('button is enabled when there is at least one message', () => {
+    const ctx = makeContext(1);
+    updateExportBtn(ctx);
+    assert.equal(ctx.exportBtn.disabled, false);
+  });
+
+  test('button stays enabled with multiple messages', () => {
+    const ctx = makeContext(5);
+    updateExportBtn(ctx);
+    assert.equal(ctx.exportBtn.disabled, false);
+  });
+
+  test('button becomes disabled again after messages cleared', () => {
+    const ctx = makeContext(3);
+    updateExportBtn(ctx);
+    assert.equal(ctx.exportBtn.disabled, false);
+
+    // Simulate messagesEl.empty() — zero children remain
+    ctx.messagesEl.querySelectorAll = (_: string) => [];
+    updateExportBtn(ctx);
+    assert.equal(ctx.exportBtn.disabled, true);
+  });
+});
