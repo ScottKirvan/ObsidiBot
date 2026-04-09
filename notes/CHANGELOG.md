@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.1.0](https://github.com/ScottKirvan/ObsidiBot/compare/v2.0.0...v2.1.0) (2026-04-09)
+
+
+### Features
+
+* **ui:** add export-to-vault button to chat panel toolbar ([8140483](https://github.com/ScottKirvan/ObsidiBot/commit/8140483c0f9fa0b84f7a7ab99cb554ac69249558))
+* **ui:** add export-to-vault button to chat panel toolbar ([03913f1](https://github.com/ScottKirvan/ObsidiBot/commit/03913f1542ef537dcf9a19b69b8afb9a6f9b5281))
+
+
+### Bug Fixes
+
+* The project rename broke legacy sessions - fixed. ([2061c91](https://github.com/ScottKirvan/ObsidiBot/commit/2061c914d3c18579f895d7462fb82c4fc782d443))
+
 ## [2.0.0](https://github.com/ScottKirvan/ObsidiBot/compare/v1.5.4...v2.0.0) (2026-04-09)
 
 
