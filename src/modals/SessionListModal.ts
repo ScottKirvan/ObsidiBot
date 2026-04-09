@@ -215,7 +215,8 @@ export class SessionListModal extends Modal {
     deleteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       if (confirm(`Delete session "${session.title}"? This cannot be undone.`)) {
-        deleteSession(this.vaultRoot, session.id);
+        const legacyDir = (session as StoredSession & { _legacyDir?: string })._legacyDir;
+        deleteSession(this.vaultRoot, session.id, legacyDir);
         this.sessions = this.sessions.filter(s => s.id !== session.id);
         this.filteredSessions = this.filteredSessions.filter(s => s.id !== session.id);
         this.rerenderList();

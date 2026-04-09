@@ -19,29 +19,57 @@ export function getSessionsDir(vaultRoot: string): string {
   return join(vaultRoot, '.obsidian', 'obsidibot', 'sessions');
 }
 
+/** Legacy path used before the project was renamed from Cortex to ObsidiBot. */
+export function getLegacySessionsDir(vaultRoot: string): string {
+  return join(vaultRoot, '.obsidian', 'cortex', 'sessions');
+}
+
 export function saveSession(vaultRoot: string, session: StoredSession): void {
   const dir = getSessionsDir(vaultRoot);
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, `${session.id}.json`), JSON.stringify(session, null, 2));
+  // If this session came from the legacy dir, migrate it: delete the old file
+  // after saving to the new location. Strip _legacyDir before persisting.
+  const legacyDir = (session as StoredSession & { _legacyDir?: string })._legacyDir;
+  const { _legacyDir: _ignored, ...toSave } = session as StoredSession & { _legacyDir?: string };
+  writeFileSync(join(dir, `${toSave.id}.json`), JSON.stringify(toSave, null, 2));
+  if (legacyDir) {
+    const oldPath = join(legacyDir, `${toSave.id}.json`);
+    if (existsSync(oldPath)) unlinkSync(oldPath);
+    // Clear the marker so subsequent saves don't look for the old file again
+    delete (session as StoredSession & { _legacyDir?: string })._legacyDir;
+  }
 }
 
 export function loadAllSessions(vaultRoot: string): StoredSession[] {
-  const dir = getSessionsDir(vaultRoot);
-  if (!existsSync(dir)) return [];
-  try {
-    return readdirSync(dir)
-      .filter(f => f.endsWith('.json'))
-      .map(f => JSON.parse(readFileSync(join(dir, f), 'utf8')) as StoredSession)
-      .sort((a, b) => {
-        const aHas = a.sortOrder !== undefined;
-        const bHas = b.sortOrder !== undefined;
-        if (aHas && bHas) return a.sortOrder! - b.sortOrder!;
-        if (aHas || bHas) return aHas ? -1 : 1;
-        return b.updatedAt.localeCompare(a.updatedAt);
-      });
-  } catch {
-    return [];
-  }
+  const loadDir = (dir: string, legacy: boolean): StoredSession[] => {
+    if (!existsSync(dir)) return [];
+    try {
+      return readdirSync(dir)
+        .filter(f => f.endsWith('.json'))
+        .map(f => {
+          const s = JSON.parse(readFileSync(join(dir, f), 'utf8')) as StoredSession;
+          if (legacy) (s as StoredSession & { _legacyDir?: string })._legacyDir = dir;
+          return s;
+        });
+    } catch {
+      return [];
+    }
+  };
+
+  const currentSessions = loadDir(getSessionsDir(vaultRoot), false);
+  const legacySessions = loadDir(getLegacySessionsDir(vaultRoot), true);
+
+  // Merge: deduplicate by id (current takes precedence if same id exists in both)
+  const seen = new Set(currentSessions.map(s => s.id));
+  const merged = [...currentSessions, ...legacySessions.filter(s => !seen.has(s.id))];
+
+  return merged.sort((a, b) => {
+    const aHas = a.sortOrder !== undefined;
+    const bHas = b.sortOrder !== undefined;
+    if (aHas && bHas) return a.sortOrder! - b.sortOrder!;
+    if (aHas || bHas) return aHas ? -1 : 1;
+    return b.updatedAt.localeCompare(a.updatedAt);
+  });
 }
 
 /**
@@ -62,8 +90,9 @@ export function saveSessionAtTop(vaultRoot: string, session: StoredSession): voi
   saveSession(vaultRoot, session);
 }
 
-export function deleteSession(vaultRoot: string, sessionId: string): void {
-  const filePath = join(getSessionsDir(vaultRoot), `${sessionId}.json`);
+export function deleteSession(vaultRoot: string, sessionId: string, fromDir?: string): void {
+  const dir = fromDir ?? getSessionsDir(vaultRoot);
+  const filePath = join(dir, `${sessionId}.json`);
   if (existsSync(filePath)) unlinkSync(filePath);
 }
 
