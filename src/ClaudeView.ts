@@ -65,6 +65,7 @@ export class ClaudeView extends ItemView {
   private inputEl: HTMLTextAreaElement;
   private messagesEl: HTMLElement;
   private sendBtn: HTMLButtonElement;
+  private exportBtn: HTMLButtonElement;
   private sessionStatusEl: HTMLElement;
   private currentSessionId: string | undefined;      // Claude's session ID (used for --resume)
   private currentSessionFileId: string | undefined;  // JSON file id (may differ from claudeSessionId)
@@ -112,6 +113,12 @@ export class ClaudeView extends ItemView {
     setIcon(newSessionBtn, 'message-square-plus');
     newSessionBtn.title = 'New session';
     newSessionBtn.addEventListener('click', () => this.startNewSession());
+
+    this.exportBtn = toolbar.createEl('button', { cls: 'obsidibot-icon-btn' });
+    setIcon(this.exportBtn, 'download');
+    this.exportBtn.title = 'Export session to vault';
+    this.exportBtn.disabled = true;
+    this.exportBtn.addEventListener('click', () => this.exportToVault());
 
     // Spacer pushes help/settings to the right
     toolbar.createDiv({ cls: 'obsidibot-toolbar-spacer' });
@@ -353,6 +360,7 @@ export class ClaudeView extends ItemView {
     this.currentSessionTitle = 'Untitled session';
     this.currentSessionCreatedAt = now;
     this.messagesEl.empty();
+    this.updateExportBtn();
     this.updateSessionStatus();
     log('New session placeholder created:', sessionId);
   }
@@ -643,6 +651,7 @@ export class ClaudeView extends ItemView {
     this.currentSessionTitle = session.title;
     this.currentSessionCreatedAt = session.createdAt;
     this.messagesEl.empty();
+    this.updateExportBtn();
     this.updateSessionStatus();
 
     this.plugin.settings.lastActiveSessionId = session.id;
@@ -1697,7 +1706,15 @@ export class ClaudeView extends ItemView {
     const el = this.messagesEl.createDiv({ cls: `obsidibot-message obsidibot-${role}` });
     el.setText(text);
     this.scrollToBottom();
+    this.updateExportBtn();
     return el;
+  }
+
+  /** Enable or disable the export button based on whether the session has any messages. */
+  private updateExportBtn() {
+    if (!this.exportBtn) return;
+    const hasMessages = this.messagesEl.querySelectorAll('.obsidibot-message').length > 0;
+    this.exportBtn.disabled = !hasMessages;
   }
 }
 
