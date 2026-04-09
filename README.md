@@ -182,6 +182,7 @@ ObsidiBot is free, open source, and maintained in spare time. If it saves you ho
 
 ---
 
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for project layout, development setup, commit conventions, and PR process.
