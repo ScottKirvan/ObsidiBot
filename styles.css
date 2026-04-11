@@ -422,6 +422,20 @@
   margin-bottom: 12px;
 }
 
+.obsidibot-export-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 0.9em;
+  color: var(--text-normal);
+}
+
+.obsidibot-export-checkbox-row label {
+  cursor: pointer;
+  user-select: none;
+}
+
 .obsidibot-export-btn-row {
   display: flex;
   justify-content: flex-end;

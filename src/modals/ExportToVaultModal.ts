@@ -4,7 +4,7 @@ export class ExportToVaultModal extends Modal {
   constructor(
     app: App,
     private defaultPath: string,
-    private onConfirm: (path: string) => void,
+    private onConfirm: (path: string, openAfter: boolean) => void,
   ) {
     super(app);
   }
@@ -22,13 +22,23 @@ export class ExportToVaultModal extends Modal {
       attr: { type: 'text', value: this.defaultPath },
     });
 
+    const checkboxRow = contentEl.createDiv({ cls: 'obsidibot-export-checkbox-row' });
+    const checkbox = checkboxRow.createEl('input', {
+      attr: { type: 'checkbox', id: 'obsidibot-open-after', checked: true },
+    });
+    checkbox.checked = true;
+    checkboxRow.createEl('label', {
+      text: 'Open note after creation',
+      attr: { for: 'obsidibot-open-after' },
+    });
+
     const btnRow = contentEl.createDiv({ cls: 'obsidibot-export-btn-row' });
     btnRow.createEl('button', { text: 'Cancel' })
       .addEventListener('click', () => this.close());
     const exportBtn = btnRow.createEl('button', { text: 'Save to vault', cls: 'mod-cta' });
     exportBtn.addEventListener('click', () => {
       const path = input.value.trim();
-      if (path) { this.onConfirm(path); this.close(); }
+      if (path) { this.onConfirm(path, checkbox.checked); this.close(); }
     });
 
     input.addEventListener('keydown', (e) => {
