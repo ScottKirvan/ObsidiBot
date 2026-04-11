@@ -86,6 +86,7 @@ export class ClaudeView extends ItemView {
   private atDropdownItems: TFile[] = [];
   private tokenGaugeEl: SVGElement;
   private attachPopoverEl: HTMLElement;
+  private compactConfirmEl: HTMLElement;
   private sessionContextTokens = 0;
   static readonly CONTEXT_WINDOW = 200_000;
   private atDropdownIndex = -1;
@@ -203,7 +204,7 @@ export class ClaudeView extends ItemView {
     arc.setAttribute('stroke-dasharray', String(C));
     arc.setAttribute('stroke-dashoffset', String(C));
     svg.appendChild(track); svg.appendChild(arc);
-    svg.addEventListener('click', () => this.compactSession());
+    svg.addEventListener('click', () => this.showCompactConfirm());
     svg.style.display = 'none';
     inputToolbar.appendChild(svg);
     this.tokenGaugeEl = svg;
@@ -293,6 +294,18 @@ export class ClaudeView extends ItemView {
       e.preventDefault();
       void this.handleDroppedFiles(e.dataTransfer.files);
     });
+
+    // Compact-session confirmation panel (slide-in from right)
+    this.compactConfirmEl = root.createDiv({ cls: 'obsidibot-compact-confirm' });
+    this.compactConfirmEl.createEl('p', {
+      text: 'Compact this session? Earlier messages will be summarized to free up context.',
+      cls: 'obsidibot-compact-confirm-msg',
+    });
+    const confirmBtnRow = this.compactConfirmEl.createDiv({ cls: 'obsidibot-compact-confirm-btns' });
+    const doCompactBtn = confirmBtnRow.createEl('button', { text: 'Compact', cls: 'mod-cta obsidibot-compact-confirm-btn' });
+    doCompactBtn.addEventListener('click', () => { this.hideCompactConfirm(); this.compactSession(); });
+    const cancelCompactBtn = confirmBtnRow.createEl('button', { text: 'Cancel', cls: 'obsidibot-compact-confirm-btn' });
+    cancelCompactBtn.addEventListener('click', () => this.hideCompactConfirm());
 
     // If Claude binary is missing, show setup guide and stop here
     if (!this.plugin.claudeBinaryPath) {
@@ -1344,6 +1357,18 @@ export class ClaudeView extends ItemView {
     this.tokenGaugeEl.setAttribute('aria-label', label);
     const titleEl = this.tokenGaugeEl.querySelector('title');
     if (titleEl) titleEl.textContent = label;
+  }
+
+  private showCompactConfirm() {
+    if (!this.currentSessionId) {
+      new Notice('ObsidiBot: no active session to compact.');
+      return;
+    }
+    this.compactConfirmEl.classList.add('is-visible');
+  }
+
+  private hideCompactConfirm() {
+    this.compactConfirmEl.classList.remove('is-visible');
   }
 
   private compactSession() {
