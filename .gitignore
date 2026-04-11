@@ -4,6 +4,7 @@ main.js
 _obsidibot-debug.log
 # Generated at runtime when plugin dev folder is opened directly as a vault
 /obsidian-commands.md
+/commands.md
 obsidibot-debug.log
 # Pasted images saved by ObsidiBot clipboard paste feature
 tmp/
