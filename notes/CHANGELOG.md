@@ -5,11 +5,8 @@
 
 ### Features
 
-* **export:** add "Open note after creation" checkbox ([6764607](https://github.com/ScottKirvan/ObsidiBot/commit/6764607e3655cd73f6f120ab6a7134c2e2d934bc))
 * **export:** add "Open note after creation" checkbox to export modal ([8051aa9](https://github.com/ScottKirvan/ObsidiBot/commit/8051aa92322dad88b2dad03afcae6e18072363b3)), closes [#96](https://github.com/ScottKirvan/ObsidiBot/issues/96)
 * **session:** fix replay fidelity — XML context tags + compaction filtering ([bb92ce9](https://github.com/ScottKirvan/ObsidiBot/commit/bb92ce90d423730187f60f737cc8c77e3024a912)), closes [#99](https://github.com/ScottKirvan/ObsidiBot/issues/99)
-* **session:** fix session replay fidelity + compaction filtering ([#99](https://github.com/ScottKirvan/ObsidiBot/issues/99)) ([adce41d](https://github.com/ScottKirvan/ObsidiBot/commit/adce41d5f3e2c782d4c6e23d1a76d30b7c84cccc))
-* **ui:** slide-in confirmation panel before session compression ([344221e](https://github.com/ScottKirvan/ObsidiBot/commit/344221e95078e363d20a0f3ff8e89b7a4eb9e794))
 * **ui:** slide-in confirmation panel before session compression ([82ac437](https://github.com/ScottKirvan/ObsidiBot/commit/82ac437d65b54c38e29478fd1c2b7a7b4b982bad)), closes [#95](https://github.com/ScottKirvan/ObsidiBot/issues/95)
 
 
@@ -27,7 +24,6 @@
 
 ### Features
 
-* **ui:** add export-to-vault button to chat panel toolbar ([8140483](https://github.com/ScottKirvan/ObsidiBot/commit/8140483c0f9fa0b84f7a7ab99cb554ac69249558))
 * **ui:** add export-to-vault button to chat panel toolbar ([03913f1](https://github.com/ScottKirvan/ObsidiBot/commit/03913f1542ef537dcf9a19b69b8afb9a6f9b5281))
 
 
@@ -58,9 +54,7 @@
 
 ### Bug Fixes
 
-* strip @@CORTEX_ACTION lines when replaying session history ([8043700](https://github.com/ScottKirvan/ObsidiBot/commit/8043700352082d53c919eae06b754e7e50b41930))
 * strip @@CORTEX_ACTION lines when replaying session history ([aaef64c](https://github.com/ScottKirvan/ObsidiBot/commit/aaef64cc77b2c99361ec2d91f206860c8e9c5753)), closes [#83](https://github.com/ScottKirvan/ObsidiBot/issues/83)
-* **ui:** ArrowDown no longer blocks cursor movement in recalled multiline messages ([433d633](https://github.com/ScottKirvan/ObsidiBot/commit/433d633aed28fbfa212b2ce69ded7c1a47d3cec6))
 * **ui:** prevent ArrowDown from blocking cursor movement in recalled multiline messages ([8775c9e](https://github.com/ScottKirvan/ObsidiBot/commit/8775c9e55e30f6cebc75c08414501edc0249f554)), closes [#82](https://github.com/ScottKirvan/ObsidiBot/issues/82)
 
 ## [1.5.2](https://github.com/ScottKirvan/ObsidiBot/compare/v1.5.1...v1.5.2) (2026-03-29)
@@ -75,9 +69,7 @@
 
 ### Bug Fixes
 
-* **ui:** add visual separation between sequential tool call events ([73ff0ab](https://github.com/ScottKirvan/ObsidiBot/commit/73ff0abd91565b92b93eed8553d33d0d31705471))
 * **ui:** add visual separation between sequential tool call events ([0bd9be6](https://github.com/ScottKirvan/ObsidiBot/commit/0bd9be6933f7841f04899ed6e7a0cc51bdc67fba)), closes [#68](https://github.com/ScottKirvan/ObsidiBot/issues/68)
-* **ui:** suppress misleading "Interrupted." on clean UI-bridge-only turns ([9180ef0](https://github.com/ScottKirvan/ObsidiBot/commit/9180ef027870faf11f4f0599b006b89f2fcf78cd))
 * **ui:** suppress misleading Interrupted message on clean UI-bridge-only turns ([3ba0e68](https://github.com/ScottKirvan/ObsidiBot/commit/3ba0e68ec94dbd44303429afde448d44092397b3)), closes [#76](https://github.com/ScottKirvan/ObsidiBot/issues/76)
 
 ## [1.5.0](https://github.com/ScottKirvan/ObsidiBot/compare/v1.4.3...v1.5.0) (2026-03-29)
@@ -92,7 +84,6 @@
 
 ### Bug Fixes
 
-* correct stale log path comment in LoggerConfig ([22fc52b](https://github.com/ScottKirvan/ObsidiBot/commit/22fc52bc503c47d5ef073d1212dbf2ecd8e9330b))
 * correct stale log path comment in LoggerConfig ([d19b6db](https://github.com/ScottKirvan/ObsidiBot/commit/d19b6db040a96ef0f2de1753cb51d08473bf16ec))
 
 ## [1.4.2](https://github.com/ScottKirvan/ObsidiBot/compare/v1.4.1...v1.4.2) (2026-03-29)
@@ -101,7 +92,6 @@
 ### Bug Fixes
 
 * refreshSessionContext now re-injects full orientation ([#69](https://github.com/ScottKirvan/ObsidiBot/issues/69)) ([ce70f88](https://github.com/ScottKirvan/ObsidiBot/commit/ce70f88858b9ed633cfc307ad529cdd50b914a19))
-* refreshSessionContext re-injects full orientation ([#69](https://github.com/ScottKirvan/ObsidiBot/issues/69)) ([18ea92f](https://github.com/ScottKirvan/ObsidiBot/commit/18ea92f6505183976ccc71b41ded32b7c21dfec6))
 
 ## [1.4.1](https://github.com/ScottKirvan/ObsidiBot/compare/v1.4.0...v1.4.1) (2026-03-29)
 
@@ -182,7 +172,6 @@
 
 * [#40](https://github.com/ScottKirvan/ObsidiBot/issues/40) using @ to inject full notes as context ([75f8cf0](https://github.com/ScottKirvan/ObsidiBot/commit/75f8cf025ec9806913520e3c0b1a9777f70288c2))
 * native permission modes, replace --dangerously-skip-permissions ([#18](https://github.com/ScottKirvan/ObsidiBot/issues/18)) ([3c41827](https://github.com/ScottKirvan/ObsidiBot/commit/3c4182799d683a1025ab74e72a0e0db0efde82ab))
-* replace dangerously-skip-permissions with native permission modes ([#18](https://github.com/ScottKirvan/ObsidiBot/issues/18)) ([1e986d8](https://github.com/ScottKirvan/ObsidiBot/commit/1e986d824b1bcbf3edff7d43134dc9581940ea5b))
 * tool call visibility, selection context injection, session replay fix ([#38](https://github.com/ScottKirvan/ObsidiBot/issues/38), [#39](https://github.com/ScottKirvan/ObsidiBot/issues/39), [#17](https://github.com/ScottKirvan/ObsidiBot/issues/17)) ([61d91ef](https://github.com/ScottKirvan/ObsidiBot/commit/61d91ef629d8e0f57ce4ac11bfe0723966a5099a))
 
 
@@ -279,32 +268,9 @@
 * remove obsidian data files from the repo - oops ([32020e9](https://github.com/ScottKirvan/ObsidiBot/commit/32020e96cf48784feac119ad31d599da2289e6b7))
 * sendOnEnter defaults to true now. Added a css box around the user message in the chat panel. ([ed2eb6b](https://github.com/ScottKirvan/ObsidiBot/commit/ed2eb6be9bfff52ad4ba20f899c022299c158224))
 
-## 1.0.0 (2026-03-09)
 
-
-### Features
-
-* Markdown rendering of responses in the panel ([5856475](https://github.com/ScottKirvan/ObsidiBot/commit/5856475a3b620237b91242737b42181681978f69))
-* plugin bootstrapped - beginning testing/debugging of basic systems ([5c4d024](https://github.com/ScottKirvan/ObsidiBot/commit/5c4d024cc87cef6cf792f087e348f51d72db36ca))
-* send-on-enter option added to settings and functionality.  Plus, lots of visual cleanup - looking sexy ([b9acdf8](https://github.com/ScottKirvan/ObsidiBot/commit/b9acdf831532eb676dbdabcf94cb36d19d6f52b5))
-* session, context, and memory management ([16d288b](https://github.com/ScottKirvan/ObsidiBot/commit/16d288bc1b0dbcb8d47d243fe93bb07768d16f9c))
-* support built-in, configurable context: _claude-context.md ([66f777a](https://github.com/ScottKirvan/ObsidiBot/commit/66f777ac7df88cb4d0bb34b3f1f478fb7af3ee31))
-
-
-### Bug Fixes
-
-* added session persistence - claude will remember your name now ([dd76ab9](https://github.com/ScottKirvan/ObsidiBot/commit/dd76ab96e533b12c9331fbbfc753e8c2b17f459b))
-* adding the code workspace to the project ([78f9d16](https://github.com/ScottKirvan/ObsidiBot/commit/78f9d16acfa4e3dbd4e1430ef00435c831c560c5))
-* claude initialization ([7759e80](https://github.com/ScottKirvan/ObsidiBot/commit/7759e8090705f88c00f2cc5a1b6853557ae2d543))
-* cleanup verbose logging ([4c691ba](https://github.com/ScottKirvan/ObsidiBot/commit/4c691ba8969713c907bd418bef32085aa4ed9a39))
-* copy/paste working ([8cdd637](https://github.com/ScottKirvan/ObsidiBot/commit/8cdd637bcf489c6ffba98040fd4691dd5d865a07))
-* first working version - read/write files in the vault ([b635aa9](https://github.com/ScottKirvan/ObsidiBot/commit/b635aa9ee707a5cde8614c92ea42bbc33d2699f9))
-* multiline input text now displays correctly in the chat panel ([2f0b5ad](https://github.com/ScottKirvan/ObsidiBot/commit/2f0b5adc280ad6466b3022145b456d7ff8550917))
-* remove obsidian data files from the repo - oops ([32020e9](https://github.com/ScottKirvan/ObsidiBot/commit/32020e96cf48784feac119ad31d599da2289e6b7))
-* sendOnEnter defaults to true now. Added a css box around the user message in the chat panel. ([ed2eb6b](https://github.com/ScottKirvan/ObsidiBot/commit/ed2eb6be9bfff52ad4ba20f899c022299c158224))
-
-## Changelog
 >[!NOTE]
 > This file and it's version format is automatically 
 > generated by [Please-Release](https://github.com/googleapis/release-please-action), 
 > and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+

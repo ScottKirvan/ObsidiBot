@@ -48,6 +48,45 @@ jobs:
           cd dist
           zip -r obsidibot-${{ needs.release-please.outputs.tag_name }}.zip obsidibot/
 
+      - name: Polish release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          cat > /tmp/header.md << 'HEADER_EOF'
+          ## 🧠 ObsidiBot — Claude Code Agentic File Management for Obsidian
+
+          > ObsidiBot puts a full Claude Code agent in Obsidian's sidebar. It reads, writes, reorganizes, and creates notes — and hands you the results inside Obsidian. No API key needed.
+          >
+          > → [Full feature list and User Guide](https://github.com/ScottKirvan/ObsidiBot#readme)
+
+          ### 📋 Requirements
+          - Obsidian **desktop** (Windows, Mac, Linux — no mobile)
+          - [Claude Code CLI](https://code.claude.com/docs/en/overview#native-install-recommended) installed and authenticated
+
+          ### 📦 Installation
+          **Recommended (beta):** Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) → Add Beta Plugin → `ScottKirvan/ObsidiBot`
+
+          **Manual:** Download `obsidibot-<version>.zip` below → extract → move `obsidibot/` folder to `<vault>/.obsidian/plugins/` → enable in Obsidian settings
+
+          > ⚠️ **Public beta** — not yet in the Obsidian community plugin browser. Feedback welcome on [Discord](https://discord.gg/TN6XJSNK5Y) or via [GitHub Issues](https://github.com/ScottKirvan/ObsidiBot/issues).
+
+          ---
+
+          ### 🆕 Changes in this Release
+          HEADER_EOF
+
+          cat > /tmp/footer.md << 'FOOTER_EOF'
+
+          ---
+
+          📖 [User Guide](https://www.scottkirvan.com/ObsidiBot/) · 💬 [Discord](https://discord.gg/TN6XJSNK5Y) · 🐛 [Report a Bug](https://github.com/ScottKirvan/ObsidiBot/issues/new?template=bug_report.md) · ✨ [Request Feature](https://github.com/ScottKirvan/ObsidiBot/issues/new?template=feature_request.md)
+          FOOTER_EOF
+
+          gh release view "$TAG" --json body -q '.body' > /tmp/current_notes.md
+          cat /tmp/header.md /tmp/current_notes.md /tmp/footer.md > /tmp/full_notes.md
+          gh release edit "$TAG" --notes-file /tmp/full_notes.md
+
       - name: Upload release assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
