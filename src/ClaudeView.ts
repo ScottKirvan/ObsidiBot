@@ -1758,12 +1758,14 @@ export class ClaudeView extends ItemView {
   private appendUserMessageWithContexts(text: string, contexts: InjectedContext[]): HTMLElement {
     const el = this.messagesEl.createDiv({ cls: 'obsidibot-message obsidibot-user' });
 
-    const badgeStrip = el.createDiv({ cls: 'obsidibot-replay-context-strip' });
-    for (const ctx of contexts) {
-      const badge = badgeStrip.createSpan({ cls: 'obsidibot-replay-context-badge' });
-      const iconEl = badge.createSpan({ cls: 'obsidibot-pending-context-icon' });
-      setIcon(iconEl, this.iconForContextType(ctx.type));
-      badge.createSpan({ cls: 'obsidibot-replay-context-label', text: this.labelForContext(ctx) });
+    if (contexts.length > 0) {
+      const badgeStrip = el.createDiv({ cls: 'obsidibot-replay-context-strip' });
+      for (const ctx of contexts) {
+        const badge = badgeStrip.createSpan({ cls: 'obsidibot-replay-context-badge' });
+        const iconEl = badge.createSpan({ cls: 'obsidibot-replay-context-icon' });
+        setIcon(iconEl, this.iconForContextType(ctx.type));
+        badge.createSpan({ cls: 'obsidibot-replay-context-label', text: this.labelForContext(ctx) });
+      }
     }
 
     el.createSpan({ text });

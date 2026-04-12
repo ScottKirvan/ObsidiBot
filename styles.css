@@ -477,7 +477,7 @@
 .obsidibot-replay-context-strip {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
   margin-bottom: 5px;
 }
 
@@ -485,14 +485,25 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: var(--background-modifier-border);
-  border-radius: 4px;
-  padding: 2px 6px;
   font-size: 0.78em;
+  opacity: 0.8;
+}
+
+.obsidibot-replay-context-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--interactive-accent);
+}
+
+.obsidibot-replay-context-icon svg {
+  width: 11px;
+  height: 11px;
 }
 
 .obsidibot-replay-context-label {
-  color: var(--text-muted);
+  color: var(--interactive-accent);
+  font-weight: 500;
 }
 
 /* Markdown content inside assistant messages */
