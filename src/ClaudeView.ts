@@ -12,6 +12,8 @@ import { log, estimateTokens } from './utils/logger';
 import { extractToolDetail } from './utils/toolFormatting';
 import {
   StoredSession,
+  InjectedContext,
+  InjectedContextType,
   saveSession,
   saveSessionAtTop,
   loadAllSessions,
@@ -691,8 +693,15 @@ export class ClaudeView extends ItemView {
       const messages = loadSessionMessages(session.claudeSessionId);
       if (messages.length > 0) {
         for (const msg of messages) {
-          if (msg.role === 'user') {
-            this.appendMessage('user', msg.content);
+          if (msg.role === 'separator') {
+            const divider = this.messagesEl.createDiv({ cls: 'obsidibot-compaction-divider' });
+            divider.setText(msg.content);
+          } else if (msg.role === 'user') {
+            if (msg.contexts && msg.contexts.length > 0) {
+              this.appendUserMessageWithContexts(msg.content, msg.contexts);
+            } else {
+              this.appendMessage('user', msg.content);
+            }
           } else {
             const el = this.appendMessage('assistant', '');
             const { clean } = extractActions(msg.content);
@@ -754,7 +763,21 @@ export class ClaudeView extends ItemView {
     this.inputDraft = '';
     this.inputEl.value = '';
     this.setSendState(true);
-    this.appendMessage('user', prompt);
+    // Capture manually-added contexts now (before pendingContexts is cleared after send)
+    // and convert to InjectedContext for badge display in the message bubble.
+    const liveContextBadges: InjectedContext[] = this.pendingContexts
+      .filter(c => c.type === 'url' || c.type === 'image' || c.type === 'pdf' || !c.type || c.type === 'text')
+      .map(c => {
+        if (c.type === 'url')   return { type: 'url' as const,        url: c.text };
+        if (c.type === 'image') return { type: 'image' as const,      source: c.source, path: c.text };
+        if (c.type === 'pdf')   return { type: 'pdf' as const,        source: c.source, path: c.text };
+        return                         { type: 'attachment' as const,  source: c.source };
+      });
+    if (liveContextBadges.length > 0) {
+      this.appendUserMessageWithContexts(prompt, liveContextBadges);
+    } else {
+      this.appendMessage('user', prompt);
+    }
 
     // Response group: tool events (above) + assistant bubble + token stats (below)
     const responseGroupEl = this.messagesEl.createDiv({ cls: 'obsidibot-response-group' });
@@ -780,14 +803,14 @@ export class ClaudeView extends ItemView {
       if (isSplit && this.plugin.settings.injectSplitPaneFiles) {
         const paths = leaves.map(l => (l.view as any).file?.path).filter(Boolean) as string[];
         const unique = [...new Set(paths)];
-        activeFileNote = `[Open in split view: ${unique.join(' | ')}]\n\n`;
+        activeFileNote = `<obsidibot-context type="split-view" paths="${unique.join('|')}"></obsidibot-context>\n\n`;
       } else if (isStacked && this.plugin.settings.injectStackedTabFiles) {
         const paths = leaves.map(l => (l.view as any).file?.path).filter(Boolean) as string[];
         const unique = [...new Set(paths)];
-        activeFileNote = `[Open in stacked tabs: ${unique.join(' | ')}]\n\n`;
+        activeFileNote = `<obsidibot-context type="stacked-tabs" paths="${unique.join('|')}"></obsidibot-context>\n\n`;
       } else {
         const activeFile = this.app.workspace.getActiveFile();
-        activeFileNote = activeFile ? `[Active note: ${activeFile.path}]\n\n` : '';
+        activeFileNote = activeFile ? `<obsidibot-context type="active-note" path="${activeFile.path}"></obsidibot-context>\n\n` : '';
       }
     }
 
@@ -795,10 +818,10 @@ export class ClaudeView extends ItemView {
     if (this.pendingContexts.length > 0) {
       const contextBlock = this.pendingContexts
         .map(c => {
-          if (c.type === 'url') return `**[URL: ${c.text}]**`;
-          if (c.type === 'image') return `**[Attached image: ${c.source}]**\nRead this file to view the image: ${c.text}`;
-          if (c.type === 'pdf') return `**[Attached PDF: ${c.source}]**\nRead this file to view the document: ${c.text}`;
-          return `**[Context from ${c.source}]**\n${c.text}`;
+          if (c.type === 'url') return `<obsidibot-context type="url" url="${c.text}"></obsidibot-context>`;
+          if (c.type === 'image') return `<obsidibot-context type="image" source="${c.source}" path="${c.text}">Read this file to view the image: ${c.text}</obsidibot-context>`;
+          if (c.type === 'pdf') return `<obsidibot-context type="pdf" source="${c.source}" path="${c.text}">Read this file to view the document: ${c.text}</obsidibot-context>`;
+          return `<obsidibot-context type="attachment" source="${c.source}">${c.text}</obsidibot-context>`;
         })
         .join('\n\n');
       finalPrompt = `${contextBlock}\n\n${prompt}`;
@@ -826,7 +849,7 @@ export class ClaudeView extends ItemView {
       }
     } else {
       if (this.pendingSystemMessage) {
-        finalPrompt = `${this.pendingSystemMessage}\n\n${finalPrompt}`;
+        finalPrompt = `<obsidibot-context type="system-message">${this.pendingSystemMessage}</obsidibot-context>\n\n${finalPrompt}`;
         this.pendingSystemMessage = null;
       }
       log(`[CONTINUE SESSION ${this.currentSessionId?.substring(0, 8)}] Prompt: ~${estimateTokens(finalPrompt)} tokens`);
@@ -1743,6 +1766,58 @@ export class ClaudeView extends ItemView {
     this.scrollToBottom();
     this.updateExportBtn();
     return el;
+  }
+
+  /** Render a replayed user message with context badges above the text.
+   *  Only manually-added context types are shown — auto-injected ones
+   *  (active-note, split-view, stacked-tabs, system-message) are silent
+   *  in the live UI and should stay silent on replay. */
+  private appendUserMessageWithContexts(text: string, contexts: InjectedContext[]): HTMLElement {
+    const el = this.messagesEl.createDiv({ cls: 'obsidibot-message obsidibot-user' });
+
+    const manualContexts = contexts.filter(ctx =>
+      (ctx.type === 'attachment' || ctx.type === 'url' || ctx.type === 'image' || ctx.type === 'pdf')
+    );
+    if (manualContexts.length > 0) {
+      const badgeStrip = el.createDiv({ cls: 'obsidibot-replay-context-strip' });
+      for (const ctx of manualContexts) {
+        const badge = badgeStrip.createSpan({ cls: 'obsidibot-replay-context-badge' });
+        const iconEl = badge.createSpan({ cls: 'obsidibot-replay-context-icon' });
+        setIcon(iconEl, this.iconForContextType(ctx.type));
+        badge.createSpan({ cls: 'obsidibot-replay-context-label', text: this.labelForContext(ctx) });
+      }
+    }
+
+    el.createSpan({ text });
+    this.scrollToBottom();
+    this.updateExportBtn();
+    return el;
+  }
+
+  private iconForContextType(type: InjectedContextType): string {
+    switch (type) {
+      case 'image':        return 'image';
+      case 'pdf':          return 'file-text';
+      case 'url':          return 'link';
+      case 'system-message': return 'refresh-cw';
+      case 'split-view':
+      case 'stacked-tabs': return 'layout';
+      default:             return 'paperclip';
+    }
+  }
+
+  private labelForContext(ctx: InjectedContext): string {
+    switch (ctx.type) {
+      case 'active-note':   return ctx.path ?? 'active note';
+      case 'split-view':    return `Split: ${ctx.paths?.replace(/\|/g, ', ') ?? ''}`;
+      case 'stacked-tabs':  return `Stacked: ${ctx.paths?.replace(/\|/g, ', ') ?? ''}`;
+      case 'attachment':    return ctx.source ?? 'attachment';
+      case 'url':           return ctx.url ?? 'url';
+      case 'image':         return ctx.source ?? 'image';
+      case 'pdf':           return ctx.source ?? 'pdf';
+      case 'system-message': return 'context refresh';
+      default:              return ctx.type;
+    }
   }
 
   /** Enable or disable the export button based on whether the session has any messages. */
