@@ -763,7 +763,21 @@ export class ClaudeView extends ItemView {
     this.inputDraft = '';
     this.inputEl.value = '';
     this.setSendState(true);
-    this.appendMessage('user', prompt);
+    // Capture manually-added contexts now (before pendingContexts is cleared after send)
+    // and convert to InjectedContext for badge display in the message bubble.
+    const liveContextBadges: InjectedContext[] = this.pendingContexts
+      .filter(c => c.type === 'url' || c.type === 'image' || c.type === 'pdf' || !c.type || c.type === 'text')
+      .map(c => {
+        if (c.type === 'url')   return { type: 'url' as const,        url: c.text };
+        if (c.type === 'image') return { type: 'image' as const,      source: c.source, path: c.text };
+        if (c.type === 'pdf')   return { type: 'pdf' as const,        source: c.source, path: c.text };
+        return                         { type: 'attachment' as const,  source: c.source };
+      });
+    if (liveContextBadges.length > 0) {
+      this.appendUserMessageWithContexts(prompt, liveContextBadges);
+    } else {
+      this.appendMessage('user', prompt);
+    }
 
     // Response group: tool events (above) + assistant bubble + token stats (below)
     const responseGroupEl = this.messagesEl.createDiv({ cls: 'obsidibot-response-group' });
@@ -805,8 +819,8 @@ export class ClaudeView extends ItemView {
       const contextBlock = this.pendingContexts
         .map(c => {
           if (c.type === 'url') return `<obsidibot-context type="url" url="${c.text}"></obsidibot-context>`;
-          if (c.type === 'image') return `<obsidibot-context type="image" source="${c.source}" path="${c.text}"></obsidibot-context>\nRead this file to view the image: ${c.text}`;
-          if (c.type === 'pdf') return `<obsidibot-context type="pdf" source="${c.source}" path="${c.text}"></obsidibot-context>\nRead this file to view the document: ${c.text}`;
+          if (c.type === 'image') return `<obsidibot-context type="image" source="${c.source}" path="${c.text}">Read this file to view the image: ${c.text}</obsidibot-context>`;
+          if (c.type === 'pdf') return `<obsidibot-context type="pdf" source="${c.source}" path="${c.text}">Read this file to view the document: ${c.text}</obsidibot-context>`;
           return `<obsidibot-context type="attachment" source="${c.source}">${c.text}</obsidibot-context>`;
         })
         .join('\n\n');
