@@ -42,6 +42,7 @@
   flex-direction: column;
   border-top: 1px solid var(--background-modifier-border);
   flex-shrink: 0;
+  position: relative;
 }
 
 .obsidibot-input {
@@ -982,20 +983,14 @@
 }
 
 /* ── Compact-session confirmation panel ── */
-.obsidibot-view {
-  position: relative;
-}
-
 .obsidibot-compact-confirm {
   position: absolute;
   right: 0;
-  bottom: 0;
+  bottom: 100%;
   width: min(280px, 92%);
   background: var(--background-secondary);
   border: 1px solid var(--background-modifier-border);
-  border-right: none;
-  border-bottom: none;
-  border-radius: 6px 0 0 0;
+  border-radius: 6px 0 6px 6px;
   padding: 12px 14px;
   box-shadow: -4px -4px 16px rgba(0, 0, 0, 0.15);
   z-index: 50;

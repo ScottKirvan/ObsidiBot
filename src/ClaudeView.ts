@@ -295,8 +295,8 @@ export class ClaudeView extends ItemView {
       void this.handleDroppedFiles(e.dataTransfer.files);
     });
 
-    // Compact-session confirmation panel (slide-in from right)
-    this.compactConfirmEl = root.createDiv({ cls: 'obsidibot-compact-confirm' });
+    // Compact-session confirmation panel (slide-in from right, anchored above input area)
+    this.compactConfirmEl = inputArea.createDiv({ cls: 'obsidibot-compact-confirm' });
     this.compactConfirmEl.createEl('p', {
       text: 'Compact this session? Earlier messages will be summarized to free up context.',
       cls: 'obsidibot-compact-confirm-msg',
