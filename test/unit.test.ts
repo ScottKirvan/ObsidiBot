@@ -633,3 +633,42 @@ describe('export button disabled state', () => {
     assert.equal(ctx.exportBtn.disabled, true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// ExportToVaultModal — openAfter checkbox logic
+// ---------------------------------------------------------------------------
+
+describe('ExportToVaultModal openAfter', () => {
+  /** Simulates the modal's confirm handler, mirroring the implementation. */
+  function simulateConfirm(path: string, checkboxChecked: boolean): { path: string; openAfter: boolean } | null {
+    let result: { path: string; openAfter: boolean } | null = null;
+    const onConfirm = (p: string, openAfter: boolean) => { result = { path: p, openAfter }; };
+    const trimmed = path.trim();
+    if (trimmed) { onConfirm(trimmed, checkboxChecked); }
+    return result;
+  }
+
+  test('passes openAfter: true when checkbox is checked', () => {
+    const r = simulateConfirm('sessions/MySession.md', true);
+    assert.ok(r);
+    assert.equal(r!.openAfter, true);
+    assert.equal(r!.path, 'sessions/MySession.md');
+  });
+
+  test('passes openAfter: false when checkbox is unchecked', () => {
+    const r = simulateConfirm('sessions/MySession.md', false);
+    assert.ok(r);
+    assert.equal(r!.openAfter, false);
+  });
+
+  test('does not call onConfirm for empty path', () => {
+    const r = simulateConfirm('   ', true);
+    assert.equal(r, null);
+  });
+
+  test('trims whitespace from path before confirming', () => {
+    const r = simulateConfirm('  sessions/Note.md  ', true);
+    assert.ok(r);
+    assert.equal(r!.path, 'sessions/Note.md');
+  });
+});

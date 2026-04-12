@@ -417,6 +417,14 @@ export class ClaudeView extends ItemView {
     log('Session exported to vault:', notePath);
   }
 
+  private async openExportedNote(notePath: string): Promise<void> {
+    if (!notePath.endsWith('.md')) notePath += '.md';
+    const file = this.app.vault.getAbstractFileByPath(notePath);
+    if (file instanceof TFile) {
+      await this.app.workspace.getLeaf(false).openFile(file);
+    }
+  }
+
   /** Export the currently visible session to a vault note. */
   async exportToVault(): Promise<void> {
     const messages = this.messagesEl.querySelectorAll('.obsidibot-message');
@@ -427,12 +435,13 @@ export class ClaudeView extends ItemView {
     const safeName = title.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim();
     const folder = this.plugin.settings.exportFolder.trim();
     const defaultPath = folder ? `${folder}/${safeName} ${date}.md` : `${safeName} ${date}.md`;
-    new ExportToVaultModal(this.app, defaultPath, async (notePath) => {
+    new ExportToVaultModal(this.app, defaultPath, async (notePath, openAfter) => {
       const notice = new Notice('Preparing transcript…', 0);
       const { userLabel, assistantLabel } = await this.queryConversationLabels();
       notice.hide();
       const content = this.buildExportMarkdown(title, sessionId, userLabel, assistantLabel);
       await this.writeExportNote(notePath, content);
+      if (openAfter) await this.openExportedNote(notePath);
     }).open();
   }
 
@@ -444,7 +453,7 @@ export class ClaudeView extends ItemView {
     const safeName = session.title.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim();
     const folder = this.plugin.settings.exportFolder.trim();
     const defaultPath = folder ? `${folder}/${safeName} ${date}.md` : `${safeName} ${date}.md`;
-    new ExportToVaultModal(this.app, defaultPath, async (notePath) => {
+    new ExportToVaultModal(this.app, defaultPath, async (notePath, openAfter) => {
       const dateStr = new Date(session.updatedAt).toISOString().slice(0, 10);
       let md = `---\nobsidibot_session: true\ndate: ${dateStr}\nsession_id: ${session.claudeSessionId}\nmessages: ${messages.length}\n---\n\n`;
       md += `# ${session.title}\n\n`;
@@ -453,6 +462,7 @@ export class ClaudeView extends ItemView {
         md += `**${label}:**\n${msg.content.trim()}\n\n`;
       }
       await this.writeExportNote(notePath, md);
+      if (openAfter) await this.openExportedNote(notePath);
     }).open();
   }
 
