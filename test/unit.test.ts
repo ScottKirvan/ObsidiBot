@@ -634,7 +634,6 @@ describe('export button disabled state', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
 // ExportToVaultModal — openAfter checkbox logic
 // ---------------------------------------------------------------------------
 
@@ -670,5 +669,68 @@ describe('ExportToVaultModal openAfter', () => {
     const r = simulateConfirm('  sessions/Note.md  ', true);
     assert.ok(r);
     assert.equal(r!.path, 'sessions/Note.md');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Compact-confirm panel — show/hide logic
+// ---------------------------------------------------------------------------
+
+describe('compact confirm panel', () => {
+  /** Minimal panel state mirroring showCompactConfirm / hideCompactConfirm. */
+  function makePanel(sessionId: string | undefined) {
+    const classes = new Set<string>();
+    const panelEl = {
+      classList: {
+        add: (c: string) => classes.add(c),
+        remove: (c: string) => classes.delete(c),
+        has: (c: string) => classes.has(c),
+      },
+    };
+
+    function showCompactConfirm() {
+      if (!sessionId) return 'no-session';
+      panelEl.classList.add('is-visible');
+      return 'shown';
+    }
+
+    function hideCompactConfirm() {
+      panelEl.classList.remove('is-visible');
+    }
+
+    return { panelEl, showCompactConfirm, hideCompactConfirm };
+  }
+
+  test('panel is hidden by default (no is-visible class)', () => {
+    const { panelEl } = makePanel('sess-1');
+    assert.equal(panelEl.classList.has('is-visible'), false);
+  });
+
+  test('show adds is-visible when session exists', () => {
+    const { panelEl, showCompactConfirm } = makePanel('sess-1');
+    const result = showCompactConfirm();
+    assert.equal(result, 'shown');
+    assert.equal(panelEl.classList.has('is-visible'), true);
+  });
+
+  test('show does nothing when no session', () => {
+    const { panelEl, showCompactConfirm } = makePanel(undefined);
+    const result = showCompactConfirm();
+    assert.equal(result, 'no-session');
+    assert.equal(panelEl.classList.has('is-visible'), false);
+  });
+
+  test('hide removes is-visible', () => {
+    const { panelEl, showCompactConfirm, hideCompactConfirm } = makePanel('sess-1');
+    showCompactConfirm();
+    assert.equal(panelEl.classList.has('is-visible'), true);
+    hideCompactConfirm();
+    assert.equal(panelEl.classList.has('is-visible'), false);
+  });
+
+  test('hide is safe to call when panel is already hidden', () => {
+    const { panelEl, hideCompactConfirm } = makePanel('sess-1');
+    assert.doesNotThrow(() => hideCompactConfirm());
+    assert.equal(panelEl.classList.has('is-visible'), false);
   });
 });

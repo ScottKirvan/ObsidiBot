@@ -42,6 +42,7 @@
   flex-direction: column;
   border-top: 1px solid var(--background-modifier-border);
   flex-shrink: 0;
+  position: relative;
 }
 
 .obsidibot-input {
@@ -979,4 +980,42 @@
 .obsidibot-vault-query-error {
   color: var(--text-faint);
   font-style: italic;
+}
+
+/* ── Compact-session confirmation panel ── */
+.obsidibot-compact-confirm {
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  width: min(280px, 92%);
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px 0 6px 6px;
+  padding: 12px 14px;
+  box-shadow: -4px -4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 50;
+  transform: translateX(110%);
+  transition: transform 220ms ease;
+}
+
+.obsidibot-compact-confirm.is-visible {
+  transform: translateX(0);
+}
+
+.obsidibot-compact-confirm-msg {
+  margin: 0 0 10px;
+  font-size: 0.88em;
+  color: var(--text-normal);
+  line-height: 1.4;
+}
+
+.obsidibot-compact-confirm-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.obsidibot-compact-confirm-btn {
+  font-size: 0.85em;
+  padding: 4px 10px;
 }
