@@ -1754,13 +1754,19 @@ export class ClaudeView extends ItemView {
     return el;
   }
 
-  /** Render a replayed user message with context badges above the text. */
+  /** Render a replayed user message with context badges above the text.
+   *  Only manually-added context types are shown — auto-injected ones
+   *  (active-note, split-view, stacked-tabs, system-message) are silent
+   *  in the live UI and should stay silent on replay. */
   private appendUserMessageWithContexts(text: string, contexts: InjectedContext[]): HTMLElement {
     const el = this.messagesEl.createDiv({ cls: 'obsidibot-message obsidibot-user' });
 
-    if (contexts.length > 0) {
+    const manualContexts = contexts.filter(ctx =>
+      (ctx.type === 'attachment' || ctx.type === 'url' || ctx.type === 'image' || ctx.type === 'pdf')
+    );
+    if (manualContexts.length > 0) {
       const badgeStrip = el.createDiv({ cls: 'obsidibot-replay-context-strip' });
-      for (const ctx of contexts) {
+      for (const ctx of manualContexts) {
         const badge = badgeStrip.createSpan({ cls: 'obsidibot-replay-context-badge' });
         const iconEl = badge.createSpan({ cls: 'obsidibot-replay-context-icon' });
         setIcon(iconEl, this.iconForContextType(ctx.type));
