@@ -24,9 +24,9 @@ export class ExportToVaultModal extends Modal {
 
     const checkboxRow = contentEl.createDiv({ cls: 'obsidibot-export-checkbox-row' });
     const checkbox = checkboxRow.createEl('input', {
-      attr: { type: 'checkbox', id: 'obsidibot-open-after', checked: true },
+      attr: { type: 'checkbox', id: 'obsidibot-open-after' },
     });
-    checkbox.checked = true;
+    checkbox.checked = false;
     checkboxRow.createEl('label', {
       text: 'Open note after creation',
       attr: { for: 'obsidibot-open-after' },
