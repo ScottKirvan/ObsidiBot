@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.2.0](https://github.com/ScottKirvan/ObsidiBot/compare/v2.1.0...v2.2.0) (2026-04-12)
+
+
+### Features
+
+* **export:** add "Open note after creation" checkbox ([6764607](https://github.com/ScottKirvan/ObsidiBot/commit/6764607e3655cd73f6f120ab6a7134c2e2d934bc))
+* **export:** add "Open note after creation" checkbox to export modal ([8051aa9](https://github.com/ScottKirvan/ObsidiBot/commit/8051aa92322dad88b2dad03afcae6e18072363b3)), closes [#96](https://github.com/ScottKirvan/ObsidiBot/issues/96)
+* **session:** fix replay fidelity — XML context tags + compaction filtering ([bb92ce9](https://github.com/ScottKirvan/ObsidiBot/commit/bb92ce90d423730187f60f737cc8c77e3024a912)), closes [#99](https://github.com/ScottKirvan/ObsidiBot/issues/99)
+* **session:** fix session replay fidelity + compaction filtering ([#99](https://github.com/ScottKirvan/ObsidiBot/issues/99)) ([adce41d](https://github.com/ScottKirvan/ObsidiBot/commit/adce41d5f3e2c782d4c6e23d1a76d30b7c84cccc))
+* **ui:** slide-in confirmation panel before session compression ([344221e](https://github.com/ScottKirvan/ObsidiBot/commit/344221e95078e363d20a0f3ff8e89b7a4eb9e794))
+* **ui:** slide-in confirmation panel before session compression ([82ac437](https://github.com/ScottKirvan/ObsidiBot/commit/82ac437d65b54c38e29478fd1c2b7a7b4b982bad)), closes [#95](https://github.com/ScottKirvan/ObsidiBot/issues/95)
+
+
+### Bug Fixes
+
+* **export:** change open-after checkbox default to unchecked ([743bb9c](https://github.com/ScottKirvan/ObsidiBot/commit/743bb9cc5aa62c4222451b047205d037ab26e4ca))
+* **session:** filter all &lt;local-command-*&gt; entries from replay ([c9d3fd9](https://github.com/ScottKirvan/ObsidiBot/commit/c9d3fd93f9b99ca5a6aadac4da1b6b68caf74548))
+* **session:** fix blank white badge boxes in replayed user messages ([2e784f9](https://github.com/ScottKirvan/ObsidiBot/commit/2e784f9d4f6079fd8096cadeab7d671a21d6a910))
+* **session:** only show badges for manually-added context on replay ([01d41f2](https://github.com/ScottKirvan/ObsidiBot/commit/01d41f2fdbb864313c278a21966fa1d545d73c08))
+* **session:** show context badges in live bubble + fix image/pdf replay text ([d56e629](https://github.com/ScottKirvan/ObsidiBot/commit/d56e629f8c3cb9057e2c1499016d12cdca5c1e5c))
+* **ui:** anchor compact confirm panel above input area ([0e0c0d0](https://github.com/ScottKirvan/ObsidiBot/commit/0e0c0d09a4d5df52a87997ec8ca9da39705aa532))
+
 ## [2.1.0](https://github.com/ScottKirvan/ObsidiBot/compare/v2.0.0...v2.1.0) (2026-04-09)
 
 
