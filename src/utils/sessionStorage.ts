@@ -153,7 +153,8 @@ function extractObsidiBotContexts(content: string): { clean: string; contexts: I
 }
 
 const COMPACTION_SUMMARY_PREFIX = 'This session is being continued from a previous conversation';
-const INTERNAL_USER_PREFIXES = ['<local-command-caveat>', '<command-name>'];
+// All <local-command-*> variants (caveat, stdout, stderr, etc.) are internal noise
+const INTERNAL_USER_PREFIXES = ['<local-command-', '<command-name>'];
 
 function findJsonlPath(claudeSessionId: string): string | undefined {
   const projectsDir = join(homedir(), '.claude', 'projects');
