@@ -101,11 +101,59 @@ export function titleFromPrompt(prompt: string): string {
   return first.length > 60 ? first.substring(0, 60) + '…' : first;
 }
 
+export type InjectedContextType =
+  | 'active-note'
+  | 'split-view'
+  | 'stacked-tabs'
+  | 'attachment'
+  | 'url'
+  | 'image'
+  | 'pdf'
+  | 'system-message';
+
+export interface InjectedContext {
+  type: InjectedContextType;
+  path?: string;     // active-note
+  paths?: string;    // split-view, stacked-tabs (pipe-separated)
+  source?: string;   // attachment, image, pdf
+  url?: string;      // url
+  content?: string;  // attachment body text
+}
+
 export interface ChatMessage {
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'separator';
   content: string;
   timestamp: string;
+  contexts?: InjectedContext[];
 }
+
+/**
+ * Strip all <obsidibot-context> tags from content and return the clean text
+ * plus a structured list of the injected contexts for badge rendering on replay.
+ */
+function extractObsidiBotContexts(content: string): { clean: string; contexts: InjectedContext[] } {
+  const contexts: InjectedContext[] = [];
+  // Matches both self-closing-style and body-carrying tags
+  const TAG_RE = /<obsidibot-context\s([^>]*)>([\s\S]*?)<\/obsidibot-context>/g;
+  const ATTR_RE = /(\w[\w-]*)="([^"]*)"/g;
+
+  const clean = content.replace(TAG_RE, (_match, attrStr: string, body: string) => {
+    const ctx: Record<string, string> = {};
+    let m: RegExpExecArray | null;
+    ATTR_RE.lastIndex = 0;
+    while ((m = ATTR_RE.exec(attrStr)) !== null) {
+      ctx[m[1]] = m[2];
+    }
+    if (body.trim()) ctx['content'] = body.trim();
+    if (ctx['type']) contexts.push(ctx as unknown as InjectedContext);
+    return '';
+  });
+
+  return { clean: clean.trim(), contexts };
+}
+
+const COMPACTION_SUMMARY_PREFIX = 'This session is being continued from a previous conversation';
+const INTERNAL_USER_PREFIXES = ['<local-command-caveat>', '<command-name>'];
 
 function findJsonlPath(claudeSessionId: string): string | undefined {
   const projectsDir = join(homedir(), '.claude', 'projects');
@@ -139,18 +187,31 @@ export function loadSessionMessages(claudeSessionId: string): ChatMessage[] {
     const lines = readFileSync(jsonlPath, 'utf8').split('\n').filter(l => l.trim());
     const messages: ChatMessage[] = [];
     let isFirstUser = true;
+    let skipNextUser = false;
 
     for (const line of lines) {
       try {
         const entry = JSON.parse(line) as Record<string, unknown>;
 
+        // Compaction boundary — insert a divider and skip the summary that follows
+        if (entry.type === 'system' && (entry as Record<string, unknown>).subtype === 'compact_boundary') {
+          skipNextUser = true;
+          messages.push({ role: 'separator', content: '─── conversation compacted ───', timestamp: entry.timestamp as string });
+          continue;
+        }
+
         if (entry.type === 'user') {
+          // Drop the compaction summary that immediately follows a compact_boundary
+          if (skipNextUser) {
+            skipNextUser = false;
+            continue;
+          }
+
           const msg = entry.message as Record<string, unknown> | undefined;
           let content: string;
           if (typeof msg?.content === 'string') {
             content = msg.content;
           } else if (Array.isArray(msg?.content)) {
-            // Claude stores user messages as content block arrays in some formats
             content = (msg.content as Array<Record<string, unknown>>)
               .filter(b => b.type === 'text')
               .map(b => b.text as string)
@@ -158,12 +219,28 @@ export function loadSessionMessages(claudeSessionId: string): ChatMessage[] {
           } else {
             content = '';
           }
+
+          // Filter internal command noise
+          if (INTERNAL_USER_PREFIXES.some(p => content.startsWith(p))) continue;
+          // Belt-and-suspenders: catch any compaction summary not preceded by compact_boundary
+          if (content.startsWith(COMPACTION_SUMMARY_PREFIX)) continue;
+
           if (isFirstUser) {
             // Strip injected vault context from display
             content = content.replace(/<vault_context>[\s\S]*?<\/vault_context>\s*/g, '').trim();
             isFirstUser = false;
           }
-          if (content) messages.push({ role: 'user', content, timestamp: entry.timestamp as string });
+
+          // Strip <obsidibot-context> tags and collect metadata for badge rendering
+          const { clean, contexts } = extractObsidiBotContexts(content);
+          if (clean || contexts.length > 0) {
+            messages.push({
+              role: 'user',
+              content: clean,
+              timestamp: entry.timestamp as string,
+              contexts: contexts.length > 0 ? contexts : undefined,
+            });
+          }
 
         } else if (entry.type === 'assistant') {
           const msg = entry.message as Record<string, unknown> | undefined;

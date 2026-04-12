@@ -462,6 +462,39 @@
   letter-spacing: 0.05em;
 }
 
+/* ── Compaction divider (shown when a session was compacted) ── */
+.obsidibot-compaction-divider {
+  align-self: center;
+  text-align: center;
+  font-size: 0.75em;
+  color: var(--text-faint);
+  font-style: italic;
+  padding: 4px 0;
+  letter-spacing: 0.05em;
+}
+
+/* ── Replay context badge strip (inside replayed user message bubbles) ── */
+.obsidibot-replay-context-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 5px;
+}
+
+.obsidibot-replay-context-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.78em;
+}
+
+.obsidibot-replay-context-label {
+  color: var(--text-muted);
+}
+
 /* Markdown content inside assistant messages */
 .obsidibot-assistant p:last-child {
   margin-bottom: 0;
