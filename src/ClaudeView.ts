@@ -409,8 +409,17 @@ export class ClaudeView extends ItemView {
     md += `# ${title}\n\n`;
     for (const el of msgEls) {
       const label = el.classList.contains('obsidibot-user') ? userLabel : assistantLabel;
-      const content = (el.dataset.markdown ?? el.textContent ?? '').trim();
-      md += `**${label}:**\n${content}\n\n`;
+      if (el.classList.contains('obsidibot-assistant')) {
+        const text = (el.dataset.markdown ?? '').trim();
+        const queryMd = el.dataset.queries
+          ? this.resolveQueriesToMarkdown(JSON.parse(el.dataset.queries) as VaultQuery[])
+          : '';
+        const combined = [text, queryMd].filter(Boolean).join('\n\n');
+        if (!combined) continue;
+        md += `**${label}:**\n${combined}\n\n`;
+      } else {
+        md += `**${label}:**\n${(el.textContent ?? '').trim()}\n\n`;
+      }
     }
     return md;
   }
@@ -474,7 +483,15 @@ export class ClaudeView extends ItemView {
       md += `# ${session.title}\n\n`;
       for (const msg of messages) {
         const label = msg.role === 'user' ? (session.userLabel ?? 'User') : (session.assistantLabel ?? 'ObsidiBot');
-        md += `**${label}:**\n${msg.content.trim()}\n\n`;
+        if (msg.role === 'assistant') {
+          const text = this.cleanContent(msg.content).trim();
+          const queryMd = this.queryResultsAsMarkdown(msg.content);
+          const combined = [text, queryMd].filter(Boolean).join('\n\n');
+          if (!combined) continue; // skip blank assistant turns (protocol-only responses)
+          md += `**${label}:**\n${combined}\n\n`;
+        } else {
+          md += `**${label}:**\n${msg.content.trim()}\n\n`;
+        }
       }
       await this.writeExportNote(notePath, md);
       if (openAfter) await this.openExportedNote(notePath);
@@ -704,9 +721,22 @@ export class ClaudeView extends ItemView {
             }
           } else {
             const el = this.appendMessage('assistant', '');
-            const { clean } = extractActions(msg.content);
+            const clean = this.cleanContent(msg.content);
             el.dataset.markdown = clean;
             await MarkdownRenderer.render(this.app, clean, el, '', this);
+            // Re-render vault query result cards and store queries for export
+            const replayQueries: VaultQuery[] = [];
+            for (const line of msg.content.split('\n')) {
+              if (!line.startsWith(QUERY_PREFIX)) continue;
+              try {
+                const q = JSON.parse(line.slice(QUERY_PREFIX.length)) as VaultQuery;
+                replayQueries.push(q);
+                this.renderQueryResultCard(this.messagesEl, resolveQuery(this.app, q));
+              } catch { /* skip malformed query lines */ }
+            }
+            if (replayQueries.length > 0) {
+              el.dataset.queries = JSON.stringify(replayQueries);
+            }
           }
         }
         const divider = this.messagesEl.createDiv({ cls: 'obsidibot-history-divider' });
@@ -1007,6 +1037,9 @@ export class ClaudeView extends ItemView {
           assistantEl.dataset.markdown = accumulated;
           assistantEl.empty();
           MarkdownRenderer.render(this.app, accumulated, assistantEl, '', this);
+        }
+        if (pendingQueries.length > 0) {
+          assistantEl.dataset.queries = JSON.stringify(pendingQueries);
         }
         this.scrollToBottom();
 
@@ -1583,9 +1616,10 @@ export class ClaudeView extends ItemView {
     }
 
     const r = result.result as Record<string, unknown>;
+    const isTags = Array.isArray(r.tags);
     const items: string[] = Array.isArray(r.backlinks) ? r.backlinks as string[]
       : Array.isArray(r.outlinks) ? r.outlinks as string[]
-        : Array.isArray(r.tags) ? r.tags as string[]
+        : isTags ? r.tags as string[]
           : Array.isArray(r.files) ? r.files as string[]
             : [];
 
@@ -1594,7 +1628,16 @@ export class ClaudeView extends ItemView {
     } else {
       const list = body.createEl('ul', { cls: 'obsidibot-vault-query-list' });
       for (const item of items) {
-        list.createEl('li', { text: item });
+        const li = list.createEl('li');
+        if (isTags) {
+          li.setText(item);
+        } else {
+          const a = li.createEl('a', { cls: 'internal-link', text: item });
+          a.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.app.workspace.openLinkText(item, '/', false);
+          });
+        }
       }
     }
     this.scrollToBottom();
@@ -1758,6 +1801,67 @@ export class ClaudeView extends ItemView {
       assistantEl.setText(`Process error: ${err.message}`);
       unlock();
     });
+  }
+
+  /**
+   * Strip all protocol lines (@@CORTEX_ACTION, @@CORTEX_QUERY, etc.) from raw
+   * assistant content before display or export. This is the single canonical
+   * cleaning step — add new protocol prefixes to extractActions() and they are
+   * automatically handled everywhere that calls cleanContent().
+   *
+   * Note: paths that read el.dataset.markdown are already clean because
+   * dataset.markdown is always set from cleanContent() output during
+   * streaming and replay — do not double-clean those paths.
+   */
+  private cleanContent(content: string): string {
+    return extractActions(content).clean;
+  }
+
+  /**
+   * Resolve a list of VaultQuery objects and return a markdown representation
+   * of their results (for vault export). File paths become Obsidian wikilinks;
+   * tags remain as plain text. This is the single implementation used by both
+   * the active-session export (queries stored on el.dataset.queries) and the
+   * historical-session export (queries parsed from raw JSONL content).
+   */
+  private resolveQueriesToMarkdown(queries: VaultQuery[]): string {
+    const blocks: string[] = [];
+    for (const q of queries) {
+      const result = resolveQuery(this.app, q);
+      const label = queryLabel(q);
+      if (result.error) {
+        blocks.push(`> **${label}:** Error: ${result.error}`);
+        continue;
+      }
+      const r = result.result as Record<string, unknown>;
+      const isTags = Array.isArray(r.tags);
+      const items: string[] = Array.isArray(r.backlinks) ? r.backlinks as string[]
+        : Array.isArray(r.outlinks) ? r.outlinks as string[]
+          : isTags ? r.tags as string[]
+            : Array.isArray(r.files) ? r.files as string[]
+              : [];
+      if (items.length === 0) {
+        blocks.push(`> **${label}:** No results.`);
+      } else {
+        const rows = items.map(i =>
+          isTags ? `> - ${i}` : `> - [[${i.replace(/\.md$/, '')}]]`
+        ).join('\n');
+        blocks.push(`> **${label}:**\n${rows}`);
+      }
+    }
+    return blocks.join('\n\n');
+  }
+
+  /** Parse @@CORTEX_QUERY lines from raw content and resolve them to markdown. */
+  private queryResultsAsMarkdown(content: string): string {
+    const queries: VaultQuery[] = [];
+    for (const line of content.split('\n')) {
+      if (!line.startsWith(QUERY_PREFIX)) continue;
+      try {
+        queries.push(JSON.parse(line.slice(QUERY_PREFIX.length)) as VaultQuery);
+      } catch { /* skip malformed */ }
+    }
+    return this.resolveQueriesToMarkdown(queries);
   }
 
   private appendMessage(role: 'user' | 'assistant' | 'system', text: string): HTMLElement {
