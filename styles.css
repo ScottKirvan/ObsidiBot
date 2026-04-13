@@ -1063,3 +1063,82 @@
   font-size: 0.85em;
   padding: 4px 10px;
 }
+
+/* ── Slash command menu ── */
+.obsidibot-slash-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  z-index: 100;
+  max-height: 340px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.obsidibot-slash-search-wrap {
+  padding: 8px 8px 4px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  flex-shrink: 0;
+}
+
+.obsidibot-slash-search {
+  width: 100%;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.9em;
+  color: var(--text-normal);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.obsidibot-slash-list {
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.obsidibot-slash-category {
+  padding: 4px 12px 2px;
+  font-size: 0.72em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.obsidibot-slash-item {
+  display: flex;
+  flex-direction: column;
+  padding: 5px 14px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin: 0 4px;
+}
+
+.obsidibot-slash-item-highlighted {
+  background: var(--background-modifier-hover);
+}
+
+.obsidibot-slash-item-name {
+  font-size: 0.9em;
+  color: var(--text-normal);
+}
+
+.obsidibot-slash-item-desc {
+  font-size: 0.78em;
+  color: var(--text-muted);
+}
+
+.obsidibot-slash-empty {
+  padding: 10px 14px;
+  font-size: 0.88em;
+  color: var(--text-muted);
+}

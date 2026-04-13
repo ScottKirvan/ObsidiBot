@@ -19,6 +19,9 @@ data.json
 # In production vaults this lives at .obsidian/plugins/obsidibot/.claude/sessions/
 .claude/sessions/
 
+# User slash command templates (local to each install)
+commands/
+
 notes/COMMIT_DRAFT.md
 ObsidiBot_Marketing/
 docs/.vitepress/cache/
