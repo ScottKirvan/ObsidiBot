@@ -6,7 +6,7 @@ hero:
   text: "Claude lives in your vault"
   tagline: An Obsidian plugin that puts a full Claude Code agent at your fingertips — reading, writing, and organizing your notes with you.
   image:
-    src: /hero-image.svg
+    src: /logo.png
     alt: ObsidiBot
   actions:
     - theme: brand
