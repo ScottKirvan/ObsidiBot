@@ -17,6 +17,7 @@ import {
   saveSession,
   saveSessionAtTop,
   loadAllSessions,
+  resolveSessionsDir,
   titleFromPrompt,
   canResumeLocally,
   loadSessionMessages,
@@ -317,7 +318,7 @@ export class ClaudeView extends ItemView {
 
     if (this.plugin.settings.resumeLastSession) {
       const vaultRoot = (this.app.vault.adapter as any).basePath;
-      const sessions = loadAllSessions(vaultRoot);
+      const sessions = loadAllSessions(vaultRoot, this.getSessionsDir());
       if (sessions.length > 0) {
         const lastId = this.plugin.settings.lastActiveSessionId;
         const target = (lastId && sessions.find(s => s.id === lastId)) || sessions[0];
@@ -368,7 +369,7 @@ export class ClaudeView extends ItemView {
       claudeSessionId: '',
     };
 
-    saveSessionAtTop(vaultRoot, newSession);
+    saveSessionAtTop(vaultRoot, newSession, this.getSessionsDir());
     this.placeholderSessionId = sessionId;
     this.currentSessionId = undefined;
     this.currentSessionFileId = sessionId;
@@ -382,7 +383,8 @@ export class ClaudeView extends ItemView {
 
   showSessionHistory() {
     const vaultRoot = (this.app.vault.adapter as any).basePath;
-    const sessions = loadAllSessions(vaultRoot);
+    const sessionsDir = this.getSessionsDir();
+    const sessions = loadAllSessions(vaultRoot, sessionsDir);
     new SessionListModal(this.app, vaultRoot, sessions, (session) => {
       this.loadSession(session);
     }, () => {
@@ -396,7 +398,7 @@ export class ClaudeView extends ItemView {
       }
     }, (session) => {
       void this.exportSessionToVault(session);
-    }).open();
+    }, sessionsDir).open();
   }
 
   /** Build export markdown from DOM messages (active session). */
@@ -966,6 +968,7 @@ export class ClaudeView extends ItemView {
 
         if (sessionId) {
           const vaultRoot = (this.app.vault.adapter as any).basePath;
+          const sessionsDir = this.getSessionsDir();
           const now = new Date().toISOString();
 
           if (this.placeholderSessionId) {
@@ -978,7 +981,7 @@ export class ClaudeView extends ItemView {
               createdAt: this.currentSessionCreatedAt ?? now,
               updatedAt: now,
               claudeSessionId: sessionId,
-            });
+            }, sessionsDir);
             const placeholderId = this.placeholderSessionId;
             this.placeholderSessionId = undefined;
             log('Placeholder session updated:', placeholderId, '→', sessionId);
@@ -993,7 +996,7 @@ export class ClaudeView extends ItemView {
               createdAt: now,
               updatedAt: now,
               claudeSessionId: sessionId,
-            });
+            }, sessionsDir);
             log('Session saved:', sessionId, this.currentSessionTitle);
           } else if (this.currentSessionId) {
             const fileId = this.currentSessionFileId ?? this.currentSessionId;
@@ -1003,7 +1006,7 @@ export class ClaudeView extends ItemView {
               createdAt: this.currentSessionCreatedAt ?? now,
               updatedAt: now,
               claudeSessionId: this.currentSessionId,
-            });
+            }, sessionsDir);
           }
 
           this.updateSessionStatus();
@@ -1761,7 +1764,7 @@ export class ClaudeView extends ItemView {
             createdAt: this.currentSessionCreatedAt ?? now,
             updatedAt: now,
             claudeSessionId: this.currentSessionId,
-          });
+          }, this.getSessionsDir());
         }
 
         if (toolCallCount > 0) {
@@ -1815,6 +1818,12 @@ export class ClaudeView extends ItemView {
    */
   private cleanContent(content: string): string {
     return extractActions(content).clean;
+  }
+
+  /** Resolved sessions directory, honoring the user's sessionStoragePath setting. */
+  private getSessionsDir(): string {
+    const vaultRoot = (this.app.vault.adapter as any).basePath as string;
+    return resolveSessionsDir(vaultRoot, this.plugin.settings.sessionStoragePath);
   }
 
   /**
