@@ -810,7 +810,7 @@ export class ClaudeView extends ItemView {
         activeFileNote = `<obsidibot-context type="stacked-tabs" paths="${unique.join('|')}"></obsidibot-context>\n\n`;
       } else {
         const activeFile = this.app.workspace.getActiveFile();
-        activeFileNote = activeFile ? `<obsidibot-context type="active-note" path="${activeFile.path}"></obsidibot-context>\n\n` : '';
+        activeFileNote = activeFile ? `<obsidibot-context type="active-note" path="${activeFile.path}">Read this file if the user's task relates to its content.</obsidibot-context>\n\n` : '';
       }
     }
 
