@@ -89,7 +89,7 @@ ObsidiBot/
   styles.css
   assets/
     media/
-      logo.jpg                 ← About modal / plugin browser logo (embedded at build time)
+      logo.png                 ← About modal / plugin browser logo (embedded at build time)
   src/
     ClaudeView.ts              ← chat panel UI, session state, setup/auth error panels
     ClaudeProcess.ts           ← binary detection, spawn (PowerShell on Win), stream-json parsing

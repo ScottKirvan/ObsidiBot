@@ -1,7 +1,7 @@
 # ObsidiBot [![starline](https://starlines.qoo.monster/assets/ScottKirvan/ObsidiBot)](https://github.com/qoomon/starline)
 <div align="center">
 
-  <img src="assets/media/logo.jpg" alt="logo" width="200" height="auto" />
+  <img src="assets/media/logo.png" alt="logo" width="200" height="auto" />
   <h1><a href="https://github.com/ScottKirvan/ObsidiBot">ScottKirvan/ObsidiBot</a></h1>
   <h3>Claude agentic file management inside Obsidian</h3>
 

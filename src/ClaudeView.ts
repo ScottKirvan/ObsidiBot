@@ -1,7 +1,8 @@
 import { ItemView, WorkspaceLeaf, MarkdownRenderer, Notice, setIcon, TFile, Modal, App } from 'obsidian';
+import { SlashMenu, SlashCommand } from './SlashMenu';
 import { spawn } from 'child_process';
-import { writeFileSync, mkdirSync, existsSync } from 'fs';
-import { join } from 'path';
+import { writeFileSync, mkdirSync, existsSync, readdirSync, readFileSync } from 'fs';
+import { join, isAbsolute } from 'path';
 import type ObsidiBotPlugin from '../main';
 import { spawnClaude, parseStreamOutput, killProcess, findClaudeBinary, PermissionDenial, PermissionMode } from './ClaudeProcess';
 import { extractActions, executeAction } from './UIBridge';
@@ -69,6 +70,7 @@ export class ClaudeView extends ItemView {
   private messagesEl: HTMLElement;
   private sendBtn: HTMLButtonElement;
   private exportBtn: HTMLButtonElement;
+  private attachBtn: HTMLButtonElement;
   private sessionStatusEl: HTMLElement;
   private currentSessionId: string | undefined;      // Claude's session ID (used for --resume)
   private currentSessionFileId: string | undefined;  // JSON file id (may differ from claudeSessionId)
@@ -79,6 +81,8 @@ export class ClaudeView extends ItemView {
   private historyIndex: number = -1;
   private inputDraft: string = '';
   private activeProc: ReturnType<typeof spawnClaude> | null = null;
+  private activeSlashMenu: SlashMenu | null = null;
+  private inputAreaEl: HTMLElement;
   private pendingContexts: Array<{ text: string; source: string; pinned: boolean; type?: 'text' | 'url' | 'image' | 'pdf' }> = [];
   private pendingContextZone: HTMLElement;
   /** Overrides settings.permissionMode for the current session only. Cleared on new session. */
@@ -148,6 +152,7 @@ export class ClaudeView extends ItemView {
     this.messagesEl = root.createDiv({ cls: 'obsidibot-messages' });
 
     const inputArea = root.createDiv({ cls: 'obsidibot-input-area' });
+    this.inputAreaEl = inputArea;
 
     this.atDropdownEl = inputArea.createDiv({ cls: 'obsidibot-at-dropdown' });
     this.atDropdownEl.style.display = 'none';
@@ -177,15 +182,15 @@ export class ClaudeView extends ItemView {
 
     const inputToolbar = inputArea.createDiv({ cls: 'obsidibot-input-toolbar' });
 
-    const attachBtn = inputToolbar.createEl('button', { cls: 'obsidibot-icon-btn obsidibot-input-toolbar-btn' });
-    setIcon(attachBtn, 'paperclip');
-    attachBtn.title = 'Attach file or URL';
-    attachBtn.addEventListener('click', () => this.toggleAttachPopover(attachBtn));
+    this.attachBtn = inputToolbar.createEl('button', { cls: 'obsidibot-icon-btn obsidibot-input-toolbar-btn' });
+    setIcon(this.attachBtn, 'paperclip');
+    this.attachBtn.title = 'Attach file or URL';
+    this.attachBtn.addEventListener('click', () => this.toggleAttachPopover(this.attachBtn));
 
     const slashBtn = inputToolbar.createEl('button', { cls: 'obsidibot-icon-btn obsidibot-input-toolbar-btn' });
     setIcon(slashBtn, 'slash');
-    slashBtn.title = 'Slash commands (coming soon)';
-    slashBtn.disabled = true;
+    slashBtn.title = 'Commands';
+    slashBtn.addEventListener('click', () => this.openSlashMenu('button'));
 
     inputToolbar.createDiv({ cls: 'obsidibot-input-toolbar-spacer' });
 
@@ -223,7 +228,10 @@ export class ClaudeView extends ItemView {
         this.handleSend();
       }
     });
-    this.inputEl.addEventListener('input', () => this.handleAtMention());
+    this.inputEl.addEventListener('input', () => {
+      this.handleAtMention();
+      this.handleSlashTrigger();
+    });
 
     this.inputEl.addEventListener('blur', () => {
       // Delay so mousedown on a dropdown item fires before the dropdown hides
@@ -231,6 +239,13 @@ export class ClaudeView extends ItemView {
     });
 
     this.inputEl.addEventListener('keydown', (e) => {
+      // Slash menu (inline mode) takes priority
+      if (this.activeSlashMenu) {
+        const consumed = this.activeSlashMenu.handleKeyDown(e);
+        if (consumed) return;
+        // Not consumed — menu dismissed itself, let the key fall through normally
+      }
+
       // Dropdown navigation takes priority over everything else
       if (this.atDropdownEl.style.display !== 'none') {
         if (e.key === 'ArrowDown') { e.preventDefault(); this.atDropdownNav(1); return; }
@@ -1938,6 +1953,165 @@ export class ClaudeView extends ItemView {
     if (!this.exportBtn) return;
     const hasMessages = this.messagesEl.querySelectorAll('.obsidibot-message').length > 0;
     this.exportBtn.disabled = !hasMessages;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Slash command menu
+
+  openSlashMenu(mode: 'button' | 'inline') {
+    // Only one menu at a time
+    if (this.activeSlashMenu) return;
+
+    let commands = this.buildCommands();
+
+    // In inline mode, wrap each action to strip the / trigger before executing
+    if (mode === 'inline' && this.inputEl) {
+      const triggerPos = (this.inputEl.selectionStart ?? 1) - 1;
+      commands = commands.map(cmd => ({
+        ...cmd,
+        action: () => {
+          const val = this.inputEl.value;
+          this.inputEl.value = val.slice(0, triggerPos) + val.slice(triggerPos + 1);
+          this.inputEl.dispatchEvent(new Event('input'));
+          cmd.action();
+        },
+      }));
+    }
+
+    this.activeSlashMenu = new SlashMenu(
+      this.inputAreaEl,
+      commands,
+      mode,
+      () => { this.activeSlashMenu = null; },
+    );
+    this.activeSlashMenu.open();
+  }
+
+  private handleSlashTrigger() {
+    if (this.activeSlashMenu) return;
+    const { value, selectionStart } = this.inputEl;
+    const pos = selectionStart ?? 0;
+    // Must have just typed a /
+    if (pos < 1 || value[pos - 1] !== '/') return;
+    // Must be at start of input or preceded by a space/newline
+    const preceded = pos === 1 || value[pos - 2] === ' ' || value[pos - 2] === '\n';
+    if (!preceded) return;
+    this.openSlashMenu('inline');
+  }
+
+  private resolveCommandsFolder(): string {
+    const vaultRoot = (this.app.vault.adapter as any).basePath as string;
+    const custom = this.plugin.settings.commandsFolder;
+    if (custom?.trim()) {
+      const p = custom.trim();
+      return isAbsolute(p) ? p : join(vaultRoot, p);
+    }
+    // Use manifest.dir so the path is correct regardless of plugin folder name
+    return join(vaultRoot, this.plugin.manifest.dir, 'commands');
+  }
+
+  private loadTemplateCommands(): SlashCommand[] {
+    const folder = this.resolveCommandsFolder();
+    if (!existsSync(folder)) return [];
+    const commands: SlashCommand[] = [];
+    try {
+      const files = readdirSync(folder).filter(f => f.endsWith('.md'));
+      for (const file of files) {
+        try {
+          const raw = readFileSync(join(folder, file), 'utf8');
+          // Parse optional YAML frontmatter
+          let body = raw;
+          let category = 'Prompts';
+          let description: string | undefined;
+          const fmMatch = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+          if (fmMatch) {
+            const fm = fmMatch[1];
+            body = fmMatch[2].trim();
+            const catMatch = fm.match(/^category:\s*(.+)$/m);
+            const descMatch = fm.match(/^description:\s*(.+)$/m);
+            if (catMatch) category = catMatch[1].trim();
+            if (descMatch) description = descMatch[1].trim();
+          }
+          const name = file.replace(/\.md$/, '');
+          commands.push({
+            category,
+            name,
+            description,
+            action: () => {
+              if (!this.inputEl) return;
+              const current = this.inputEl.value;
+              const insert = current ? current + '\n\n' + body : body;
+              this.inputEl.value = insert;
+              this.inputEl.dispatchEvent(new Event('input'));
+              this.inputEl.focus();
+              this.inputEl.setSelectionRange(insert.length, insert.length);
+            },
+          });
+        } catch { /* skip malformed files */ }
+      }
+    } catch { /* folder unreadable */ }
+    return commands;
+  }
+
+  private buildCommands(): SlashCommand[] {
+    return [
+      {
+        category: 'Session',
+        name: 'New session',
+        description: 'Start a fresh conversation',
+        action: () => this.startNewSession(),
+      },
+      {
+        category: 'Session',
+        name: 'Show history',
+        description: 'Browse and resume past sessions',
+        action: () => this.showSessionHistory(),
+      },
+      {
+        category: 'Session',
+        name: 'Export session',
+        description: 'Save this session to your vault',
+        action: () => {
+          if (!this.currentSessionFileId) { new Notice('No active session to export.'); return; }
+          const sessions = loadAllSessions((this.app.vault.adapter as any).basePath, this.getSessionsDir());
+          const session = sessions.find(s => s.id === this.currentSessionFileId);
+          if (session) void this.exportSessionToVault(session);
+          else new Notice('Session not found.');
+        },
+      },
+      {
+        category: 'Context',
+        name: 'Attach file',
+        description: 'Add a file, image, or URL to the prompt',
+        action: () => this.toggleAttachPopover(this.attachBtn),
+      },
+      {
+        category: 'Context',
+        name: 'Open context file',
+        description: 'Edit your persistent vault context',
+        action: () => {
+          const file = this.app.vault.getFileByPath(this.plugin.settings.contextFilePath);
+          if (file) this.app.workspace.getLeaf(false).openFile(file);
+          else new Notice(`Context file not found: ${this.plugin.settings.contextFilePath}`);
+        },
+      },
+      {
+        category: 'Context',
+        name: 'Refresh context',
+        description: 'Re-inject vault context into the session',
+        action: () => void this.refreshSessionContext(),
+      },
+      {
+        category: 'Context',
+        name: 'Open settings',
+        description: 'Open ObsidiBot settings',
+        action: () => {
+          (this.app as any).setting.open();
+          (this.app as any).setting.openTabById('obsidibot');
+        },
+      },
+      ...this.loadTemplateCommands(),
+    ];
   }
 }
 
