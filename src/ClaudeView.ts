@@ -228,7 +228,10 @@ export class ClaudeView extends ItemView {
         this.handleSend();
       }
     });
-    this.inputEl.addEventListener('input', () => this.handleAtMention());
+    this.inputEl.addEventListener('input', () => {
+      this.handleAtMention();
+      this.handleSlashTrigger();
+    });
 
     this.inputEl.addEventListener('blur', () => {
       // Delay so mousedown on a dropdown item fires before the dropdown hides
@@ -1959,7 +1962,22 @@ export class ClaudeView extends ItemView {
     // Only one menu at a time
     if (this.activeSlashMenu) return;
 
-    const commands = this.buildCommands();
+    let commands = this.buildCommands();
+
+    // In inline mode, wrap each action to strip the / trigger before executing
+    if (mode === 'inline' && this.inputEl) {
+      const triggerPos = (this.inputEl.selectionStart ?? 1) - 1;
+      commands = commands.map(cmd => ({
+        ...cmd,
+        action: () => {
+          const val = this.inputEl.value;
+          this.inputEl.value = val.slice(0, triggerPos) + val.slice(triggerPos + 1);
+          this.inputEl.dispatchEvent(new Event('input'));
+          cmd.action();
+        },
+      }));
+    }
+
     this.activeSlashMenu = new SlashMenu(
       this.inputAreaEl,
       commands,
@@ -1969,9 +1987,21 @@ export class ClaudeView extends ItemView {
     this.activeSlashMenu.open();
   }
 
+  private handleSlashTrigger() {
+    if (this.activeSlashMenu) return;
+    const { value, selectionStart } = this.inputEl;
+    const pos = selectionStart ?? 0;
+    // Must have just typed a /
+    if (pos < 1 || value[pos - 1] !== '/') return;
+    // Must be at start of input or preceded by a space/newline
+    const preceded = pos === 1 || value[pos - 2] === ' ' || value[pos - 2] === '\n';
+    if (!preceded) return;
+    this.openSlashMenu('inline');
+  }
+
   private resolveCommandsFolder(): string {
     const vaultRoot = (this.app.vault.adapter as any).basePath as string;
-    const custom = (this.plugin.settings as any).commandsFolder as string | undefined;
+    const custom = this.plugin.settings.commandsFolder;
     if (custom?.trim()) {
       const p = custom.trim();
       return isAbsolute(p) ? p : join(vaultRoot, p);

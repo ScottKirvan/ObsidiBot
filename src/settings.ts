@@ -45,6 +45,12 @@ export interface ObsidiBotSettings {
    * Vault-relative path (e.g. "_sessions") or absolute path.
    */
   sessionStoragePath: string;
+  /**
+   * Folder containing user slash command templates (.md files).
+   * Empty = default (plugin dir/commands — gitignored).
+   * Vault-relative path or absolute path.
+   */
+  commandsFolder: string;
 }
 
 export const DEFAULT_SETTINGS: ObsidiBotSettings = {
@@ -69,6 +75,7 @@ export const DEFAULT_SETTINGS: ObsidiBotSettings = {
   exportFolder: 'ObsidiBot Exports',
   lastActiveSessionId: '',
   sessionStoragePath: '',
+  commandsFolder: '',
 };
 
 export class ObsidiBotSettingsTab extends PluginSettingTab {
@@ -257,6 +264,24 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
           .setValue(this.plugin.settings.sessionStoragePath)
           .onChange(async (value) => {
             this.plugin.settings.sessionStoragePath = value.trim();
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName('Commands folder')
+      .setDesc(
+        'Folder containing your slash command templates (.md files). ' +
+        'Leave empty for the default location (plugin dir/commands). ' +
+        'Use a vault-relative path (e.g. _commands) to keep templates in your vault, ' +
+        'or an absolute path. Templates reload each time you open the / menu.'
+      )
+      .addText((text) =>
+        text
+          .setPlaceholder('Default (plugin dir/commands)')
+          .setValue(this.plugin.settings.commandsFolder)
+          .onChange(async (value) => {
+            this.plugin.settings.commandsFolder = value.trim();
             await this.plugin.saveSettings();
           })
       );

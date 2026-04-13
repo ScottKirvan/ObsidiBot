@@ -36,6 +36,7 @@ export default {
         text: 'Using ObsidiBot',
         items: [
           { text: 'Chat Panel', link: '/guide/chat-panel' },
+          { text: 'Slash Commands', link: '/guide/slash-commands' },
           { text: 'Session Manager', link: '/guide/sessions' },
           { text: 'Context System', link: '/guide/context-system' },
         ]
