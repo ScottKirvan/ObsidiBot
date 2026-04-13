@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.3.0](https://github.com/ScottKirvan/ObsidiBot/compare/v2.2.1...v2.3.0) (2026-04-13)
+
+
+### Features
+
+* configurable session storage path ([#20](https://github.com/ScottKirvan/ObsidiBot/issues/20)) ([5f1171f](https://github.com/ScottKirvan/ObsidiBot/commit/5f1171f17a1a3babac1ed6ac71aa5de583eeca07))
+* make vault query result file paths clickable internal links ([80de859](https://github.com/ScottKirvan/ObsidiBot/commit/80de85991b8aaf5b6d1f541c513de2952d5e3b6f)), closes [#84](https://github.com/ScottKirvan/ObsidiBot/issues/84)
+
+
+### Bug Fixes
+
+* add read hint to active-note context tag (Closes [#102](https://github.com/ScottKirvan/ObsidiBot/issues/102)) ([e3e9eeb](https://github.com/ScottKirvan/ObsidiBot/commit/e3e9eeb9a834ca25c405fdc35feb1d84241be707))
+* include vault query results in active-session export to vault ([aa78d73](https://github.com/ScottKirvan/ObsidiBot/commit/aa78d735e6dff74d7cdc0bc61793503dba319809))
+* inject CommonMark rendering rules into session orientation (Closes [#103](https://github.com/ScottKirvan/ObsidiBot/issues/103)) ([49454e7](https://github.com/ScottKirvan/ObsidiBot/commit/49454e7be5156b7a123c6c3dfa2fbcec610735ef))
+* re-render vault query result cards on session replay ([36d4f30](https://github.com/ScottKirvan/ObsidiBot/commit/36d4f30c5f43dc50fd5416d06da5a821d82e035b))
+* render query results as wikilinks in vault export ([ae1fcbc](https://github.com/ScottKirvan/ObsidiBot/commit/ae1fcbc17f62f78ede2229f34da675d24a8c2ef9))
+* strip @@CORTEX_QUERY lines from session replay and extractActions ([45d5bb9](https://github.com/ScottKirvan/ObsidiBot/commit/45d5bb9996dd0b7ecc5ba097ea2ada03a5afdcc1))
+
 ## [2.2.1](https://github.com/ScottKirvan/ObsidiBot/compare/v2.2.0...v2.2.1) (2026-04-12)
 
 
