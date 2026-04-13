@@ -5,6 +5,7 @@ export class SessionListModal extends Modal {
   sessions: StoredSession[];
   filteredSessions: StoredSession[];
   vaultRoot: string;
+  sessionsDir: string;
   activeSessionFileId: string | undefined;
   onSelect: (session: StoredSession) => void;
   onNewSession: () => void;
@@ -25,9 +26,11 @@ export class SessionListModal extends Modal {
     activeSessionFileId?: string,
     onRename: (session: StoredSession) => void = () => { },
     onExportToVault: (session: StoredSession) => void = () => { },
+    sessionsDir?: string,
   ) {
     super(app);
     this.vaultRoot = vaultRoot;
+    this.sessionsDir = sessionsDir ?? vaultRoot;
     this.sessions = sessions;
     this.filteredSessions = sessions;
     this.onSelect = onSelect;
@@ -97,7 +100,7 @@ export class SessionListModal extends Modal {
   private saveSortOrder() {
     this.sessions.forEach((s, i) => {
       s.sortOrder = i;
-      saveSession(this.vaultRoot, s);
+      saveSession(this.vaultRoot, s, this.sessionsDir);
     });
   }
 
@@ -216,7 +219,7 @@ export class SessionListModal extends Modal {
       e.stopPropagation();
       if (confirm(`Delete session "${session.title}"? This cannot be undone.`)) {
         const legacyDir = (session as StoredSession & { _legacyDir?: string })._legacyDir;
-        deleteSession(this.vaultRoot, session.id, legacyDir);
+        deleteSession(this.vaultRoot, session.id, legacyDir, this.sessionsDir);
         this.sessions = this.sessions.filter(s => s.id !== session.id);
         this.filteredSessions = this.filteredSessions.filter(s => s.id !== session.id);
         this.rerenderList();
@@ -242,7 +245,7 @@ export class SessionListModal extends Modal {
         const newTitle = input.value.trim();
         if (newTitle && newTitle !== session.title) {
           session.title = newTitle;
-          saveSession(this.vaultRoot, session);
+          saveSession(this.vaultRoot, session, this.sessionsDir);
           titleEl.setText(newTitle);
           this.onRename(session);
         }

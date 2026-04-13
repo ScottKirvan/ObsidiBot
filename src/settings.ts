@@ -39,6 +39,12 @@ export interface ObsidiBotSettings {
   exportFolder: string;
   /** File ID of the session that was active when Obsidian was last closed. */
   lastActiveSessionId: string;
+  /**
+   * Where session JSON files are stored.
+   * Empty = default (.obsidian/obsidibot/sessions — gitignored).
+   * Vault-relative path (e.g. "_sessions") or absolute path.
+   */
+  sessionStoragePath: string;
 }
 
 export const DEFAULT_SETTINGS: ObsidiBotSettings = {
@@ -62,6 +68,7 @@ export const DEFAULT_SETTINGS: ObsidiBotSettings = {
   injectStackedTabFiles: false,
   exportFolder: 'ObsidiBot Exports',
   lastActiveSessionId: '',
+  sessionStoragePath: '',
 };
 
 export class ObsidiBotSettingsTab extends PluginSettingTab {
@@ -231,6 +238,25 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
           .setValue(this.plugin.settings.exportFolder)
           .onChange(async (value) => {
             this.plugin.settings.exportFolder = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName('Session storage path')
+      .setDesc(
+        'Where session files are stored. ' +
+        'Leave empty for the default location (.obsidian/obsidibot/sessions — excluded from git). ' +
+        'Use a vault-relative path (e.g. _sessions) to track sessions in git alongside your notes, ' +
+        'or an absolute path to store them outside the vault entirely. ' +
+        'Restart ObsidiBot after changing this.'
+      )
+      .addText((text) =>
+        text
+          .setPlaceholder('Default (.obsidian/obsidibot/sessions)')
+          .setValue(this.plugin.settings.sessionStoragePath)
+          .onChange(async (value) => {
+            this.plugin.settings.sessionStoragePath = value.trim();
             await this.plugin.saveSettings();
           })
       );
