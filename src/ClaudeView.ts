@@ -707,6 +707,15 @@ export class ClaudeView extends ItemView {
             const { clean } = extractActions(msg.content);
             el.dataset.markdown = clean;
             await MarkdownRenderer.render(this.app, clean, el, '', this);
+            // Re-render any vault query result cards from the original response
+            for (const line of msg.content.split('\n')) {
+              if (!line.startsWith(QUERY_PREFIX)) continue;
+              try {
+                const q = JSON.parse(line.slice(QUERY_PREFIX.length)) as VaultQuery;
+                const result = resolveQuery(this.app, q);
+                this.renderQueryResultCard(this.messagesEl, result);
+              } catch { /* skip malformed query lines */ }
+            }
           }
         }
         const divider = this.messagesEl.createDiv({ cls: 'obsidibot-history-divider' });
