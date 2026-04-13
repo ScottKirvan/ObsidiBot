@@ -1583,9 +1583,10 @@ export class ClaudeView extends ItemView {
     }
 
     const r = result.result as Record<string, unknown>;
+    const isTags = Array.isArray(r.tags);
     const items: string[] = Array.isArray(r.backlinks) ? r.backlinks as string[]
       : Array.isArray(r.outlinks) ? r.outlinks as string[]
-        : Array.isArray(r.tags) ? r.tags as string[]
+        : isTags ? r.tags as string[]
           : Array.isArray(r.files) ? r.files as string[]
             : [];
 
@@ -1594,7 +1595,16 @@ export class ClaudeView extends ItemView {
     } else {
       const list = body.createEl('ul', { cls: 'obsidibot-vault-query-list' });
       for (const item of items) {
-        list.createEl('li', { text: item });
+        const li = list.createEl('li');
+        if (isTags) {
+          li.setText(item);
+        } else {
+          const a = li.createEl('a', { cls: 'internal-link', text: item });
+          a.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.app.workspace.openLinkText(item, '/', false);
+          });
+        }
       }
     }
     this.scrollToBottom();
