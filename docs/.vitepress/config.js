@@ -8,7 +8,7 @@ export default {
   ],
 
   themeConfig: {
-    logo: '../assets/media/logo.jpg',
+    logo: '../assets/media/logo.png',
     siteTitle: 'ObsidiBot',
 
     nav: [
