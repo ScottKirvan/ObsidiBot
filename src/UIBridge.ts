@@ -1,6 +1,6 @@
 import { App, Modal, Notice } from 'obsidian';
 import { log, warn } from './utils/logger';
-import { ACTION_PREFIX } from './constants';
+import { ACTION_PREFIX, QUERY_PREFIX } from './constants';
 export { ACTION_PREFIX } from './constants';
 
 export interface ObsidiBotAction {
@@ -83,6 +83,8 @@ export function extractActions(text: string): { clean: string; actions: ObsidiBo
       } catch {
         warn('UIBridge: malformed action line:', line);
       }
+    } else if (line.startsWith(QUERY_PREFIX)) {
+      // Strip query lines — they are intercepted at stream time and must never appear in the UI
     } else {
       kept.push(line);
     }
