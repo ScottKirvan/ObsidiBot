@@ -1,5 +1,5 @@
 import { App, Modal, Plugin } from 'obsidian';
-import logoDataUrl from '../../assets/media/logo.jpg';
+import logoDataUrl from '../../assets/media/logo.png';
 
 export class AboutModal extends Modal {
   private plugin: Plugin;
