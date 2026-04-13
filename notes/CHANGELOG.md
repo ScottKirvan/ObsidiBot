@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.4.0](https://github.com/ScottKirvan/ObsidiBot/compare/v2.3.0...v2.4.0) (2026-04-13)
+
+
+### Features
+
+* Canvas integration — read and generate .canvas files ([#28](https://github.com/ScottKirvan/ObsidiBot/issues/28)) ([cb7fda6](https://github.com/ScottKirvan/ObsidiBot/commit/cb7fda676af5b0e80949f0bd575d3e8272586ab0))
+* slash command menu ([#27](https://github.com/ScottKirvan/ObsidiBot/issues/27)) ([8af1902](https://github.com/ScottKirvan/ObsidiBot/commit/8af1902c2fb5edb241849e00aed4b3c8cd92be32))
+
 ## [2.3.0](https://github.com/ScottKirvan/ObsidiBot/compare/v2.2.1...v2.3.0) (2026-04-13)
 
 
