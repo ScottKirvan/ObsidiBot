@@ -474,7 +474,15 @@ export class ClaudeView extends ItemView {
       md += `# ${session.title}\n\n`;
       for (const msg of messages) {
         const label = msg.role === 'user' ? (session.userLabel ?? 'User') : (session.assistantLabel ?? 'ObsidiBot');
-        md += `**${label}:**\n${this.cleanContent(msg.content).trim()}\n\n`;
+        if (msg.role === 'assistant') {
+          const text = this.cleanContent(msg.content).trim();
+          const queryMd = this.queryResultsAsMarkdown(msg.content);
+          const combined = [text, queryMd].filter(Boolean).join('\n\n');
+          if (!combined) continue; // skip blank assistant turns (protocol-only responses)
+          md += `**${label}:**\n${combined}\n\n`;
+        } else {
+          md += `**${label}:**\n${msg.content.trim()}\n\n`;
+        }
       }
       await this.writeExportNote(notePath, md);
       if (openAfter) await this.openExportedNote(notePath);
@@ -1791,6 +1799,43 @@ export class ClaudeView extends ItemView {
    */
   private cleanContent(content: string): string {
     return extractActions(content).clean;
+  }
+
+  /**
+   * Resolve any @@CORTEX_QUERY lines in raw assistant content and return
+   * a markdown representation of the results (for vault export).
+   * File paths are rendered as Obsidian wikilinks; tags as plain text.
+   */
+  private queryResultsAsMarkdown(content: string): string {
+    const blocks: string[] = [];
+    for (const line of content.split('\n')) {
+      if (!line.startsWith(QUERY_PREFIX)) continue;
+      try {
+        const q = JSON.parse(line.slice(QUERY_PREFIX.length)) as VaultQuery;
+        const result = resolveQuery(this.app, q);
+        const label = queryLabel(q);
+        if (result.error) {
+          blocks.push(`> **${label}:** Error: ${result.error}`);
+          continue;
+        }
+        const r = result.result as Record<string, unknown>;
+        const isTags = Array.isArray(r.tags);
+        const items: string[] = Array.isArray(r.backlinks) ? r.backlinks as string[]
+          : Array.isArray(r.outlinks) ? r.outlinks as string[]
+            : isTags ? r.tags as string[]
+              : Array.isArray(r.files) ? r.files as string[]
+                : [];
+        if (items.length === 0) {
+          blocks.push(`> **${label}:** No results.`);
+        } else {
+          const rows = items.map(i =>
+            isTags ? `> - ${i}` : `> - [[${i.replace(/\.md$/, '')}]]`
+          ).join('\n');
+          blocks.push(`> **${label}:**\n${rows}`);
+        }
+      } catch { /* skip malformed */ }
+    }
+    return blocks.join('\n\n');
   }
 
   private appendMessage(role: 'user' | 'assistant' | 'system', text: string): HTMLElement {
