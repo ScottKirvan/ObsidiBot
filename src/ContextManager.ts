@@ -79,7 +79,26 @@ export class ContextManager {
         `Always use \`  \\n\` (two spaces before the newline) when line breaks matter — verse, poetry, addresses, dialogue.\n` +
       `- **Avoid raw HTML** (\`<br>\`, \`<b>\`, etc.) — use CommonMark syntax instead.\n` +
       `- **Underscore emphasis doesn't work inside words** — use \`*asterisks*\` for italic and \`**bold**\`.\n` +
-      `- **List spacing**: omit blank lines between items for a tight list; add them only when items need paragraph spacing.`;
+      `- **List spacing**: omit blank lines between items for a tight list; add them only when items need paragraph spacing.\n\n` +
+      `## Obsidian Canvas\n` +
+      `Canvas files (\`.canvas\`) are visual boards stored as JSON. When a canvas is shared with you it is converted to a readable text description. ` +
+      `You can also create or modify canvas files by writing valid Canvas JSON.\n\n` +
+      `Canvas JSON schema:\n` +
+      `\`\`\`json\n` +
+      `{\n` +
+      `  "nodes": [\n` +
+      `    { "id": "1", "type": "text",  "text": "Card content",       "x": 0,   "y": 0,   "width": 250, "height": 60  },\n` +
+      `    { "id": "2", "type": "file",  "file": "Notes/MyNote.md",    "x": 300, "y": 0,   "width": 400, "height": 400 },\n` +
+      `    { "id": "3", "type": "group", "label": "Group name",        "x": -50, "y": -50, "width": 800, "height": 500 },\n` +
+      `    { "id": "4", "type": "link",  "url": "https://example.com", "x": 0,   "y": 200, "width": 400, "height": 300 }\n` +
+      `  ],\n` +
+      `  "edges": [\n` +
+      `    { "id": "e1", "fromNode": "1", "toNode": "2", "label": "optional" }\n` +
+      `  ]\n` +
+      `}\n` +
+      `\`\`\`\n\n` +
+      `Layout tips: place nodes on a grid with ~50px gaps; groups should fully contain their member nodes. ` +
+      `Use \`x\`/\`y\` to control position (origin is top-left). IDs must be unique strings.`;
 
     if (this.commandAllowlist.length > 0) {
       const rows = this.commandAllowlist

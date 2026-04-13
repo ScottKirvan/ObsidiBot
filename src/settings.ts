@@ -69,7 +69,7 @@ export const DEFAULT_SETTINGS: ObsidiBotSettings = {
   logEnabled: true,
   logFilePath: '.obsidian/plugins/obsidibot/obsidibot-debug.log',
   logVerbosity: 'normal',
-  atMentionExtensions: 'md, pdf, fountain, txt',
+  atMentionExtensions: 'md, canvas, pdf, fountain, txt',
   injectSplitPaneFiles: true,
   injectStackedTabFiles: false,
   exportFolder: 'ObsidiBot Exports',
