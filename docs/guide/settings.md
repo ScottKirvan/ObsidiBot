@@ -7,6 +7,7 @@ Open **Settings → ObsidiBot** to configure:
 | **Claude binary path**             | *(auto-detect)*                                      | Full path to the `claude` executable. Leave blank to auto-detect from PATH and common install locations.                                                             |
 | **Context file path**              | `_claude-context.md`                                 | Vault-relative path to the context file injected at session start.                                                                                                   |
 | **Export folder**                  | `ObsidiBot Exports`                                  | Default folder for **Export session to vault**. Created automatically if it doesn't exist. Leave blank to save at vault root.                                        |
+| **Session storage path**           | *(empty — default location)*                         | Where session JSON files are stored. See [Session storage location](#session-storage-location) below.                                                                |
 | **Vault tree depth**               | 3 levels                                             | Levels of folder/file names injected at session start. `0` = off, `1`–`10` = N levels, `-1` = unlimited. Names only — no file contents.                              |
 | **Send on Enter**                  | On                                                   | Press Enter to send. Shift+Enter always inserts a newline.                                                                                                           |
 | **Resume last session on startup** | On                                                   | Automatically resume the most recent session when the panel opens.                                                                                                   |
@@ -20,3 +21,19 @@ Open **Settings → ObsidiBot** to configure:
 | **Log verbosity**                  | Normal                                               | **Normal** logs session events and errors. **Verbose** adds raw stream data and token breakdowns.                                                                    |
 | **@-mention file types**           | `md, fountain, txt`                                  | Comma-separated file extensions included in the `@` autocomplete dropdown.                                                                                           |
 | **Inject split-pane files**        | On                                                   | When in split-pane view, include all visible file paths as active note context.                                                                                      |
+
+## Session storage location
+
+By default, session files are stored in `.obsidian/obsidibot/sessions/` inside your vault. This folder is typically gitignored, so sessions don't appear in your git history.
+
+You can change this in **Settings → ObsidiBot → Session storage path**:
+
+| Value | Behaviour |
+|---|---|
+| *(empty)* | Default — `.obsidian/obsidibot/sessions/`. Gitignored. |
+| `_sessions` (vault-relative) | Sessions stored at `_sessions/` in your vault root. Tracked by git if not excluded. |
+| `/Users/you/sessions` (absolute) | Sessions stored outside the vault entirely. |
+
+::: warning Sessions are not migrated
+Changing this setting affects **new sessions only**. Existing sessions remain in their original location and will not appear in the session manager until you change the path back. If you want to move existing sessions, copy the `.json` files manually to the new path before restarting ObsidiBot.
+:::
