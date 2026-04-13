@@ -72,7 +72,14 @@ export class ContextManager {
       `Example — find all backlinks for the active note and continue working:\n` +
       `@@CORTEX_QUERY {"query": "backlinks", "path": "Notes/MyNote.md", "mode": "inject"}\n\n` +
       `Example — show the user all files tagged #project:\n` +
-      `@@CORTEX_QUERY {"query": "tags", "tag": "project", "mode": "show"}`;
+      `@@CORTEX_QUERY {"query": "tags", "tag": "project", "mode": "show"}\n\n` +
+      `## Markdown rendering\n` +
+      `Your responses are rendered by Obsidian's CommonMark-strict markdown engine. Key rules:\n` +
+      `- **Hard line breaks require two trailing spaces** (or a blank line). A single newline collapses into the same line. ` +
+        `Always use \`  \\n\` (two spaces before the newline) when line breaks matter — verse, poetry, addresses, dialogue.\n` +
+      `- **Avoid raw HTML** (\`<br>\`, \`<b>\`, etc.) — use CommonMark syntax instead.\n` +
+      `- **Underscore emphasis doesn't work inside words** — use \`*asterisks*\` for italic and \`**bold**\`.\n` +
+      `- **List spacing**: omit blank lines between items for a tight list; add them only when items need paragraph spacing.`;
 
     if (this.commandAllowlist.length > 0) {
       const rows = this.commandAllowlist
