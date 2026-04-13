@@ -1,5 +1,6 @@
 import { ItemView, WorkspaceLeaf, MarkdownRenderer, Notice, setIcon, TFile, Modal, App } from 'obsidian';
 import { SlashMenu, SlashCommand } from './SlashMenu';
+import { canvasToText } from './utils/canvasParser';
 import { spawn } from 'child_process';
 import { writeFileSync, mkdirSync, existsSync, readdirSync, readFileSync } from 'fs';
 import { join, isAbsolute } from 'path';
@@ -1373,7 +1374,8 @@ export class ClaudeView extends ItemView {
       this.inputEl.setSelectionRange(newBefore.length, newBefore.length);
     }
 
-    const content = await this.app.vault.read(file);
+    const raw = await this.app.vault.read(file);
+    const content = file.extension === 'canvas' ? canvasToText(file.name, raw) : raw;
     this.injectSelectionContext(content, file.basename);
   }
 
@@ -1497,7 +1499,7 @@ export class ClaudeView extends ItemView {
   }
 
   private openFilePicker() {
-    const TEXT_EXTS = new Set(['txt', 'md', 'fountain', 'js', 'ts', 'jsx', 'tsx', 'json', 'css', 'html', 'xml', 'csv', 'yaml', 'yml', 'py', 'rb', 'go', 'rs', 'java', 'c', 'cpp', 'h', 'sh', 'bat', 'ps1']);
+    const TEXT_EXTS = new Set(['txt', 'md', 'fountain', 'js', 'ts', 'jsx', 'tsx', 'json', 'canvas', 'css', 'html', 'xml', 'csv', 'yaml', 'yml', 'py', 'rb', 'go', 'rs', 'java', 'c', 'cpp', 'h', 'sh', 'bat', 'ps1']);
     const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico', 'tiff', 'heic', 'heif', 'avif']);
     const input = document.createElement('input');
     input.type = 'file';
@@ -1512,7 +1514,8 @@ export class ClaudeView extends ItemView {
         const type = IMAGE_EXTS.has(ext) ? 'image' : 'pdf';
         this.pendingContexts.push({ text: filePath, source: f.name, pinned: false, type });
       } else {
-        const text = TEXT_EXTS.has(ext) ? await f.text() : f.name;
+        let text = TEXT_EXTS.has(ext) ? await f.text() : f.name;
+        if (ext === 'canvas') text = canvasToText(f.name, text);
         this.pendingContexts.push({ text, source: f.name, pinned: false });
       }
       this.renderContextZone();
@@ -1583,7 +1586,7 @@ export class ClaudeView extends ItemView {
   }
 
   private async handleDroppedFiles(files: FileList): Promise<void> {
-    const TEXT_EXTS = new Set(['txt', 'md', 'fountain', 'js', 'ts', 'jsx', 'tsx', 'json', 'css', 'html', 'xml', 'csv', 'yaml', 'yml', 'py', 'rb', 'go', 'rs', 'java', 'c', 'cpp', 'h', 'sh', 'bat', 'ps1']);
+    const TEXT_EXTS = new Set(['txt', 'md', 'fountain', 'js', 'ts', 'jsx', 'tsx', 'json', 'canvas', 'css', 'html', 'xml', 'csv', 'yaml', 'yml', 'py', 'rb', 'go', 'rs', 'java', 'c', 'cpp', 'h', 'sh', 'bat', 'ps1']);
     const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico', 'tiff', 'heic', 'heif', 'avif']);
     for (const f of Array.from(files)) {
       const ext = f.name.split('.').pop()?.toLowerCase() ?? '';
@@ -1592,7 +1595,8 @@ export class ClaudeView extends ItemView {
         const filePath = this.saveBinaryToTmp(f.name, await f.arrayBuffer());
         this.pendingContexts.push({ text: filePath, source: f.name, pinned: false, type });
       } else if (TEXT_EXTS.has(ext)) {
-        const text = await f.text();
+        let text = await f.text();
+        if (ext === 'canvas') text = canvasToText(f.name, text);
         this.pendingContexts.push({ text, source: f.name, pinned: false });
       } else {
         // Unknown binary — pass filename; Claude can attempt to read it

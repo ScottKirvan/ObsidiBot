@@ -1,6 +1,6 @@
 {
   "name": "obsidibot",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Claude Code agentic file management for Obsidian vaults",
   "main": "main.js",
   "scripts": {
