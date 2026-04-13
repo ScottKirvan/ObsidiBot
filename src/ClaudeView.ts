@@ -474,7 +474,7 @@ export class ClaudeView extends ItemView {
       md += `# ${session.title}\n\n`;
       for (const msg of messages) {
         const label = msg.role === 'user' ? (session.userLabel ?? 'User') : (session.assistantLabel ?? 'ObsidiBot');
-        md += `**${label}:**\n${msg.content.trim()}\n\n`;
+        md += `**${label}:**\n${this.cleanContent(msg.content).trim()}\n\n`;
       }
       await this.writeExportNote(notePath, md);
       if (openAfter) await this.openExportedNote(notePath);
@@ -704,7 +704,7 @@ export class ClaudeView extends ItemView {
             }
           } else {
             const el = this.appendMessage('assistant', '');
-            const { clean } = extractActions(msg.content);
+            const clean = this.cleanContent(msg.content);
             el.dataset.markdown = clean;
             await MarkdownRenderer.render(this.app, clean, el, '', this);
             // Re-render any vault query result cards from the original response
@@ -1777,6 +1777,20 @@ export class ClaudeView extends ItemView {
       assistantEl.setText(`Process error: ${err.message}`);
       unlock();
     });
+  }
+
+  /**
+   * Strip all protocol lines (@@CORTEX_ACTION, @@CORTEX_QUERY, etc.) from raw
+   * assistant content before display or export. This is the single canonical
+   * cleaning step — add new protocol prefixes to extractActions() and they are
+   * automatically handled everywhere that calls cleanContent().
+   *
+   * Note: paths that read el.dataset.markdown are already clean because
+   * dataset.markdown is always set from cleanContent() output during
+   * streaming and replay — do not double-clean those paths.
+   */
+  private cleanContent(content: string): string {
+    return extractActions(content).clean;
   }
 
   private appendMessage(role: 'user' | 'assistant' | 'system', text: string): HTMLElement {
