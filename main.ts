@@ -1,6 +1,6 @@
 import { Plugin, Notice, WorkspaceLeaf, addIcon } from 'obsidian';
-import { writeFileSync } from 'fs';
-import { join } from 'path';
+import { writeFileSync, existsSync, readdirSync } from 'fs';
+import { join, isAbsolute } from 'path';
 import { ClaudeView, VIEW_TYPE_CLAUDE } from './src/ClaudeView';
 import { ObsidiBotSettings, DEFAULT_SETTINGS, ObsidiBotSettingsTab } from './src/settings';
 import { findClaudeBinary } from './src/ClaudeProcess';
@@ -12,6 +12,7 @@ export default class ObsidiBotPlugin extends Plugin {
   settings: ObsidiBotSettings;
   shellEnv: Record<string, string> = {};
   claudeBinaryPath: string | null = null;
+  private skillCommandIds = new Set<string>();
 
   async onload() {
     await this.loadSettings();
@@ -24,7 +25,10 @@ export default class ObsidiBotPlugin extends Plugin {
     });
     log('ObsidiBot loading — vault root:', vaultRoot);
 
-    this.app.workspace.onLayoutReady(() => this.generateCommandsFile());
+    this.app.workspace.onLayoutReady(() => {
+      this.generateCommandsFile();
+      this.reloadSkillCommands();
+    });
 
     this.shellEnv = resolveShellEnv();
     this.claudeBinaryPath = findClaudeBinary(this.settings.binaryPath);
@@ -184,6 +188,19 @@ export default class ObsidiBotPlugin extends Plugin {
       }
     });
 
+    this.addCommand({
+      id: 'reload-obsidibot-skills',
+      name: 'Reload skills',
+      callback: () => {
+        if (!this.settings.registerSkillsAsCommands) {
+          new Notice('ObsidiBot: "Register skills as Ctrl+P commands" is disabled in settings.');
+          return;
+        }
+        this.reloadSkillCommands();
+        new Notice('ObsidiBot: skills reloaded.');
+      }
+    });
+
     this.addSettingTab(new ObsidiBotSettingsTab(this.app, this));
   }
 
@@ -327,6 +344,60 @@ export default class ObsidiBotPlugin extends Plugin {
 
   async saveSettings() {
     await this.saveData(this.settings);
+  }
+
+  private resolveCommandsFolder(): string {
+    const vaultRoot = (this.app.vault.adapter as any).basePath as string;
+    const custom = this.settings.commandsFolder;
+    if (custom?.trim()) {
+      const p = custom.trim();
+      return isAbsolute(p) ? p : join(vaultRoot, p);
+    }
+    return join(vaultRoot, this.manifest.dir, 'commands');
+  }
+
+  reloadSkillCommands() {
+    // Remove all previously registered template commands
+    for (const id of this.skillCommandIds) {
+      (this.app as any).commands.removeCommand(id);
+    }
+    this.skillCommandIds.clear();
+
+    if (!this.settings.registerSkillsAsCommands) return;
+
+    const folder = this.resolveCommandsFolder();
+    if (!existsSync(folder)) return;
+
+    try {
+      const files = readdirSync(folder).filter(f => f.endsWith('.md'));
+      for (const file of files) {
+        const filePath = join(folder, file);
+        const name = file.replace(/\.md$/, '');
+        const id = `obsidibot:skill-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+
+        this.addCommand({
+          id,
+          name: `Skill: ${name}`,
+          callback: () => {
+            const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
+            if (existing.length) {
+              this.app.workspace.revealLeaf(existing[0]);
+              (existing[0].view as ClaudeView).executeSkill(filePath);
+            } else {
+              this.activateView().then(() => {
+                const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
+                if (leaves.length) (leaves[0].view as ClaudeView).executeSkill(filePath);
+              });
+            }
+          }
+        });
+
+        this.skillCommandIds.add(id);
+      }
+      log(`Registered ${files.length} skill(s) in Ctrl+P`);
+    } catch (e) {
+      warn('Failed to register skill commands:', e);
+    }
   }
 
   generateCommandsFile() {
