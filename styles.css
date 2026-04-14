@@ -1205,3 +1205,85 @@
   justify-content: flex-end;
   margin-top: 20px;
 }
+
+/* ── User intro modal (context file generation) ── */
+.obsidibot-intro-modal .obsidibot-intro-textarea {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 0.9em;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  padding: 8px;
+  color: var(--text-normal);
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+
+.obsidibot-intro-modal .obsidibot-intro-files-section {
+  border-top: 1px solid var(--background-modifier-border);
+  padding-top: 12px;
+  margin-bottom: 12px;
+}
+
+.obsidibot-intro-modal .obsidibot-intro-files-label {
+  font-size: 0.82em;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.obsidibot-intro-modal .obsidibot-intro-files-desc {
+  font-size: 0.8em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.obsidibot-intro-modal .obsidibot-intro-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.obsidibot-intro-modal .obsidibot-intro-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--background-modifier-hover);
+  border-radius: var(--radius-s);
+  padding: 2px 8px;
+  font-size: 0.82em;
+  color: var(--text-normal);
+}
+
+.obsidibot-intro-modal .obsidibot-intro-chip-remove {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 1em;
+  line-height: 1;
+  padding-left: 2px;
+}
+
+.obsidibot-intro-modal .obsidibot-intro-chip-remove:hover {
+  color: var(--color-red);
+}
+
+.obsidibot-intro-modal .obsidibot-intro-add-btn {
+  font-size: 0.82em;
+  padding: 3px 10px;
+  background: transparent;
+  border: 1px dashed var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.obsidibot-intro-modal .obsidibot-intro-add-btn:hover {
+  border-color: var(--interactive-accent);
+  color: var(--interactive-accent);
+}

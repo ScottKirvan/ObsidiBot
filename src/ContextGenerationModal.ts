@@ -1,8 +1,10 @@
-import { App, Modal, Notice } from 'obsidian';
+import { App, FuzzySuggestModal, Modal, Notice, TFile } from 'obsidian';
 import type ObsidiBotPlugin from '../main';
 import { spawnClaude, parseStreamOutput } from './ClaudeProcess';
 import { buildVaultTree } from './utils/fileTree';
 import { log } from './utils/logger';
+import { existsSync, readdirSync } from 'fs';
+import { join, isAbsolute } from 'path';
 
 export class ContextGenerationModal extends Modal {
   private plugin: ObsidiBotPlugin;
@@ -47,7 +49,9 @@ export class ContextGenerationModal extends Modal {
     });
     generateBtn.addEventListener('click', () => {
       this.close();
-      this.generateContextFile();
+      new UserIntroModal(this.app, (intro, contextFiles) => {
+        this.generateContextFile(intro, contextFiles);
+      }).open();
     });
 
     const blankBtn = btnRow.createEl('button', { text: 'Create blank template' });
@@ -68,7 +72,28 @@ export class ContextGenerationModal extends Modal {
     this.contentEl.empty();
   }
 
-  private async generateContextFile() {
+  private resolveSkillsFolder(): string {
+    const custom = this.plugin.settings.commandsFolder;
+    if (custom?.trim()) {
+      const p = custom.trim();
+      return isAbsolute(p) ? p : join(this.vaultRoot, p);
+    }
+    return join(this.vaultRoot, this.plugin.manifest.dir, 'commands');
+  }
+
+  private listSkills(): string[] {
+    try {
+      const folder = this.resolveSkillsFolder();
+      if (!existsSync(folder)) return [];
+      return readdirSync(folder)
+        .filter(f => f.endsWith('.md'))
+        .map(f => f.replace(/\.md$/, ''));
+    } catch {
+      return [];
+    }
+  }
+
+  private async generateContextFile(userIntro: string, contextFiles: string[] = []) {
     new Notice('ObsidiBot: generating context file in the background…');
     log('ContextGenerationModal: spawning background generation');
 
@@ -77,10 +102,28 @@ export class ContextGenerationModal extends Modal {
       ? `Here is the current vault structure (folder and file names only — no file contents):\n\`\`\`\n${tree}\n\`\`\``
       : 'The vault structure is not available — please explore with your file tools.';
 
+    const skills = this.listSkills();
+    const skillsSection = skills.length > 0
+      ? `\nThe user has the following ObsidiBot skills available:\n${skills.map(s => `- ${s}`).join('\n')}\nInclude a brief "## Available Skills" section listing these.`
+      : '';
+
+    const introSection = userIntro.trim()
+      ? `\nThe user has shared the following about themselves and how they use this vault:\n"${userIntro.trim()}"\nUse this to personalise the context file where relevant.`
+      : '';
+
+    const contextFilesSection = contextFiles.length > 0
+      ? `\nThe user has provided the following files as additional context. Read each of them before writing the context file — they contain relevant background information about the project, conventions, or prior work:\n${contextFiles.map(p => `- ${join(this.vaultRoot, p)}`).join('\n')}`
+      : '';
+
+    const today = new Date().toISOString().slice(0, 10);
+
     const prompt = [
       `You are setting up a context file for a new ObsidiBot (Obsidian plugin) user.`,
       ``,
       `${treeSection}`,
+      `${introSection}`,
+      `${contextFilesSection}`,
+      `${skillsSection}`,
       ``,
       `Please create the file \`${this.contextFilePath}\` in the vault root.`,
       `This file will be injected at the start of every ObsidiBot session as your persistent memory.`,
@@ -90,6 +133,8 @@ export class ContextGenerationModal extends Modal {
       `- Inferred naming conventions and folder purposes`,
       `- Any obvious ongoing projects or focus areas you can detect from folder/file names`,
       `- A short "## Notes for Claude" section with placeholder text the user can customise`,
+      `${skillsSection ? '- A "## Available Skills" section listing the skills above' : ''}`,
+      `- A footer line: "_Last updated: ${today}_"`,
       ``,
       `Write the file now using your file tools. Do not ask for confirmation — just create it.`,
     ].join('\n');
@@ -123,6 +168,7 @@ export class ContextGenerationModal extends Modal {
   }
 
   private async createBlankTemplate() {
+    const today = new Date().toISOString().slice(0, 10);
     const stub = [
       '# Vault Context',
       '',
@@ -137,6 +183,8 @@ export class ContextGenerationModal extends Modal {
       '',
       '## Notes for Claude',
       '<!-- e.g. Prefer concise bullet-point summaries. Always ask before deleting files. -->',
+      '',
+      `_Last updated: ${today}_`,
     ].join('\n');
 
     try {
@@ -146,5 +194,114 @@ export class ContextGenerationModal extends Modal {
       log('ContextGenerationModal: failed to create blank template:', err);
       new Notice('ObsidiBot: failed to create context file. Check the debug log.');
     }
+  }
+}
+
+/**
+ * Second-step modal shown after "Generate with Claude" is selected.
+ * Collects an optional self-description and optional additional context files,
+ * then calls back with both.
+ */
+class UserIntroModal extends Modal {
+  private selectedFiles = new Map<string, string>(); // path → display name
+  private chipsEl!: HTMLElement;
+  private onSubmit: (intro: string, contextFiles: string[]) => void;
+
+  constructor(app: App, onSubmit: (intro: string, contextFiles: string[]) => void) {
+    super(app);
+    this.onSubmit = onSubmit;
+  }
+
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.addClass('obsidibot-intro-modal');
+    contentEl.createEl('h2', { text: 'About you and your vault' });
+    contentEl.createEl('p', {
+      text: 'Help Claude generate a more personalised context file. ' +
+        'Tell it a little about yourself and how you use this vault.',
+    });
+
+    const ta = contentEl.createEl('textarea', { cls: 'obsidibot-intro-textarea' });
+    ta.placeholder = '(optional) e.g. I\'m a screenwriter using this vault for research and script development.';
+    ta.rows = 4;
+
+    // ── Additional context files (optional) ──────────────────────────────
+    const filesSection = contentEl.createDiv({ cls: 'obsidibot-intro-files-section' });
+    filesSection.createEl('div', {
+      text: 'Additional context files (optional)',
+      cls: 'obsidibot-intro-files-label',
+    });
+    filesSection.createEl('div', {
+      text: 'Add any files Claude should read before generating — e.g. an existing CLAUDE.md, project notes, or style guides.',
+      cls: 'obsidibot-intro-files-desc',
+    });
+
+    this.chipsEl = filesSection.createDiv({ cls: 'obsidibot-intro-chips' });
+
+    const addBtn = filesSection.createEl('button', {
+      text: '+ Add file',
+      cls: 'obsidibot-intro-add-btn',
+    });
+    addBtn.addEventListener('click', () => {
+      new ContextFilePicker(this.app, (file) => {
+        if (!this.selectedFiles.has(file.path)) {
+          this.selectedFiles.set(file.path, file.basename);
+          this.renderChips();
+        }
+      }).open();
+    });
+
+    // ── Buttons ──────────────────────────────────────────────────────────
+    const btnRow = contentEl.createDiv({ cls: 'modal-button-container' });
+
+    const okBtn = btnRow.createEl('button', { text: 'Generate', cls: 'mod-cta' });
+    okBtn.addEventListener('click', () => {
+      const intro = ta.value.trim() === '(optional)' ? '' : ta.value.trim();
+      const files = [...this.selectedFiles.keys()];
+      this.close();
+      this.onSubmit(intro, files);
+    });
+
+    const cancelBtn = btnRow.createEl('button', { text: 'Cancel' });
+    cancelBtn.addEventListener('click', () => this.close());
+
+    setTimeout(() => ta.focus(), 50);
+  }
+
+  private renderChips() {
+    this.chipsEl.empty();
+    for (const [path, name] of this.selectedFiles) {
+      const chip = this.chipsEl.createDiv({ cls: 'obsidibot-intro-chip' });
+      chip.createSpan({ text: name, cls: 'obsidibot-intro-chip-name' });
+      const remove = chip.createSpan({ text: '×', cls: 'obsidibot-intro-chip-remove' });
+      remove.addEventListener('click', () => {
+        this.selectedFiles.delete(path);
+        this.renderChips();
+      });
+    }
+  }
+
+  onClose() {
+    this.contentEl.empty();
+  }
+}
+
+/** Fuzzy vault-file picker for the UserIntroModal context file selector. */
+class ContextFilePicker extends FuzzySuggestModal<TFile> {
+  constructor(app: App, private onChoose: (file: TFile) => void) {
+    super(app);
+    this.setPlaceholder('Pick a file to include as context…');
+  }
+
+  getItems(): TFile[] {
+    return this.app.vault.getFiles();
+  }
+
+  getItemText(file: TFile): string {
+    return file.path;
+  }
+
+  onChooseItem(file: TFile) {
+    this.onChoose(file);
   }
 }

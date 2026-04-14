@@ -32,10 +32,21 @@ Deeper trees give Claude better spatial awareness of large vaults but cost more 
 
 A markdown file injected at the start of every session. Default path: `_claude-context.md` at your vault root. This is Claude's **persistent memory** — it survives across sessions and syncs with your vault.
 
-Seed it manually with your vault conventions:
+### Getting started
+
+When you first open ObsidiBot, a setup dialog offers three options:
+
+- **Generate with Claude** — Claude scans your vault structure and writes a context file tailored to your folders and naming conventions. You'll be asked one optional question first: *"Tell me a little about yourself and how you use this vault."* The more you share, the more personalised the result — but it's entirely optional.
+- **Create blank template** — Gives you a pre-structured file with placeholder sections to fill in yourself.
+- **Skip** — Skips setup for now. You can relaunch it any time via **ObsidiBot: Open context file** from the palette — if the file doesn't exist yet, the setup dialog reopens automatically.
+
+### What to put in it
 
 ```markdown
 # My Vault Context
+
+## About this vault
+A personal knowledge base for screenwriting research and script development.
 
 ## Conventions
 - Meeting notes go in 02_Calendar/YYYY-MM-DD format
@@ -44,7 +55,39 @@ Seed it manually with your vault conventions:
 
 ## Current focus
 Working on Q2 planning. Key notes: [[Q2 Goals]], [[Team Roster]]
+
+## Notes for Claude
+Prefer concise bullet-point summaries. Always ask before deleting files.
+
+_Last updated: 2026-04-13_
 ```
+
+Think of it as a briefing document — tell Claude who you are, how your vault is organised, what's currently in focus, and any standing preferences.
+
+### `_claude-context.md` vs `CLAUDE.md`
+
+ObsidiBot's context file and Claude Code's native `CLAUDE.md` serve similar purposes but have distinct roles:
+
+|  | `_claude-context.md` | `CLAUDE.md` |
+|---|---|---|
+| **Read by** | ObsidiBot (injected at session start) | Claude Code CLI natively on every spawn |
+| **Location** | Configurable — any path in or outside the vault | Project root by convention |
+| **Purpose** | Vault-specific: who you are, how you work, current focus | Project/repo instructions: architecture, conventions, build commands |
+| **Editable from** | ObsidiBot: Open context file command | Any text editor |
+| **Travels with vault** | Yes — it's a vault note | Yes — it's a tracked file |
+| **Updated by Claude** | Yes, when Autonomous memory is on | No — Claude Code reads it, doesn't write it |
+
+**When to use both:** `CLAUDE.md` at the vault root works as a fallback — Claude Code reads it on every spawn regardless of ObsidiBot. Use it for technical/project-level instructions that apply everywhere. Use `_claude-context.md` for personal context, vault conventions, and the evolving notes that Autonomous memory maintains.
+
+**When `_claude-context.md` wins:** it can live anywhere (configurable path), it's updated by Claude automatically, and it doesn't need to be at the vault root. If you use ObsidiBot across multiple vaults, each can have its own context file at a different path without touching `CLAUDE.md`.
+
+### Keeping it fresh
+
+The context file can go stale as your vault evolves. A few habits that help:
+
+- **Add a datestamp** (`_Last updated: YYYY-MM-DD_`) so Claude — and you — can tell how fresh it is
+- **Turn on Autonomous memory** (see section 6) and let Claude maintain it as it learns your vault
+- **Run "Refresh session context"** from the palette to re-inject the file into an active session after editing it
 
 The context file path is configurable in **Settings → ObsidiBot**.
 

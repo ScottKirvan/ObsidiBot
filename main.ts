@@ -7,6 +7,7 @@ import { findClaudeBinary } from './src/ClaudeProcess';
 import { resolveShellEnv } from './src/utils/shellEnv';
 import { initLogger, log, warn } from './src/utils/logger';
 import { AboutModal } from './src/modals/AboutModal';
+import { ContextGenerationModal } from './src/ContextGenerationModal';
 
 export default class ObsidiBotPlugin extends Plugin {
   settings: ObsidiBotSettings;
@@ -325,7 +326,17 @@ export default class ObsidiBotPlugin extends Plugin {
     if (file) {
       this.app.workspace.openLinkText(contextPath, '', false);
     } else {
-      new Notice(`Context file not found: ${contextPath}`);
+      // File missing — relaunch the creation dialog instead of dead-ending with a Notice
+      const vaultRoot = (this.app.vault.adapter as any).basePath;
+      new ContextGenerationModal(
+        this.app,
+        this,
+        contextPath,
+        this.claudeBinaryPath ?? '',
+        vaultRoot,
+        this.shellEnv,
+        this.settings.vaultTreeDepth,
+      ).open();
     }
   }
 
