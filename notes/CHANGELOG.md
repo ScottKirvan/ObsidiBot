@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.0](https://github.com/ScottKirvan/ObsidiBot/compare/v2.5.0...v2.6.0) (2026-04-14)
+
+
+### Features
+
+* context file — interview modal, multi-file picker, and datestamp ([983f898](https://github.com/ScottKirvan/ObsidiBot/commit/983f898b49f95e753b6fc84406715b62417e171d))
+
 ## [2.5.0](https://github.com/ScottKirvan/ObsidiBot/compare/v2.4.0...v2.5.0) (2026-04-14)
 
 
