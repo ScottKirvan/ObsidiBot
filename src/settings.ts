@@ -46,11 +46,16 @@ export interface ObsidiBotSettings {
    */
   sessionStoragePath: string;
   /**
-   * Folder containing user slash command templates (.md files).
+   * Folder containing skill files (.md files).
    * Empty = default (plugin dir/commands — gitignored).
    * Vault-relative path or absolute path.
    */
   commandsFolder: string;
+  /**
+   * Register skills as Obsidian Ctrl+P commands.
+   * Use "Reload skills" from the palette after adding or removing skill files.
+   */
+  registerSkillsAsCommands: boolean;
 }
 
 export const DEFAULT_SETTINGS: ObsidiBotSettings = {
@@ -76,6 +81,7 @@ export const DEFAULT_SETTINGS: ObsidiBotSettings = {
   lastActiveSessionId: '',
   sessionStoragePath: '',
   commandsFolder: '',
+  registerSkillsAsCommands: false,
 };
 
 export class ObsidiBotSettingsTab extends PluginSettingTab {
@@ -269,12 +275,12 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('Commands folder')
+      .setName('Skills folder')
       .setDesc(
-        'Folder containing your slash command templates (.md files). ' +
+        'Folder containing your skill files (.md files). ' +
         'Leave empty for the default location (plugin dir/commands). ' +
-        'Use a vault-relative path (e.g. _commands) to keep templates in your vault, ' +
-        'or an absolute path. Templates reload each time you open the / menu.'
+        'Use a vault-relative path (e.g. _skills) to keep skills in your vault, ' +
+        'or an absolute path. Skills reload each time you open the / menu.'
       )
       .addText((text) =>
         text
@@ -283,6 +289,26 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
           .onChange(async (value) => {
             this.plugin.settings.commandsFolder = value.trim();
             await this.plugin.saveSettings();
+            if (this.plugin.settings.registerSkillsAsCommands) {
+              this.plugin.reloadSkillCommands();
+            }
+          })
+      );
+
+    new Setting(containerEl)
+      .setName('Register skills as Ctrl+P commands')
+      .setDesc(
+        'Expose each skill as an Obsidian command palette entry (prefixed "Skill: …"). ' +
+        'Run "ObsidiBot: Reload skills" from the palette after adding or removing skill files. ' +
+        'Disable if you find the extra commands cluttering the palette.'
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.registerSkillsAsCommands)
+          .onChange(async (value) => {
+            this.plugin.settings.registerSkillsAsCommands = value;
+            await this.plugin.saveSettings();
+            this.plugin.reloadSkillCommands();
           })
       );
 

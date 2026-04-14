@@ -1,12 +1,12 @@
 # Slash Commands
 
-The `/` menu gives you quick access to built-in ObsidiBot actions and your own reusable prompt templates — all without leaving the chat panel.
+The `/` menu gives you quick access to built-in ObsidiBot actions and your own **skills** — all without leaving the chat panel.
 
 ## Opening the menu
 
 **Toolbar button** — click the `/` button in the input toolbar. A menu opens with a search box. Type to filter, use arrow keys to navigate, Enter to execute, Escape to close.
 
-**Inline trigger** — type `/` in the chat input, preceded by a space or at the start of the input (e.g. `summarize this /`). A compact menu appears above the input. Navigate with arrow keys, Enter executes, Escape or any other key dismisses it — the `/` stays as literal text so you can keep typing normally.
+**Inline trigger** — type `/` in the chat input, preceded by a space or at the start of the input. A compact menu appears above the input. Navigate with arrow keys, Enter executes, Escape or any other key dismisses it.
 
 ::: tip
 `/` only triggers the menu when preceded by a space or at the start of the input. Typing `and/or` or `https://...` never opens the menu.
@@ -24,48 +24,54 @@ The `/` menu gives you quick access to built-in ObsidiBot actions and your own r
 | **Context** | Refresh context | Re-inject vault context into the session |
 | **Context** | Open settings | Open ObsidiBot settings |
 
-## Prompt templates
+## Skills
 
-Create `.md` files in your commands folder and they appear in the `/` menu automatically. Selecting a template inserts its content into the input so you can review or edit before sending.
+Skills are the real power of the `/` menu. A skill is a markdown file that gives Claude a defined mission — from a simple reusable prompt to a fully parameterized agentic workflow.
 
-**Default folder:** `<plugin dir>/commands/` — this is inside the plugin directory and gitignored by default.
+Drop a `.md` file in your skills folder and it appears in the menu instantly. No restart required.
 
-**Custom folder:** set **Settings → ObsidiBot → Commands folder** to any vault-relative path (e.g. `_commands`) or absolute path. Templates reload each time you open the menu, so changes take effect immediately.
+**Default folder:** `<plugin dir>/commands/` — inside the plugin directory, gitignored by default.
 
-### Template format
+**Custom folder:** set **Settings → ObsidiBot → Skills folder** to any vault-relative path (e.g. `_skills`) or absolute path.
 
-A template file can be plain text or include optional YAML frontmatter to set its category and description:
+See the **[Skills reference](./skills)** for the full file format, all frontmatter fields, and examples.
+
+### Quick example
 
 ```markdown
 ---
-category: Git
-description: Write a commit message for staged changes
+category: Writing
+description: Summarize the active note
+autorun: true
 ---
-Review my staged git changes and write a conventional commit message following the Conventional Commits spec.
+Summarize the currently active note concisely, preserving key decisions and open questions.
 ```
 
-| Frontmatter field | Default | Description |
-|---|---|---|
-| `category` | `Prompts` | Groups templates under a named heading in the menu |
-| `description` | *(none)* | Short subtitle shown below the command name |
+Save this as `_skills/Summarize Note.md`. It appears under **Writing** in the `/` menu. Selecting it fires immediately — no extra steps.
 
-Without frontmatter, the filename (minus `.md`) becomes the command name and it appears under **Prompts**.
+### Parameterized skills
 
-### Examples
+Skills can define form fields that ObsidiBot presents as a modal before running:
 
-**`_commands/weekly-review.md`**
 ```markdown
 ---
-category: Reviews
-description: Structured weekly review
+category: GitHub
+description: File a bug report
+autorun: true
+params:
+  - id: repo
+    type: input
+    label: Repository
+    placeholder: owner/repo
+    validations:
+      required: true
+  - id: title
+    type: input
+    label: Bug title
+    validations:
+      required: true
 ---
-Review my notes from this week and give me a summary of:
-- What I worked on
-- Any open threads or unresolved questions
-- Suggested priorities for next week
+File a GitHub issue in {{repo}} titled "{{title}}".
 ```
 
-**`_commands/brainstorm.md`**
-```
-Let's brainstorm ideas about the following topic. Give me at least 10 diverse ideas, then help me evaluate the most promising ones.
-```
+The user fills in the form, hits **Run**, and Claude gets a precisely scoped prompt. No prompt editing required.

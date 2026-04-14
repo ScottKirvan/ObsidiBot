@@ -1142,3 +1142,66 @@
   font-size: 0.88em;
   color: var(--text-muted);
 }
+
+/* ── Slash command param modal ── */
+.obsidibot-param-modal .obsidibot-param-field {
+  margin-bottom: 16px;
+}
+
+.obsidibot-param-modal .obsidibot-param-label {
+  display: block;
+  font-size: 0.88em;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-normal);
+}
+
+.obsidibot-param-modal .obsidibot-param-desc {
+  font-size: 0.8em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.obsidibot-param-modal .obsidibot-param-input,
+.obsidibot-param-modal .obsidibot-param-textarea,
+.obsidibot-param-modal .obsidibot-param-select {
+  width: 100%;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  padding: 6px 8px;
+  font-size: 0.88em;
+  color: var(--text-normal);
+  box-sizing: border-box;
+}
+
+.obsidibot-param-modal .obsidibot-param-textarea {
+  min-height: 80px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.obsidibot-param-modal .obsidibot-param-note-input {
+  cursor: pointer;
+}
+
+.obsidibot-param-modal .obsidibot-param-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88em;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+
+.obsidibot-param-modal .obsidibot-param-error {
+  font-size: 0.8em;
+  color: var(--color-red);
+  margin-top: 4px;
+}
+
+.obsidibot-param-modal .obsidibot-param-btn-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}

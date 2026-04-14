@@ -37,6 +37,7 @@ export default {
         items: [
           { text: 'Chat Panel', link: '/guide/chat-panel' },
           { text: 'Slash Commands', link: '/guide/slash-commands' },
+          { text: 'Skills', link: '/guide/skills' },
           { text: 'Session Manager', link: '/guide/sessions' },
           { text: 'Context System', link: '/guide/context-system' },
         ]

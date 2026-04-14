@@ -1,5 +1,6 @@
-import { ItemView, WorkspaceLeaf, MarkdownRenderer, Notice, setIcon, TFile, Modal, App } from 'obsidian';
+import { ItemView, WorkspaceLeaf, MarkdownRenderer, Notice, setIcon, TFile, Modal, App, parseYaml } from 'obsidian';
 import { SlashMenu, SlashCommand } from './SlashMenu';
+import { SlashParamModal, SlashParam } from './modals/SlashParamModal';
 import { canvasToText } from './utils/canvasParser';
 import { spawn } from 'child_process';
 import { writeFileSync, mkdirSync, existsSync, readdirSync, readFileSync } from 'fs';
@@ -81,6 +82,7 @@ export class ClaudeView extends ItemView {
   private inputHistory: string[] = [];
   private historyIndex: number = -1;
   private inputDraft: string = '';
+  private suppressNextUserBubble = false;
   private activeProc: ReturnType<typeof spawnClaude> | null = null;
   private activeSlashMenu: SlashMenu | null = null;
   private inputAreaEl: HTMLElement;
@@ -821,11 +823,14 @@ export class ClaudeView extends ItemView {
         if (c.type === 'pdf')   return { type: 'pdf' as const,        source: c.source, path: c.text };
         return                         { type: 'attachment' as const,  source: c.source };
       });
-    if (liveContextBadges.length > 0) {
-      this.appendUserMessageWithContexts(prompt, liveContextBadges);
-    } else {
-      this.appendMessage('user', prompt);
+    if (!this.suppressNextUserBubble) {
+      if (liveContextBadges.length > 0) {
+        this.appendUserMessageWithContexts(prompt, liveContextBadges);
+      } else {
+        this.appendMessage('user', prompt);
+      }
     }
+    this.suppressNextUserBubble = false;
 
     // Response group: tool events (above) + assistant bubble + token stats (below)
     const responseGroupEl = this.messagesEl.createDiv({ cls: 'obsidibot-response-group' });
@@ -2014,7 +2019,63 @@ export class ClaudeView extends ItemView {
     return join(vaultRoot, this.plugin.manifest.dir, 'commands');
   }
 
-  private loadTemplateCommands(): SlashCommand[] {
+  /** Execute a template file by absolute path — used by Ctrl+P registered commands. */
+  executeSkill(filePath: string) {
+    if (!this.inputEl) return;
+    try {
+      const raw = readFileSync(filePath, 'utf8');
+      let body = raw;
+      let params: SlashParam[] | undefined;
+      let autorun = false;
+      let name = filePath.split(/[\\/]/).pop()?.replace(/\.md$/, '') ?? 'Command';
+
+      const fmMatch = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+      if (fmMatch) {
+        body = fmMatch[2].trim();
+        try {
+          const fm = parseYaml(fmMatch[1]) as Record<string, unknown>;
+          if (fm.autorun === true) autorun = true;
+          if (Array.isArray(fm.params)) params = fm.params as SlashParam[];
+        } catch { /* use defaults */ }
+      }
+
+      if (params?.length) {
+        new SlashParamModal(this.app, name, params, body, autorun, (result, shouldRun, attachments) => {
+          for (const att of attachments) {
+            this.pendingContexts.push({ text: att.text, source: att.source, pinned: false });
+          }
+          if (attachments.length) this.renderContextZone();
+          if (shouldRun) {
+            this.inputEl.value = result;
+            this.inputEl.dispatchEvent(new Event('input'));
+            this.appendMessage('system', `Running: ${name}`);
+            this.suppressNextUserBubble = true;
+            this.handleSend();
+          } else {
+            this.inputEl.value = result;
+            this.inputEl.dispatchEvent(new Event('input'));
+            this.inputEl.focus();
+            this.inputEl.setSelectionRange(result.length, result.length);
+          }
+        }).open();
+      } else if (autorun) {
+        this.inputEl.value = body;
+        this.inputEl.dispatchEvent(new Event('input'));
+        this.appendMessage('system', `Running: ${name}`);
+        this.suppressNextUserBubble = true;
+        this.handleSend();
+      } else {
+        const current = this.inputEl.value;
+        const insert = current ? current + '\n\n' + body : body;
+        this.inputEl.value = insert;
+        this.inputEl.dispatchEvent(new Event('input'));
+        this.inputEl.focus();
+        this.inputEl.setSelectionRange(insert.length, insert.length);
+      }
+    } catch { /* file unreadable */ }
+  }
+
+  private loadSkillCommands(): SlashCommand[] {
     const folder = this.resolveCommandsFolder();
     if (!existsSync(folder)) return [];
     const commands: SlashCommand[] = [];
@@ -2023,19 +2084,24 @@ export class ClaudeView extends ItemView {
       for (const file of files) {
         try {
           const raw = readFileSync(join(folder, file), 'utf8');
-          // Parse optional YAML frontmatter
           let body = raw;
           let category = 'Prompts';
           let description: string | undefined;
+          let params: SlashParam[] | undefined;
+          let autorun = false;
+
           const fmMatch = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
           if (fmMatch) {
-            const fm = fmMatch[1];
             body = fmMatch[2].trim();
-            const catMatch = fm.match(/^category:\s*(.+)$/m);
-            const descMatch = fm.match(/^description:\s*(.+)$/m);
-            if (catMatch) category = catMatch[1].trim();
-            if (descMatch) description = descMatch[1].trim();
+            try {
+              const fm = parseYaml(fmMatch[1]) as Record<string, unknown>;
+              if (typeof fm.category === 'string') category = fm.category;
+              if (typeof fm.description === 'string') description = fm.description;
+              if (fm.autorun === true) autorun = true;
+              if (Array.isArray(fm.params)) params = fm.params as SlashParam[];
+            } catch { /* malformed frontmatter — use defaults */ }
           }
+
           const name = file.replace(/\.md$/, '');
           commands.push({
             category,
@@ -2043,12 +2109,41 @@ export class ClaudeView extends ItemView {
             description,
             action: () => {
               if (!this.inputEl) return;
-              const current = this.inputEl.value;
-              const insert = current ? current + '\n\n' + body : body;
-              this.inputEl.value = insert;
-              this.inputEl.dispatchEvent(new Event('input'));
-              this.inputEl.focus();
-              this.inputEl.setSelectionRange(insert.length, insert.length);
+              if (params?.length) {
+                new SlashParamModal(this.app, name, params, body, autorun, (result, shouldRun, attachments) => {
+                  // Add note attachments to pending context (shown as badges, like @-mention)
+                  for (const att of attachments) {
+                    this.pendingContexts.push({ text: att.text, source: att.source, pinned: false });
+                  }
+                  if (attachments.length) this.renderContextZone();
+
+                  if (shouldRun) {
+                    this.inputEl.value = result;
+                    this.inputEl.dispatchEvent(new Event('input'));
+                    this.appendMessage('system', `Running: ${name}`);
+                    this.suppressNextUserBubble = true;
+                    this.handleSend();
+                  } else {
+                    this.inputEl.value = result;
+                    this.inputEl.dispatchEvent(new Event('input'));
+                    this.inputEl.focus();
+                    this.inputEl.setSelectionRange(result.length, result.length);
+                  }
+                }).open();
+              } else if (autorun) {
+                this.inputEl.value = body;
+                this.inputEl.dispatchEvent(new Event('input'));
+                this.appendMessage('system', `Running: ${name}`);
+                this.suppressNextUserBubble = true;
+                this.handleSend();
+              } else {
+                const current = this.inputEl.value;
+                const insert = current ? current + '\n\n' + body : body;
+                this.inputEl.value = insert;
+                this.inputEl.dispatchEvent(new Event('input'));
+                this.inputEl.focus();
+                this.inputEl.setSelectionRange(insert.length, insert.length);
+              }
             },
           });
         } catch { /* skip malformed files */ }
@@ -2114,7 +2209,7 @@ export class ClaudeView extends ItemView {
           (this.app as any).setting.openTabById('obsidibot');
         },
       },
-      ...this.loadTemplateCommands(),
+      ...this.loadSkillCommands(),
     ];
   }
 }
