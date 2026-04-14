@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.5.0](https://github.com/ScottKirvan/ObsidiBot/compare/v2.4.0...v2.5.0) (2026-04-14)
+
+
+### Features
+
+* skills — parameterized slash commands with Ctrl+P API ([1536f9a](https://github.com/ScottKirvan/ObsidiBot/commit/1536f9a051554fc6cc2d3d1fb38a3a61953316f8))
+
+
+### Bug Fixes
+
+* docs: fix broken image in user documentation splash screen ([2468911](https://github.com/ScottKirvan/ObsidiBot/commit/2468911aba3ca549f02001b4ceded710ab51d26a))
+
 ## [2.4.0](https://github.com/ScottKirvan/ObsidiBot/compare/v2.3.0...v2.4.0) (2026-04-13)
 
 
