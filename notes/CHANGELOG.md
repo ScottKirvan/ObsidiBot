@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.0](https://github.com/ScottKirvan/ObsidiBot/compare/v2.6.1...v2.7.0) (2026-04-15)
+
+
+### Features
+
+* references to vault notes will now render as wililinks in claude responses ([89abd62](https://github.com/ScottKirvan/ObsidiBot/commit/89abd62e1820d073a1e93100130ff956a52c47f2))
+
 ## [2.6.1](https://github.com/ScottKirvan/ObsidiBot/compare/v2.6.0...v2.6.1) (2026-04-15)
 
 
