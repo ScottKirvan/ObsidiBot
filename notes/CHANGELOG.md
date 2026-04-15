@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.1](https://github.com/ScottKirvan/ObsidiBot/compare/v2.6.0...v2.6.1) (2026-04-15)
+
+
+### Bug Fixes
+
+* internal links clickable + hard line breaks in chat renderer ([#115](https://github.com/ScottKirvan/ObsidiBot/issues/115), [#116](https://github.com/ScottKirvan/ObsidiBot/issues/116)) ([636d91f](https://github.com/ScottKirvan/ObsidiBot/commit/636d91fca1fe9dd884c2905011637e1f6de96834))
+
 ## [2.6.0](https://github.com/ScottKirvan/ObsidiBot/compare/v2.5.0...v2.6.0) (2026-04-14)
 
 
