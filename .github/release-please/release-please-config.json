@@ -5,6 +5,7 @@
   "changelog-path": "notes/CHANGELOG.md",
   "packages": {
     ".": {
+      "version-prefix": "",
       "extra-files": [
         "notes/VERSION.md",
         {
