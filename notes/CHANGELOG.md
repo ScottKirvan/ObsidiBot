@@ -6,6 +6,11 @@
 ### Features
 
 * context file — interview modal, multi-file picker, and datestamp ([983f898](https://github.com/ScottKirvan/ObsidiBot/commit/983f898b49f95e753b6fc84406715b62417e171d))
+  * "Open context file" command now relaunches the setup dialog when the file is missing instead of showing a dead-end Notice
+  * "Generate with Claude" opens a two-step interview modal: optional self-description textarea + multi-file picker (existing CLAUDE.md, project notes, style guides, etc.)
+  * Selected files are passed to Claude as paths to read before generating — no size constraints, Claude uses its own file tools
+  * Generated and blank template files both include a `_Last updated_` datestamp
+  * Skills list injected into the generation prompt if any skills exist in the configured folder
 
 ## [2.5.0](https://github.com/ScottKirvan/ObsidiBot/compare/v2.4.0...v2.5.0) (2026-04-14)
 
@@ -26,6 +31,10 @@
 
 * Canvas integration — read and generate .canvas files ([#28](https://github.com/ScottKirvan/ObsidiBot/issues/28)) ([cb7fda6](https://github.com/ScottKirvan/ObsidiBot/commit/cb7fda676af5b0e80949f0bd575d3e8272586ab0))
 * slash command menu ([#27](https://github.com/ScottKirvan/ObsidiBot/issues/27)) ([8af1902](https://github.com/ScottKirvan/ObsidiBot/commit/8af1902c2fb5edb241849e00aed4b3c8cd92be32))
+  * **Toolbar button mode:** opens with a search box; type to filter, arrow keys navigate, Enter executes, Escape closes
+  * **Inline trigger mode:** type `/` preceded by a space (or at start of input) to open a compact menu; any non-navigation key dismisses and keeps the `/` as literal text
+  * **Built-in commands:** New session, Show history, Export session, Attach file, Open context file, Refresh context, Open settings
+  * **Prompt templates:** `.md` files in the configured commands folder appear automatically; optional YAML frontmatter (`category`, `description`) controls grouping and subtitle
 
 ## [2.3.0](https://github.com/ScottKirvan/ObsidiBot/compare/v2.2.1...v2.3.0) (2026-04-13)
 
@@ -44,6 +53,7 @@
 * re-render vault query result cards on session replay ([36d4f30](https://github.com/ScottKirvan/ObsidiBot/commit/36d4f30c5f43dc50fd5416d06da5a821d82e035b))
 * render query results as wikilinks in vault export ([ae1fcbc](https://github.com/ScottKirvan/ObsidiBot/commit/ae1fcbc17f62f78ede2229f34da675d24a8c2ef9))
 * strip @@CORTEX_QUERY lines from session replay and extractActions ([45d5bb9](https://github.com/ScottKirvan/ObsidiBot/commit/45d5bb9996dd0b7ecc5ba097ea2ada03a5afdcc1))
+* fix @@CORTEX_QUERY lines appearing verbatim in vault exports ([01df214](https://github.com/ScottKirvan/ObsidiBot/commit/01df214255b44a9f48cca57716b381bedeb22584))
 
 ## [2.2.1](https://github.com/ScottKirvan/ObsidiBot/compare/v2.2.0...v2.2.1) (2026-04-12)
 

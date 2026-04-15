@@ -65,3 +65,19 @@ npm run dev                    # watch mode
 
 ## Commits
 `feat:` / `fix:` / `docs:` / `chore:` / `refactor:` / `test:`. Breaking: `feat!:` or `BREAKING CHANGE:` footer. release-please handles CHANGELOG + version bumps.
+
+## Release process (post-merge checklist)
+release-please only reads commit **subject lines** — commit bodies are ignored. After each release PR merges:
+
+1. Scan commit bodies for sub-features/fixes not visible in the subject:
+   ```bash
+   git log --format="%H %s%n%b%n---" <prev-tag>..HEAD
+   ```
+2. Manually expand any sparse entries in `notes/CHANGELOG.md`
+3. Sync the GitHub release page to match:
+   ```bash
+   gh release edit <tag> --notes "$(cat release-body.md)"
+   ```
+   (or paste directly via `gh release edit <tag> --notes-file <file>`)
+
+The natural checkpoint is the release-please PR review — that's the right moment to catch multi-bullet commits before the release goes public.
