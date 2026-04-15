@@ -31,37 +31,37 @@ The frontmatter controls how the skill appears in the menu and how it behaves. T
 
 ## Frontmatter reference
 
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `category` | string | `Prompts` | Groups the skill under a named heading in the `/` menu |
-| `description` | string | *(none)* | Short subtitle shown below the skill name |
-| `autorun` | boolean | `false` | If `true`, executes immediately. If `false`, inserts into the chat input for review |
-| `params` | array | *(none)* | Form fields presented to the user before the skill runs |
+| Field         | Type    | Default   | Description                                                                         |
+| ------------- | ------- | --------- | ----------------------------------------------------------------------------------- |
+| `category`    | string  | `Prompts` | Groups the skill under a named heading in the `/` menu                              |
+| `description` | string  | *(none)*  | Short subtitle shown below the skill name                                           |
+| `autorun`     | boolean | `false`   | If `true`, executes immediately. If `false`, inserts into the chat input for review |
+| `params`      | array   | *(none)*  | Form fields presented to the user before the skill runs                             |
 
 ## `params` fields
 
 When `params` is defined, ObsidiBot shows a modal form before running the skill. Each entry is an object with the following properties:
 
-| Property | Required | Description |
-|---|---|---|
-| `id` | Yes | Variable name used in `{{interpolation}}` in the prompt body |
-| `type` | Yes | Field type — see below |
-| `label` | Yes | Human-readable label shown in the form |
-| `description` | No | Helper text shown below the label |
-| `placeholder` | No | Placeholder text for `input` and `textarea` fields |
-| `options` | Yes (dropdown, checkboxes) | Array of string values |
-| `default` | No | Pre-filled value |
-| `validations.required` | No | If `true`, blocks submission when the field is empty |
+| Property               | Required                   | Description                                                  |
+| ---------------------- | -------------------------- | ------------------------------------------------------------ |
+| `id`                   | Yes                        | Variable name used in `{{interpolation}}` in the prompt body |
+| `type`                 | Yes                        | Field type — see below                                       |
+| `label`                | Yes                        | Human-readable label shown in the form                       |
+| `description`          | No                         | Helper text shown below the label                            |
+| `placeholder`          | No                         | Placeholder text for `input` and `textarea` fields           |
+| `options`              | Yes (dropdown, checkboxes) | Array of string values                                       |
+| `default`              | No                         | Pre-filled value                                             |
+| `validations.required` | No                         | If `true`, blocks submission when the field is empty         |
 
 ### Field types
 
-| Type | Description |
-|---|---|
-| `input` | Single-line text field |
-| `textarea` | Multi-line text field |
-| `dropdown` | Select from a fixed list of options |
-| `checkboxes` | One or more boolean toggles — result is a comma-separated string |
-| `note` | Vault note picker — fuzzy search over all vault notes; injects the **full note content** as an attachment (same as @-mention) |
+| Type         | Description                                                                                                                   |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `input`      | Single-line text field                                                                                                        |
+| `textarea`   | Multi-line text field                                                                                                         |
+| `dropdown`   | Select from a fixed list of options                                                                                           |
+| `checkboxes` | One or more boolean toggles — result is a comma-separated string                                                              |
+| `note`       | Vault note picker — fuzzy search over all vault notes; injects the **full note content** as an attachment (same as @-mention) |
 
 ### Variable interpolation
 
@@ -73,16 +73,16 @@ Use `{{id}}` in the prompt body to reference field values. After submission:
 
 ## Execution modes
 
-| `autorun` | `params` | Behaviour |
-|---|---|---|
-| `false` | none | Inserts prompt body into chat input for review |
-| `true` | none | Fires immediately; shows `Running: <name>` in chat |
-| `false` | defined | Shows form → inserts filled prompt into chat input |
-| `true` | defined | Shows form → fires immediately on submit |
+| `autorun` | `params` | Behaviour                                          |
+| --------- | -------- | -------------------------------------------------- |
+| `false`   | none     | Inserts prompt body into chat input for review     |
+| `true`    | none     | Fires immediately; shows `Running: <name>` in chat |
+| `false`   | defined  | Shows form → inserts filled prompt into chat input |
+| `true`    | defined  | Shows form → fires immediately on submit           |
 
 ## Skills folder
 
-**Default:** `<plugin dir>/commands/` — inside the plugin directory and gitignored by default.
+**Default:** `_ObsidiBot Skills/` — at your vault root. This keeps skills in your vault, making them easy to edit and sync with Obsidian Git.
 
 **Custom:** set **Settings → ObsidiBot → Skills folder** to:
 - A vault-relative path (e.g. `_skills`) — keeps skills in your vault, synced with Obsidian Git

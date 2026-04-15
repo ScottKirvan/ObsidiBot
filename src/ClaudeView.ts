@@ -2045,8 +2045,7 @@ export class ClaudeView extends ItemView {
       const p = custom.trim();
       return isAbsolute(p) ? p : join(vaultRoot, p);
     }
-    // Use manifest.dir so the path is correct regardless of plugin folder name
-    return join(vaultRoot, this.plugin.manifest.dir, 'commands');
+    return join(vaultRoot, '_ObsidiBot Skills');
   }
 
   /** Execute a template file by absolute path — used by Ctrl+P registered commands. */
