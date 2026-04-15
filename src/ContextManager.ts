@@ -79,7 +79,8 @@ export class ContextManager {
         `Always use \`  \\n\` (two spaces before the newline) when line breaks matter — verse, poetry, addresses, dialogue.\n` +
       `- **Avoid raw HTML** (\`<br>\`, \`<b>\`, etc.) — use CommonMark syntax instead.\n` +
       `- **Underscore emphasis doesn't work inside words** — use \`*asterisks*\` for italic and \`**bold**\`.\n` +
-      `- **List spacing**: omit blank lines between items for a tight list; add them only when items need paragraph spacing.\n\n` +
+      `- **List spacing**: omit blank lines between items for a tight list; add them only when items need paragraph spacing.\n` +
+      `- **Vault note references**: whenever you mention a note or file that exists in the vault, use wikilink syntax — \`[[note name]]\` — so it renders as a clickable link. Plain text note names are harder to act on.\n\n` +
       `## Obsidian Canvas\n` +
       `Canvas files (\`.canvas\`) are visual boards stored as JSON. When a canvas is shared with you it is converted to a readable text description. ` +
       `You can also create or modify canvas files by writing valid Canvas JSON.\n\n` +
