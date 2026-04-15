@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.2](https://github.com/ScottKirvan/ObsidiBot/compare/v2.7.1...v2.7.2) (2026-04-15)
+
+
+### Bug Fixes
+
+* force release-please workflow ([9cec316](https://github.com/ScottKirvan/ObsidiBot/commit/9cec31609b35450cef36e76d178a550aade585e2))
+
 ## [2.7.1](https://github.com/ScottKirvan/ObsidiBot/compare/v2.7.0...v2.7.1) (2026-04-15)
 
 
