@@ -743,7 +743,8 @@ export class ClaudeView extends ItemView {
             const el = this.appendMessage('assistant', '');
             const clean = this.cleanContent(msg.content);
             el.dataset.markdown = clean;
-            await MarkdownRenderer.render(this.app, clean, el, '', this);
+            await MarkdownRenderer.render(this.app, this.addHardLineBreaks(clean), el, '', this);
+            this.wireInternalLinks(el);
             // Re-render vault query result cards and store queries for export
             const replayQueries: VaultQuery[] = [];
             for (const line of msg.content.split('\n')) {
@@ -1060,7 +1061,8 @@ export class ClaudeView extends ItemView {
         } else {
           assistantEl.dataset.markdown = accumulated;
           assistantEl.empty();
-          MarkdownRenderer.render(this.app, accumulated, assistantEl, '', this);
+          MarkdownRenderer.render(this.app, this.addHardLineBreaks(accumulated), assistantEl, '', this);
+          this.wireInternalLinks(assistantEl);
         }
         if (pendingQueries.length > 0) {
           assistantEl.dataset.queries = JSON.stringify(pendingQueries);
@@ -1817,7 +1819,8 @@ export class ClaudeView extends ItemView {
         } else {
           assistantEl.dataset.markdown = accumulated;
           assistantEl.empty();
-          MarkdownRenderer.render(this.app, accumulated, assistantEl, '', this);
+          MarkdownRenderer.render(this.app, this.addHardLineBreaks(accumulated), assistantEl, '', this);
+          this.wireInternalLinks(assistantEl);
         }
         this.scrollToBottom();
         unlock();
@@ -1842,6 +1845,33 @@ export class ClaudeView extends ItemView {
    */
   private cleanContent(content: string): string {
     return extractActions(content).clean;
+  }
+
+  /** Convert single newlines to hard line breaks (two trailing spaces) outside
+   *  fenced code blocks, so CommonMark renders them as visible line breaks.
+   *  Lines already ending with two spaces are left untouched. */
+  private addHardLineBreaks(markdown: string): string {
+    // Split on fenced code blocks; odd-indexed parts are code, even are prose.
+    const parts = markdown.split(/(```[\s\S]*?```|~~~[\s\S]*?~~~)/g);
+    return parts.map((part, i) => {
+      if (i % 2 === 1) return part; // inside a code block — leave unchanged
+      // Add trailing spaces to lines that don't already have them and aren't
+      // followed by another newline (paragraph breaks stay as paragraph breaks).
+      return part.replace(/(?<! {2})\n(?!\n)/g, '  \n');
+    }).join('');
+  }
+
+  /** Wire click handlers for internal links rendered by MarkdownRenderer.
+   *  Obsidian's workspace click handler is not active in sidebar ItemViews,
+   *  so internal-link anchors need explicit handling here. */
+  private wireInternalLinks(el: HTMLElement): void {
+    el.querySelectorAll('a.internal-link').forEach(a => {
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        const href = (a as HTMLAnchorElement).getAttribute('href') ?? a.textContent ?? '';
+        this.app.workspace.openLinkText(href, '/', false);
+      });
+    });
   }
 
   /** Resolved sessions directory, honoring the user's sessionStoragePath setting. */
