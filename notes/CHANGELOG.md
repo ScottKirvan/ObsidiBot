@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.4](https://github.com/ScottKirvan/ObsidiBot/compare/2.7.3...2.7.4) (2026-04-15)
+
+
+### Bug Fixes
+
+* force release-please build ([ed31282](https://github.com/ScottKirvan/ObsidiBot/commit/ed31282d0db348db1332077a2fa6dc56d83a00c8))
+
 ## [2.7.3](https://github.com/ScottKirvan/ObsidiBot/compare/v2.7.2...2.7.3) (2026-04-15)
 
 
