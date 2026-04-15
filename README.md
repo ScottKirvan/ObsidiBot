@@ -195,5 +195,3 @@ MIT — see [LICENSE.md](LICENSE.md)
 
 Project Link: [ObsidiBot](https://github.com/ScottKirvan/ObsidiBot)  
 [CHANGELOG](notes/CHANGELOG.md) · [TODO](notes/TODO.md) · [User Guide](https://www.scottkirvan.com/ObsidiBot/)
-
-
