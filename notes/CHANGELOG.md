@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.3](https://github.com/ScottKirvan/ObsidiBot/compare/v2.7.2...2.7.3) (2026-04-15)
+
+
+### Bug Fixes
+
+* release-please tagging ([cef31af](https://github.com/ScottKirvan/ObsidiBot/commit/cef31af207acd019ad168a2dab6b0c592f28ebf5))
+
 ## [2.7.2](https://github.com/ScottKirvan/ObsidiBot/compare/v2.7.1...v2.7.2) (2026-04-15)
 
 
