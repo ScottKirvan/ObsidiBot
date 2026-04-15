@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.5](https://github.com/ScottKirvan/ObsidiBot/compare/2.7.4...2.7.5) (2026-04-15)
+
+
+### Bug Fixes
+
+* new manifest for Obsidian Plugin submission ([b47a3c5](https://github.com/ScottKirvan/ObsidiBot/commit/b47a3c5f6dac01e70dcc97e292289ac01e103448))
+
 ## [2.7.4](https://github.com/ScottKirvan/ObsidiBot/compare/2.7.3...2.7.4) (2026-04-15)
 
 
