@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.6](https://github.com/ScottKirvan/ObsidiBot/compare/2.7.5...2.7.6) (2026-04-19)
+
+
+### Bug Fixes
+
+* address Obsidian plugin submission lint requirements ([b0577e6](https://github.com/ScottKirvan/ObsidiBot/commit/b0577e6e6ad2a4cd995af0e0d2353babb4eedf75))
+
 ## [2.7.5](https://github.com/ScottKirvan/ObsidiBot/compare/2.7.4...2.7.5) (2026-04-15)
 
 
