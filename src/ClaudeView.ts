@@ -407,6 +407,8 @@ export class ClaudeView extends ItemView {
     this.currentSessionFileId = sessionId;
     this.currentSessionTitle = 'Untitled session';
     this.currentSessionCreatedAt = now;
+    this.plugin.settings.lastActiveSessionId = sessionId;
+    void this.plugin.saveSettings();
     this.messagesEl.empty();
     this.updateExportBtn();
     this.updateSessionStatus();
@@ -731,7 +733,7 @@ export class ClaudeView extends ItemView {
     this.updateSessionStatus();
 
     this.plugin.settings.lastActiveSessionId = session.id;
-    void this.plugin.saveSettings();
+    await this.plugin.saveSettings();
 
     const isNew = !session.claudeSessionId;
     const resumable = !isNew && canResumeLocally(session.claudeSessionId);
