@@ -116,17 +116,16 @@ export class SlashParamModal extends Modal {
       }
 
       const errEl = fieldEl.createEl('div', { cls: 'obsidibot-param-error' });
-      errEl.style.display = 'none';
+      errEl.hide();
       errorEls[param.id] = errEl;
     }
 
     const btnRow = form.createDiv({ cls: 'obsidibot-param-btn-row' });
-    const submitBtn = btnRow.createEl('button', {
+    btnRow.createEl('button', {
       text: this.autorun ? 'Run' : 'Insert',
       cls: 'mod-cta',
       attr: { type: 'submit' },
     });
-    submitBtn; // used
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -139,10 +138,10 @@ export class SlashParamModal extends Modal {
           : !!this.values[param.id]?.trim();
         if (param.validations?.required && !hasValue) {
           errEl.setText(`${param.label} is required.`);
-          errEl.style.display = '';
+          errEl.show();
           valid = false;
         } else {
-          errEl.style.display = 'none';
+          errEl.hide();
         }
       }
       if (!valid) return;
@@ -192,6 +191,6 @@ class NotePicker extends FuzzySuggestModal<TFile> {
   }
 
   onChooseItem(file: TFile) {
-    this.onChoose(file);
+    void this.onChoose(file);
   }
 }

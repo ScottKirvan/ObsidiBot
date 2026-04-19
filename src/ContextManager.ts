@@ -1,4 +1,8 @@
 import { App } from 'obsidian';
+
+interface AppInternal {
+  commands: { commands: Record<string, { id: string; name: string }> };
+}
 import { buildVaultTree } from './utils/fileTree';
 import { log, estimateTokens } from './utils/logger';
 import { scanPinnedFiles, scanFileInstructions } from './FrontmatterGuard';
@@ -104,7 +108,7 @@ export class ContextManager {
     if (this.commandAllowlist.length > 0) {
       const rows = this.commandAllowlist
         .map(id => {
-          const name = (this.app as any).commands.commands[id]?.name ?? id;
+          const name = (this.app as unknown as AppInternal).commands.commands[id]?.name ?? id;
           return `| \`${name}\` | \`${id}\` |`;
         })
         .join('\n');

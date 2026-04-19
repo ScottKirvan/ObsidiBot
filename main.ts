@@ -1,4 +1,4 @@
-import { Plugin, Notice, WorkspaceLeaf, addIcon } from 'obsidian';
+import { Plugin, Notice, addIcon } from 'obsidian';
 import { writeFileSync, existsSync, readdirSync } from 'fs';
 import { join, isAbsolute } from 'path';
 import { ClaudeView, VIEW_TYPE_CLAUDE } from './src/ClaudeView';
@@ -9,16 +9,29 @@ import { initLogger, log, warn } from './src/utils/logger';
 import { AboutModal } from './src/modals/AboutModal';
 import { ContextGenerationModal } from './src/ContextGenerationModal';
 
+/** Minimal shape of Obsidian's private settings/commands APIs. */
+interface AppInternal {
+  setting: { open(): void; openTabById(id: string): void };
+  commands: {
+    commands: Record<string, { id: string; name: string }>;
+    removeCommand(id: string): void;
+  };
+}
+
 export default class ObsidiBotPlugin extends Plugin {
   settings: ObsidiBotSettings;
   shellEnv: Record<string, string> = {};
   claudeBinaryPath: string | null = null;
   private skillCommandIds = new Set<string>();
 
+  private getVaultRoot(): string {
+    return (this.app.vault.adapter as unknown as { basePath: string }).basePath;
+  }
+
   async onload() {
     await this.loadSettings();
 
-    const vaultRoot = (this.app.vault.adapter as any).basePath;
+    const vaultRoot = this.getVaultRoot();
     initLogger(vaultRoot, {
       enabled: this.settings.logEnabled,
       filePath: this.settings.logFilePath,
@@ -52,28 +65,28 @@ export default class ObsidiBotPlugin extends Plugin {
     this.registerView(VIEW_TYPE_CLAUDE, (leaf) => new ClaudeView(leaf, this));
 
     this.addRibbonIcon('brain-circuit', 'Open ObsidiBot agent', () => {
-      this.activateView();
+      void this.activateView();
     });
 
     this.addCommand({
-      id: 'open-obsidibot-agent',
+      id: 'open-agent',
       name: 'Open agent panel',
       callback: () => {
-        this.activateView();
+        void this.activateView();
       }
     });
 
     this.addCommand({
-      id: 'open-obsidibot-settings',
+      id: 'open-settings',
       name: 'Open settings',
       callback: () => {
-        (this.app as any).setting.open();
-        (this.app as any).setting.openTabById('obsidibot');
+        (this.app as unknown as AppInternal).setting.open();
+        (this.app as unknown as AppInternal).setting.openTabById('obsidibot');
       }
     });
 
     this.addCommand({
-      id: 'new-obsidibot-session',
+      id: 'new-session',
       name: 'New session',
       callback: () => {
         this.newSession();
@@ -81,7 +94,7 @@ export default class ObsidiBotPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: 'clear-obsidibot-session',
+      id: 'clear-session',
       name: 'Clear current session',
       callback: () => {
         this.clearCurrentSession();
@@ -89,15 +102,15 @@ export default class ObsidiBotPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: 'toggle-obsidibot-panel',
-      name: 'Toggle ObsidiBot panel',
+      id: 'toggle-panel',
+      name: 'Toggle panel',
       callback: () => {
         this.togglePanel();
       }
     });
 
     this.addCommand({
-      id: 'show-obsidibot-session-history',
+      id: 'show-session-history',
       name: 'Show session history',
       callback: () => {
         this.showSessionHistory();
@@ -105,7 +118,7 @@ export default class ObsidiBotPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: 'export-obsidibot-conversation',
+      id: 'export-conversation',
       name: 'Export conversation',
       callback: () => {
         this.exportConversation();
@@ -113,7 +126,7 @@ export default class ObsidiBotPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: 'export-obsidibot-to-vault',
+      id: 'export-to-vault',
       name: 'Export session to vault',
       callback: () => {
         this.exportToVault();
@@ -121,7 +134,7 @@ export default class ObsidiBotPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: 'copy-obsidibot-last-response',
+      id: 'copy-last-response',
       name: 'Copy last response',
       callback: () => {
         this.copyLastResponse();
@@ -129,7 +142,7 @@ export default class ObsidiBotPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: 'send-selection-to-obsidibot',
+      id: 'send-selection',
       name: 'Send selection as context',
       editorCallback: (editor) => {
         const selection = editor.getSelection();
@@ -141,10 +154,10 @@ export default class ObsidiBotPlugin extends Plugin {
         const sourceName = file?.basename ?? 'note';
         const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
         if (existing.length) {
-          this.app.workspace.revealLeaf(existing[0]);
+          void this.app.workspace.revealLeaf(existing[0]);
           (existing[0].view as ClaudeView).injectSelectionContext(selection, sourceName);
         } else {
-          this.activateView().then(() => {
+          void this.activateView().then(() => {
             const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
             if (leaves.length) (leaves[0].view as ClaudeView).injectSelectionContext(selection, sourceName);
           });
@@ -153,7 +166,7 @@ export default class ObsidiBotPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: 'focus-obsidibot-input',
+      id: 'focus-input',
       name: 'Focus chat input',
       callback: () => {
         this.focusChatInput();
@@ -161,7 +174,7 @@ export default class ObsidiBotPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: 'open-obsidibot-context-file',
+      id: 'open-context-file',
       name: 'Open context file',
       callback: () => {
         this.openContextFile();
@@ -169,28 +182,31 @@ export default class ObsidiBotPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: 'refresh-obsidibot-context',
+      id: 'refresh-context',
       name: 'Refresh session context',
       callback: () => {
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
-        if (leaves.length) (leaves[0].view as ClaudeView).refreshSessionContext();
-        else this.activateView().then(() => {
-          const l = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
-          if (l.length) (l[0].view as ClaudeView).refreshSessionContext();
-        });
+        if (leaves.length) {
+          void (leaves[0].view as ClaudeView).refreshSessionContext();
+        } else {
+          void this.activateView().then(() => {
+            const l = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
+            if (l.length) void (l[0].view as ClaudeView).refreshSessionContext();
+          });
+        }
       }
     });
 
     this.addCommand({
-      id: 'show-obsidibot-about',
-      name: 'About ObsidiBot',
+      id: 'show-about',
+      name: 'About',
       callback: () => {
         this.showAbout();
       }
     });
 
     this.addCommand({
-      id: 'reload-obsidibot-skills',
+      id: 'reload-skills',
       name: 'Reload skills',
       callback: () => {
         if (!this.settings.registerSkillsAsCommands) {
@@ -206,7 +222,9 @@ export default class ObsidiBotPlugin extends Plugin {
   }
 
   onunload() {
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_CLAUDE);
+    // Intentionally empty — Obsidian restores leaf layout on reload.
+    // Do NOT call detachLeavesOfType here; that resets the leaf to its default
+    // location and discards any position the user has moved it to.
   }
 
   async activateView() {
@@ -214,14 +232,14 @@ export default class ObsidiBotPlugin extends Plugin {
     const existing = workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
 
     if (existing.length) {
-      workspace.revealLeaf(existing[0]);
+      await workspace.revealLeaf(existing[0]);
       return;
     }
 
     const leaf = workspace.getRightLeaf(false);
     if (leaf) {
       await leaf.setViewState({ type: VIEW_TYPE_CLAUDE, active: true });
-      workspace.revealLeaf(leaf);
+      await workspace.revealLeaf(leaf);
     }
   }
 
@@ -231,13 +249,9 @@ export default class ObsidiBotPlugin extends Plugin {
       const view = existing[0].view as ClaudeView;
       view.startNewSession();
     } else {
-      // If panel not open, open it and start new session
-      this.activateView().then(() => {
-        const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
-        if (existing.length) {
-          const view = existing[0].view as ClaudeView;
-          view.startNewSession();
-        }
+      void this.activateView().then(() => {
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
+        if (leaves.length) (leaves[0].view as ClaudeView).startNewSession();
       });
     }
   }
@@ -256,8 +270,7 @@ export default class ObsidiBotPlugin extends Plugin {
       // Panel is open, detach it
       this.app.workspace.detachLeavesOfType(VIEW_TYPE_CLAUDE);
     } else {
-      // Panel is closed, open it
-      this.activateView();
+      void this.activateView();
     }
   }
 
@@ -267,13 +280,9 @@ export default class ObsidiBotPlugin extends Plugin {
       const view = existing[0].view as ClaudeView;
       view.showSessionHistory();
     } else {
-      // If panel not open, open it first
-      this.activateView().then(() => {
-        const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
-        if (existing.length) {
-          const view = existing[0].view as ClaudeView;
-          view.showSessionHistory();
-        }
+      void this.activateView().then(() => {
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
+        if (leaves.length) (leaves[0].view as ClaudeView).showSessionHistory();
       });
     }
   }
@@ -291,7 +300,7 @@ export default class ObsidiBotPlugin extends Plugin {
     if (existing.length) {
       void (existing[0].view as ClaudeView).exportToVault();
     } else {
-      this.activateView().then(() => {
+      void this.activateView().then(() => {
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
         if (leaves.length) void (leaves[0].view as ClaudeView).exportToVault();
       });
@@ -309,11 +318,10 @@ export default class ObsidiBotPlugin extends Plugin {
   focusChatInput() {
     const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
     if (existing.length) {
-      this.app.workspace.revealLeaf(existing[0]);
-      const view = existing[0].view as ClaudeView;
-      view.focusInput();
+      void this.app.workspace.revealLeaf(existing[0]);
+      (existing[0].view as ClaudeView).focusInput();
     } else {
-      this.activateView().then(() => {
+      void this.activateView().then(() => {
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
         if (leaves.length) (leaves[0].view as ClaudeView).focusInput();
       });
@@ -324,16 +332,15 @@ export default class ObsidiBotPlugin extends Plugin {
     const contextPath = this.settings.contextFilePath || '_claude-context.md';
     const file = this.app.vault.getAbstractFileByPath(contextPath);
     if (file) {
-      this.app.workspace.openLinkText(contextPath, '', false);
+      void this.app.workspace.openLinkText(contextPath, '', false);
     } else {
       // File missing — relaunch the creation dialog instead of dead-ending with a Notice
-      const vaultRoot = (this.app.vault.adapter as any).basePath;
       new ContextGenerationModal(
         this.app,
         this,
         contextPath,
         this.claudeBinaryPath ?? '',
-        vaultRoot,
+        this.getVaultRoot(),
         this.shellEnv,
         this.settings.vaultTreeDepth,
       ).open();
@@ -346,10 +353,17 @@ export default class ObsidiBotPlugin extends Plugin {
 
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-    // Migrate old vault-root log path to plugin directory
-    if (this.settings.logFilePath === '_obsidibot-debug.log') {
-      this.settings.logFilePath = DEFAULT_SETTINGS.logFilePath;
+    // Migrate old hardcoded log paths → empty so the dynamic default takes over
+    if (
+      this.settings.logFilePath === '_obsidibot-debug.log' ||
+      this.settings.logFilePath === '.obsidian/plugins/obsidibot/obsidibot-debug.log'
+    ) {
+      this.settings.logFilePath = '';
       await this.saveSettings();
+    }
+    // Resolve empty log path to a configDir-relative default at load time
+    if (!this.settings.logFilePath) {
+      this.settings.logFilePath = `${this.app.vault.configDir}/plugins/obsidibot/obsidibot-debug.log`;
     }
   }
 
@@ -358,19 +372,19 @@ export default class ObsidiBotPlugin extends Plugin {
   }
 
   private resolveCommandsFolder(): string {
-    const vaultRoot = (this.app.vault.adapter as any).basePath as string;
     const custom = this.settings.commandsFolder;
     if (custom?.trim()) {
       const p = custom.trim();
-      return isAbsolute(p) ? p : join(vaultRoot, p);
+      return isAbsolute(p) ? p : join(this.getVaultRoot(), p);
     }
-    return join(vaultRoot, this.manifest.dir, 'commands');
+    return join(this.getVaultRoot(), this.manifest.dir, 'commands');
   }
 
   reloadSkillCommands() {
     // Remove all previously registered template commands
+    const appInternal = this.app as unknown as AppInternal;
     for (const id of this.skillCommandIds) {
-      (this.app as any).commands.removeCommand(id);
+      appInternal.commands.removeCommand(id);
     }
     this.skillCommandIds.clear();
 
@@ -392,10 +406,10 @@ export default class ObsidiBotPlugin extends Plugin {
           callback: () => {
             const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
             if (existing.length) {
-              this.app.workspace.revealLeaf(existing[0]);
+              void this.app.workspace.revealLeaf(existing[0]);
               (existing[0].view as ClaudeView).executeSkill(filePath);
             } else {
-              this.activateView().then(() => {
+              void this.activateView().then(() => {
                 const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
                 if (leaves.length) (leaves[0].view as ClaudeView).executeSkill(filePath);
               });
@@ -413,19 +427,20 @@ export default class ObsidiBotPlugin extends Plugin {
 
   generateCommandsFile() {
     try {
-      const vaultRoot = (this.app.vault.adapter as any).basePath;
-      const outPath = join(vaultRoot, '.obsidian', 'plugins', 'obsidibot', 'obsidian-commands.md');
+      const vaultRoot = this.getVaultRoot();
+      const configDir = this.app.vault.configDir;
+      const outPath = join(vaultRoot, configDir, 'plugins', 'obsidibot', 'obsidian-commands.md');
 
-      const commands = Object.values(
-        (this.app as any).commands.commands as Record<string, { id: string; name: string }>
-      ).sort((a, b) => a.id.localeCompare(b.id));
+      const appInternal = this.app as unknown as AppInternal;
+      const commands = Object.values(appInternal.commands.commands)
+        .sort((a, b) => a.id.localeCompare(b.id));
 
       // Group by plugin prefix (part before first ':')
       const groups = new Map<string, { id: string; name: string }[]>();
       for (const cmd of commands) {
         const prefix = cmd.id.includes(':') ? cmd.id.split(':')[0] : 'core';
         if (!groups.has(prefix)) groups.set(prefix, []);
-        groups.get(prefix)!.push(cmd);
+        groups.get(prefix).push(cmd);
       }
 
       const lines: string[] = [
@@ -456,8 +471,7 @@ export default class ObsidiBotPlugin extends Plugin {
   }
 
   reconfigureLogger() {
-    const vaultRoot = (this.app.vault.adapter as any).basePath;
-    initLogger(vaultRoot, {
+    initLogger(this.getVaultRoot(), {
       enabled: this.settings.logEnabled,
       filePath: this.settings.logFilePath,
       verbosity: this.settings.logVerbosity,

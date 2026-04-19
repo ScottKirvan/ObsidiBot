@@ -57,14 +57,13 @@ export class ContextGenerationModal extends Modal {
     const blankBtn = btnRow.createEl('button', { text: 'Create blank template' });
     blankBtn.addEventListener('click', () => {
       this.close();
-      this.createBlankTemplate();
+      void this.createBlankTemplate();
     });
 
     const skipBtn = btnRow.createEl('button', { text: 'Skip' });
-    skipBtn.addEventListener('click', async () => {
+    skipBtn.addEventListener('click', () => {
       this.plugin.settings.skipContextFilePrompt = true;
-      await this.plugin.saveSettings();
-      this.close();
+      void this.plugin.saveSettings().then(() => { this.close(); });
     });
   }
 
@@ -93,7 +92,7 @@ export class ContextGenerationModal extends Modal {
     }
   }
 
-  private async generateContextFile(userIntro: string, contextFiles: string[] = []) {
+  private generateContextFile(userIntro: string, contextFiles: string[] = []) {
     new Notice('ObsidiBot: generating context file in the background…');
     log('ContextGenerationModal: spawning background generation');
 

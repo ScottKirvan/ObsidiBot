@@ -3,6 +3,10 @@ import type ObsidiBotPlugin from '../main';
 import type { PermissionMode } from './ClaudeProcess';
 export type { PermissionMode };
 
+interface AppInternal {
+  commands: { commands: Record<string, { id: string; name: string }> };
+}
+
 export interface ObsidiBotSettings {
   binaryPath: string;
   contextFilePath: string;
@@ -72,7 +76,7 @@ export const DEFAULT_SETTINGS: ObsidiBotSettings = {
   commandDenylist: [],
   permissionMode: 'standard',
   logEnabled: true,
-  logFilePath: '.obsidian/plugins/obsidibot/obsidibot-debug.log',
+  logFilePath: '',
   logVerbosity: 'normal',
   atMentionExtensions: 'md, canvas, pdf, fountain, txt',
   injectSplitPaneFiles: true,
@@ -97,7 +101,7 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
     containerEl.empty();
 
     // ── General ────────────────────────────────────────────────────────────
-    containerEl.createEl('h3', { text: 'General' });
+    new Setting(containerEl).setName('General').setHeading();
 
     new Setting(containerEl)
       .setName('Claude binary path')
@@ -150,7 +154,7 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
       );
 
     // ── Context & Memory ───────────────────────────────────────────────────
-    containerEl.createEl('h3', { text: 'Context & Memory' });
+    new Setting(containerEl).setName('Context & memory').setHeading();
 
     new Setting(containerEl)
       .setName('Context file path')
@@ -259,14 +263,14 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
       .setName('Session storage path')
       .setDesc(
         'Where session files are stored. ' +
-        'Leave empty for the default location (.obsidian/obsidibot/sessions — excluded from git). ' +
+        'Leave empty for the default location (Obsidian config folder/obsidibot/sessions). ' +
         'Use a vault-relative path (e.g. _sessions) to track sessions in git alongside your notes, ' +
         'or an absolute path to store them outside the vault entirely. ' +
         'Restart ObsidiBot after changing this.'
       )
       .addText((text) =>
         text
-          .setPlaceholder('Default (.obsidian/obsidibot/sessions)')
+          .setPlaceholder('Default (Obsidian config folder/obsidibot/sessions)')
           .setValue(this.plugin.settings.sessionStoragePath)
           .onChange(async (value) => {
             this.plugin.settings.sessionStoragePath = value.trim();
@@ -313,7 +317,7 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
       );
 
     // ── Permissions ────────────────────────────────────────────────────────
-    containerEl.createEl('h3', { text: 'Permissions' });
+    new Setting(containerEl).setName('Permissions').setHeading();
 
     new Setting(containerEl)
       .setName('Permission mode')
@@ -343,10 +347,10 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
       );
 
     // ── UI Bridge & Commands ───────────────────────────────────────────────
-    containerEl.createEl('h3', { text: 'UI Bridge & Commands' });
+    new Setting(containerEl).setName('UI bridge & commands').setHeading();
 
     new Setting(containerEl)
-      .setName('UI Bridge')
+      .setName('UI bridge')
       .setDesc('Allow Claude to trigger Obsidian UI actions — open files, show notices, navigate headings. Claude is instructed to use these proactively after completing tasks.')
       .addToggle((toggle) =>
         toggle
@@ -404,7 +408,7 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
     const commandCountEl = containerEl.createEl('p', { cls: 'obsidibot-command-count' });
 
     const allCommands = Object.values(
-      (this.app as any).commands.commands as Record<string, { id: string; name: string }>
+      (this.app as unknown as AppInternal).commands.commands
     ).sort((a, b) => a.name.localeCompare(b.name));
 
     const updateCountText = () => {
@@ -433,12 +437,13 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
           const checkbox = row.createEl('input', { type: 'checkbox' });
           checkbox.id = `obsidibot-cmd-orphan-${id}`;
           checkbox.checked = true;
-          checkbox.addEventListener('change', async () => {
+          checkbox.addEventListener('change', () => {
             this.plugin.settings.commandAllowlist = this.plugin.settings.commandAllowlist.filter(x => x !== id);
-            await this.plugin.saveSettings();
-            this.plugin.notifyAllowlistChanged(this.plugin.settings.commandAllowlist);
-            renderCommandList();
-            updateCountText();
+            void this.plugin.saveSettings().then(() => {
+              this.plugin.notifyAllowlistChanged(this.plugin.settings.commandAllowlist);
+              renderCommandList();
+              updateCountText();
+            });
           });
           const label = row.createEl('label', { cls: 'obsidibot-command-name' });
           label.htmlFor = `obsidibot-cmd-orphan-${id}`;
@@ -465,7 +470,7 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
           const checkbox = row.createEl('input', { type: 'checkbox' });
           checkbox.id = `obsidibot-cmd-${cmd.id}`;
           checkbox.checked = this.plugin.settings.commandAllowlist.includes(cmd.id);
-          checkbox.addEventListener('change', async () => {
+          checkbox.addEventListener('change', () => {
             if (checkbox.checked) {
               if (!this.plugin.settings.commandAllowlist.includes(cmd.id)) {
                 this.plugin.settings.commandAllowlist = [...this.plugin.settings.commandAllowlist, cmd.id];
@@ -473,9 +478,10 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
             } else {
               this.plugin.settings.commandAllowlist = this.plugin.settings.commandAllowlist.filter(id => id !== cmd.id);
             }
-            await this.plugin.saveSettings();
-            this.plugin.notifyAllowlistChanged(this.plugin.settings.commandAllowlist);
-            updateCountText();
+            void this.plugin.saveSettings().then(() => {
+              this.plugin.notifyAllowlistChanged(this.plugin.settings.commandAllowlist);
+              updateCountText();
+            });
           });
           const label = row.createEl('label', { text: cmd.name, cls: 'obsidibot-command-name' });
           label.htmlFor = `obsidibot-cmd-${cmd.id}`;
@@ -488,7 +494,7 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
     renderCommandList();
 
     // ── Logging ────────────────────────────────────────────────────────────
-    containerEl.createEl('h3', { text: 'Logging' });
+    new Setting(containerEl).setName('Logging').setHeading();
 
     new Setting(containerEl)
       .setName('Enable debug log')
@@ -508,7 +514,7 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
       .setDesc('Vault-relative path for the log file. Defaults to the plugin folder so it stays out of your vault.')
       .addText((text) =>
         text
-          .setPlaceholder('.obsidian/plugins/obsidibot/obsidibot-debug.log')
+          .setPlaceholder('Default (plugin folder/obsidibot-debug.log)')
           .setValue(this.plugin.settings.logFilePath)
           .onChange(async (value) => {
             this.plugin.settings.logFilePath = value || '_obsidibot-debug.log';

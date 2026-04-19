@@ -3,6 +3,14 @@ import { log, warn } from './utils/logger';
 import { ACTION_PREFIX, QUERY_PREFIX } from './constants';
 export { ACTION_PREFIX } from './constants';
 
+interface UIBridgeInternal {
+  setting: { open(): void; openTabById(id: string): void };
+  commands: {
+    commands: Record<string, { id: string; name: string }>;
+    executeCommandById(id: string): boolean;
+  };
+}
+
 export interface ObsidiBotAction {
   action: string;
   [key: string]: unknown;
@@ -36,7 +44,7 @@ class ConfirmCommandModal extends Modal {
   }
 
   onOpen() {
-    this.titleEl.setText('ObsidiBot — Unlisted Command');
+    this.titleEl.setText('ObsidiBot — Unlisted command');
     const { contentEl } = this;
 
     contentEl.createEl('p', {
@@ -138,10 +146,10 @@ export async function executeAction(app: App, action: ObsidiBotAction, options: 
         const leaf = app.workspace.getLeaf(false);
         await leaf.openFile(file);
         setTimeout(() => {
-          const view = leaf.view as any;
+          const view = leaf.view as unknown as { editor?: { getValue(): string; setCursor(pos: { line: number; ch: number }): void } };
           const editor = view?.editor;
           if (editor && action.heading) {
-            const content = editor.getValue() as string;
+            const content = editor.getValue();
             const lines = content.split('\n');
             const idx = lines.findIndex((l: string) =>
               l.replace(/^#+\s*/, '').toLowerCase() === (action.heading as string).toLowerCase()
@@ -163,14 +171,14 @@ export async function executeAction(app: App, action: ObsidiBotAction, options: 
     }
 
     case 'focus-search': {
-      (app as any).commands.executeCommandById('switcher:open');
+      (app as unknown as UIBridgeInternal).commands.executeCommandById('switcher:open');
       break;
     }
 
     case 'open-settings': {
       const tab = action.tab as string | undefined;
-      (app as any).setting.open();
-      if (tab) (app as any).setting.openTabById(tab);
+      (app as unknown as UIBridgeInternal).setting.open();
+      if (tab) (app as unknown as UIBridgeInternal).setting.openTabById(tab);
       break;
     }
 
@@ -178,11 +186,12 @@ export async function executeAction(app: App, action: ObsidiBotAction, options: 
       const commandId = action.commandId as string;
       if (!commandId) { warn('UIBridge: run-command — missing commandId'); break; }
 
-      const displayName = (app as any).commands.commands[commandId]?.name ?? commandId;
+      const appInternal = app as unknown as UIBridgeInternal;
+      const displayName = appInternal.commands.commands[commandId]?.name ?? commandId;
 
       if (commandAllowlist.includes(commandId)) {
         // Allowlist takes precedence over everything — execute immediately
-        const executed = (app as any).commands.executeCommandById(commandId);
+        const executed = appInternal.commands.executeCommandById(commandId);
         if (executed) log('UIBridge: run-command executed:', commandId);
         else {
           warn('UIBridge: run-command — command not found or failed:', commandId);
@@ -198,7 +207,7 @@ export async function executeAction(app: App, action: ObsidiBotAction, options: 
         });
         if (allow) {
           if (remember && onAddToAllowlist) await onAddToAllowlist(commandId);
-          const executed = (app as any).commands.executeCommandById(commandId);
+          const executed = appInternal.commands.executeCommandById(commandId);
           if (executed) log('UIBridge: run-command executed:', commandId);
           else {
             warn('UIBridge: run-command — command not found or failed:', commandId);

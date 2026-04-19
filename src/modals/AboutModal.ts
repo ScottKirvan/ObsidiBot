@@ -21,7 +21,7 @@ export class AboutModal extends Modal {
 
     // Name + version
     contentEl.createEl('h2', { text: 'ObsidiBot', cls: 'obsidibot-about-title' });
-    contentEl.createEl('p', { text: `Version ${(this.plugin as any).manifest.version}`, cls: 'obsidibot-about-version' });
+    contentEl.createEl('p', { text: `Version ${this.plugin.manifest.version}`, cls: 'obsidibot-about-version' });
 
     contentEl.createEl('p', {
       text: 'Claude Code agentic file management for Obsidian vaults.',

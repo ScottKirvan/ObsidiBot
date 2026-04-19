@@ -1,4 +1,10 @@
 import { ItemView, WorkspaceLeaf, MarkdownRenderer, Notice, setIcon, TFile, Modal, App, parseYaml } from 'obsidian';
+
+/** Minimal shape of Obsidian's private settings/commands APIs. */
+interface AppInternal {
+  setting: { open(): void; openTabById(id: string): void };
+  commands: { commands: Record<string, { id: string; name: string }> };
+}
 import { SlashMenu, SlashCommand } from './SlashMenu';
 import { SlashParamModal, SlashParam } from './modals/SlashParamModal';
 import { canvasToText } from './utils/canvasParser';
@@ -106,6 +112,14 @@ export class ClaudeView extends ItemView {
     this.plugin = plugin;
   }
 
+  private getVaultRoot(): string {
+    return (this.app.vault.adapter as unknown as { basePath: string }).basePath;
+  }
+
+  private get appInternal(): AppInternal {
+    return this.app as unknown as AppInternal;
+  }
+
   getViewType(): string { return VIEW_TYPE_CLAUDE; }
   getDisplayText(): string { return 'ObsidiBot'; }
   getIcon(): string { return 'brain-circuit'; }
@@ -129,7 +143,7 @@ export class ClaudeView extends ItemView {
     setIcon(this.exportBtn, 'download');
     this.exportBtn.title = 'Export session to vault';
     this.exportBtn.disabled = true;
-    this.exportBtn.addEventListener('click', () => this.exportToVault());
+    this.exportBtn.addEventListener('click', () => { this.exportToVault(); });
 
     // Spacer pushes help/settings to the right
     toolbar.createDiv({ cls: 'obsidibot-toolbar-spacer' });
@@ -148,8 +162,8 @@ export class ClaudeView extends ItemView {
     setIcon(settingsBtn, 'brain-cog');
     settingsBtn.title = 'Open ObsidiBot settings';
     settingsBtn.addEventListener('click', () => {
-      (this.app as any).setting.open();
-      (this.app as any).setting.openTabById('obsidibot');
+      this.appInternal.setting.open();
+      this.appInternal.setting.openTabById('obsidibot');
     });
 
     this.messagesEl = root.createDiv({ cls: 'obsidibot-messages' });
@@ -158,10 +172,10 @@ export class ClaudeView extends ItemView {
     this.inputAreaEl = inputArea;
 
     this.atDropdownEl = inputArea.createDiv({ cls: 'obsidibot-at-dropdown' });
-    this.atDropdownEl.style.display = 'none';
+    this.atDropdownEl.hide();
 
     this.attachPopoverEl = inputArea.createDiv({ cls: 'obsidibot-attach-popover' });
-    this.attachPopoverEl.style.display = 'none';
+    this.attachPopoverEl.hide();
     const attachFileBtn = this.attachPopoverEl.createEl('button', { cls: 'obsidibot-attach-option', text: '📄  Attach file' });
     attachFileBtn.addEventListener('mousedown', (e) => { e.preventDefault(); this.closeAttachPopover(); this.openFilePicker(); });
     const attachUrlBtn = this.attachPopoverEl.createEl('button', { cls: 'obsidibot-attach-option', text: '🔗  URL' });
@@ -176,7 +190,7 @@ export class ClaudeView extends ItemView {
     });
 
     this.pendingContextZone = inputArea.createDiv({ cls: 'obsidibot-pending-context' });
-    this.pendingContextZone.style.display = 'none';
+    this.pendingContextZone.hide();
 
     this.inputEl = inputArea.createEl('textarea', {
       cls: 'obsidibot-input',
@@ -216,7 +230,7 @@ export class ClaudeView extends ItemView {
     arc.setAttribute('stroke-dashoffset', String(C));
     svg.appendChild(track); svg.appendChild(arc);
     svg.addEventListener('click', () => this.showCompactConfirm());
-    svg.style.display = 'none';
+    svg.classList.add('obsidibot-hidden');
     inputToolbar.appendChild(svg);
     this.tokenGaugeEl = svg;
 
@@ -228,7 +242,7 @@ export class ClaudeView extends ItemView {
       if (this.sendBtn.dataset.state === 'running') {
         if (this.activeProc) killProcess(this.activeProc);
       } else {
-        this.handleSend();
+        void this.handleSend();
       }
     });
     this.inputEl.addEventListener('input', () => {
@@ -253,13 +267,13 @@ export class ClaudeView extends ItemView {
       if (this.atDropdownEl.style.display !== 'none') {
         if (e.key === 'ArrowDown') { e.preventDefault(); this.atDropdownNav(1); return; }
         if (e.key === 'ArrowUp') { e.preventDefault(); this.atDropdownNav(-1); return; }
-        if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); this.atDropdownSelect(); return; }
+        if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); void this.atDropdownSelect(); return; }
         if (e.key === 'Escape') { this.atDropdownHide(); return; }
       }
 
       if (e.key === 'Enter' && !e.shiftKey && this.plugin.settings.sendOnEnter) {
         e.preventDefault();
-        this.handleSend();
+        void this.handleSend();
         return;
       }
 
@@ -335,7 +349,7 @@ export class ClaudeView extends ItemView {
     }
 
     if (this.plugin.settings.resumeLastSession) {
-      const vaultRoot = (this.app.vault.adapter as any).basePath;
+      const vaultRoot = this.getVaultRoot();
       const sessions = loadAllSessions(vaultRoot, this.getSessionsDir());
       if (sessions.length > 0) {
         const lastId = this.plugin.settings.lastActiveSessionId;
@@ -354,7 +368,7 @@ export class ClaudeView extends ItemView {
       !this.plugin.settings.skipContextFilePrompt &&
       !this.app.vault.getFileByPath(this.plugin.settings.contextFilePath)
     ) {
-      const vaultRoot = (this.app.vault.adapter as any).basePath;
+      const vaultRoot = this.getVaultRoot();
       new ContextGenerationModal(
         this.app,
         this.plugin,
@@ -372,10 +386,10 @@ export class ClaudeView extends ItemView {
   startNewSession() {
     this.sessionPermissionOverride = null;
     this.sessionContextTokens = 0;
-    this.tokenGaugeEl.style.display = 'none';
+    this.tokenGaugeEl.classList.add('obsidibot-hidden');
     this.pendingContexts = [];
     this.renderContextZone();
-    const vaultRoot = (this.app.vault.adapter as any).basePath;
+    const vaultRoot = this.getVaultRoot();
     const now = new Date().toISOString();
     const sessionId = now.replace(/[:.]/g, '-');
 
@@ -400,11 +414,11 @@ export class ClaudeView extends ItemView {
   }
 
   showSessionHistory() {
-    const vaultRoot = (this.app.vault.adapter as any).basePath;
+    const vaultRoot = this.getVaultRoot();
     const sessionsDir = this.getSessionsDir();
     const sessions = loadAllSessions(vaultRoot, sessionsDir);
     new SessionListModal(this.app, vaultRoot, sessions, (session) => {
-      this.loadSession(session);
+      void this.loadSession(session);
     }, () => {
       this.startNewSession();
     }, () => {
@@ -422,8 +436,8 @@ export class ClaudeView extends ItemView {
   /** Build export markdown from DOM messages (active session). */
   private buildExportMarkdown(title: string, sessionId: string, userLabel: string, assistantLabel: string): string {
     const msgEls = Array.from(
-      this.messagesEl.querySelectorAll('.obsidibot-message.obsidibot-user, .obsidibot-message.obsidibot-assistant')
-    ) as HTMLElement[];
+      this.messagesEl.querySelectorAll<HTMLElement>('.obsidibot-message.obsidibot-user, .obsidibot-message.obsidibot-assistant')
+    );
     const date = new Date().toISOString().slice(0, 10);
     let md = `---\nobsidibot_session: true\ndate: ${date}\nsession_id: ${sessionId}\nmessages: ${msgEls.length}\n---\n\n`;
     md += `# ${title}\n\n`;
@@ -452,8 +466,8 @@ export class ClaudeView extends ItemView {
       await this.app.vault.createFolder(folder);
     }
     const existing = this.app.vault.getAbstractFileByPath(notePath);
-    if (existing) {
-      await this.app.vault.modify(existing as TFile, content);
+    if (existing instanceof TFile) {
+      await this.app.vault.modify(existing, content);
     } else {
       await this.app.vault.create(notePath, content);
     }
@@ -470,7 +484,7 @@ export class ClaudeView extends ItemView {
   }
 
   /** Export the currently visible session to a vault note. */
-  async exportToVault(): Promise<void> {
+  exportToVault(): void {
     const messages = this.messagesEl.querySelectorAll('.obsidibot-message');
     if (messages.length === 0) { new Notice('No conversation to export'); return; }
     const title = this.currentSessionTitle || 'ObsidiBot Session';
@@ -490,7 +504,7 @@ export class ClaudeView extends ItemView {
   }
 
   /** Export any session (by StoredSession) from the history modal. */
-  private async exportSessionToVault(session: StoredSession): Promise<void> {
+  private exportSessionToVault(session: StoredSession): void {
     const messages = loadSessionMessages(session.claudeSessionId);
     if (messages.length === 0) { new Notice('No messages found for this session'); return; }
     const date = new Date(session.updatedAt).toISOString().slice(0, 10);
@@ -611,7 +625,7 @@ export class ClaudeView extends ItemView {
     } else {
       const rows = newAllowlist
         .map(id => {
-          const name = (this.app as any).commands.commands[id]?.name ?? id;
+          const name = this.appInternal.commands.commands[id]?.name ?? id;
           return `| "${name}" | ${id} |`;
         })
         .join('\n');
@@ -644,8 +658,8 @@ export class ClaudeView extends ItemView {
     if (!this.plugin.claudeBinaryPath) return Promise.resolve(defaults);
 
     const msgEls = Array.from(
-      this.messagesEl.querySelectorAll('.obsidibot-message.obsidibot-user, .obsidibot-message.obsidibot-assistant')
-    ) as HTMLElement[];
+      this.messagesEl.querySelectorAll<HTMLElement>('.obsidibot-message.obsidibot-user, .obsidibot-message.obsidibot-assistant')
+    );
     if (msgEls.length === 0) return Promise.resolve(defaults);
 
     // Walk all messages, truncating each, until we hit a total character budget.
@@ -674,9 +688,9 @@ export class ClaudeView extends ItemView {
     return new Promise((resolve) => {
       try {
         const proc = spawnClaude({
-          binaryPath: this.plugin.claudeBinaryPath!,
+          binaryPath: this.plugin.claudeBinaryPath,
           prompt,
-          vaultRoot: (this.app.vault.adapter as any).basePath,
+          vaultRoot: this.getVaultRoot(),
           env: this.plugin.shellEnv,
           permissionMode: 'readonly',
         });
@@ -836,14 +850,14 @@ export class ClaudeView extends ItemView {
     // Response group: tool events (above) + assistant bubble + token stats (below)
     const responseGroupEl = this.messagesEl.createDiv({ cls: 'obsidibot-response-group' });
     const toolEventsEl = responseGroupEl.createDiv({ cls: 'obsidibot-tool-events' });
-    toolEventsEl.style.display = 'none';
+    toolEventsEl.hide();
     const assistantEl = responseGroupEl.createDiv({ cls: 'obsidibot-message obsidibot-assistant' });
     const statusEl = assistantEl.createSpan({ cls: 'obsidibot-status', text: 'Thinking…' });
     // Separate span for streaming text so statusEl is preserved as a sibling and can be
     // re-appended when tool calls fire after text has already been streamed (fix for #67).
     const streamingTextEl = assistantEl.createSpan({ cls: 'obsidibot-streaming-text' });
     const tokenStatsEl = responseGroupEl.createDiv({ cls: 'obsidibot-token-stats' });
-    tokenStatsEl.style.display = 'none';
+    tokenStatsEl.hide();
     this.scrollToBottom();
 
     // Prepend open file context so Claude knows what note(s) are visible
@@ -855,11 +869,11 @@ export class ClaudeView extends ItemView {
       const isStacked = !isSplit && leaves.length > 1;
 
       if (isSplit && this.plugin.settings.injectSplitPaneFiles) {
-        const paths = leaves.map(l => (l.view as any).file?.path).filter(Boolean) as string[];
+        const paths = leaves.map(l => (l.view as unknown as { file?: { path: string } }).file?.path).filter(Boolean);
         const unique = [...new Set(paths)];
         activeFileNote = `<obsidibot-context type="split-view" paths="${unique.join('|')}"></obsidibot-context>\n\n`;
       } else if (isStacked && this.plugin.settings.injectStackedTabFiles) {
-        const paths = leaves.map(l => (l.view as any).file?.path).filter(Boolean) as string[];
+        const paths = leaves.map(l => (l.view as unknown as { file?: { path: string } }).file?.path).filter(Boolean);
         const unique = [...new Set(paths)];
         activeFileNote = `<obsidibot-context type="stacked-tabs" paths="${unique.join('|')}"></obsidibot-context>\n\n`;
       } else {
@@ -914,9 +928,9 @@ export class ClaudeView extends ItemView {
     let proc: ReturnType<typeof spawnClaude>;
     try {
       proc = spawnClaude({
-        binaryPath: this.plugin.claudeBinaryPath!,
+        binaryPath: this.plugin.claudeBinaryPath,
         prompt: finalPrompt,
-        vaultRoot: (this.app.vault.adapter as any).basePath,
+        vaultRoot: this.getVaultRoot(),
         env: this.plugin.shellEnv,
         resumeSessionId: this.currentSessionId,
         permissionMode: this.sessionPermissionOverride ?? this.plugin.settings.permissionMode,
@@ -945,7 +959,7 @@ export class ClaudeView extends ItemView {
           const { clean, actions } = extractActions(accumulated);
           accumulated = clean;
           uiBridgeActionCount += actions.length;
-          actions.forEach(a => executeAction(this.app, a, this.bridgeOptions()));
+          for (const a of actions) void executeAction(this.app, a, this.bridgeOptions());
         }
         streamingTextEl.textContent = accumulated;
         this.scrollToBottom();
@@ -955,7 +969,7 @@ export class ClaudeView extends ItemView {
           try {
             const { actions } = extractActions(line + '\n');
             uiBridgeActionCount += actions.length;
-            actions.forEach(a => executeAction(this.app, a, this.bridgeOptions()));
+            for (const a of actions) void executeAction(this.app, a, this.bridgeOptions());
           } catch { /* malformed — already logged in extractActions */ }
         }
       },
@@ -972,7 +986,7 @@ export class ClaudeView extends ItemView {
         statusEl.setText(TOOL_STATUS[key] ?? 'Working…');
         log('onToolCall —', tool, JSON.stringify(input).substring(0, 120));
         toolCallCount++;
-        if (toolEventsEl.style.display === 'none') toolEventsEl.style.display = 'flex';
+        toolEventsEl.show();
         const row = toolEventsEl.createDiv({ cls: 'obsidibot-tool-event' });
         const iconEl = row.createSpan({ cls: 'obsidibot-tool-event-icon' });
         setIcon(iconEl, TOOL_ICONS[key] ?? 'zap');
@@ -989,7 +1003,7 @@ export class ClaudeView extends ItemView {
         if (!accumulated && !uiBridgeActionCount && !sessionId) this.appendMessage('system', 'Interrupted.');
 
         if (sessionId) {
-          const vaultRoot = (this.app.vault.adapter as any).basePath;
+          const vaultRoot = this.getVaultRoot();
           const sessionsDir = this.getSessionsDir();
           const now = new Date().toISOString();
 
@@ -1036,8 +1050,8 @@ export class ClaudeView extends ItemView {
 
         // Collapse tool events into a toggle
         if (toolCallCount > 0) {
-          const rows = Array.from(toolEventsEl.querySelectorAll('.obsidibot-tool-event')) as HTMLElement[];
-          rows.forEach(r => { r.style.display = 'none'; });
+          const rows = Array.from(toolEventsEl.querySelectorAll<HTMLElement>('.obsidibot-tool-event'));
+          rows.forEach(r => { r.hide(); });
           const s = toolCallCount === 1 ? '' : 's';
           const toggle = toolEventsEl.createEl('button', {
             cls: 'obsidibot-tool-toggle',
@@ -1047,7 +1061,7 @@ export class ClaudeView extends ItemView {
           let expanded = false;
           toggle.addEventListener('click', () => {
             expanded = !expanded;
-            rows.forEach(r => { r.style.display = expanded ? 'flex' : 'none'; });
+            rows.forEach(r => { if (expanded) r.show(); else r.hide(); });
             toggle.setText(`${toolCallCount} tool call${s} ${expanded ? '▼' : '▶'}`);
           });
         }
@@ -1061,7 +1075,7 @@ export class ClaudeView extends ItemView {
         } else {
           assistantEl.dataset.markdown = accumulated;
           assistantEl.empty();
-          MarkdownRenderer.render(this.app, this.addHardLineBreaks(accumulated), assistantEl, '', this);
+          void MarkdownRenderer.render(this.app, this.addHardLineBreaks(accumulated), assistantEl, '', this);
           this.wireInternalLinks(assistantEl);
         }
         if (pendingQueries.length > 0) {
@@ -1091,7 +1105,7 @@ export class ClaudeView extends ItemView {
         const total = Math.max(usage.cacheReadTokens, this.sessionContextTokens)
           + usage.inputTokens + usage.outputTokens;
         this.sessionContextTokens = total;
-        this.tokenGaugeEl.style.display = '';
+        this.tokenGaugeEl.classList.remove('obsidibot-hidden');
         this.updateTokenGauge(total);
 
         // Output tokens arrive as 1 per streaming delta — accumulate.
@@ -1107,7 +1121,7 @@ export class ClaudeView extends ItemView {
         ];
         if (turnCacheTokens > 0) parts.push(`${fmt(turnCacheTokens)} cached`);
         tokenStatsEl.setText(parts.join(' · '));
-        tokenStatsEl.style.display = '';
+        tokenStatsEl.show();
       },
       onError: (err) => {
         this.appendMessage('system', `stderr: ${err.trim()}`);
@@ -1128,7 +1142,7 @@ export class ClaudeView extends ItemView {
     const isWin = process.platform === 'win32';
     const card = this.messagesEl.createDiv({ cls: 'obsidibot-setup-card' });
 
-    card.createEl('h3', { text: 'ERROR: Claude Code not found', cls: 'obsidibot-setup-title' });
+    card.createEl('h3', { text: 'Error: Claude Code not found', cls: 'obsidibot-setup-title' });
     card.createEl('p', {
       text: 'ObsidiBot requires the Claude Code CLI (included with Claude Pro/Max). ' +
         'Follow the steps below, then click Check again.',
@@ -1178,9 +1192,9 @@ export class ClaudeView extends ItemView {
     pathInput.type = 'text';
     pathInput.placeholder = isWin ? 'C:\\Users\\you\\AppData\\Local\\Programs\\claude\\claude.exe' : '/usr/local/bin/claude';
     pathInput.value = this.plugin.settings.binaryPath ?? '';
-    pathInput.addEventListener('change', async () => {
+    pathInput.addEventListener('change', () => {
       this.plugin.settings.binaryPath = pathInput.value.trim();
-      await this.plugin.saveSettings();
+      void this.plugin.saveSettings();
     });
 
     // Action buttons
@@ -1195,10 +1209,10 @@ export class ClaudeView extends ItemView {
     docsLink.setAttr('rel', 'noopener');
 
     const checkBtn = btnRow.createEl('button', { text: 'Check again', cls: 'mod-cta obsidibot-setup-check-btn' });
-    checkBtn.addEventListener('click', async () => {
+    checkBtn.addEventListener('click', () => {
       this.plugin.claudeBinaryPath = findClaudeBinary(this.plugin.settings.binaryPath);
       if (this.plugin.claudeBinaryPath) {
-        await this.onOpen();
+        void this.onOpen();
       } else {
         const err = card.createEl('p', {
           text: isWin
@@ -1217,7 +1231,7 @@ export class ClaudeView extends ItemView {
 
   private renderAuthError(el: HTMLElement) {
     el.empty();
-    el.createEl('p', { text: 'ERROR: Claude Code is not authenticated.', cls: 'obsidibot-setup-step-title' });
+    el.createEl('p', { text: 'Error: Claude Code is not authenticated.', cls: 'obsidibot-setup-step-title' });
     el.createEl('p', {
       text: 'Click Open terminal below. Claude Code will launch and open a browser window to log in. ' +
         'If the browser does not open automatically, press c in the terminal to copy the login URL.',
@@ -1232,7 +1246,7 @@ export class ClaudeView extends ItemView {
 
     const loginBtn = btnRow.createEl('button', { text: 'Open terminal', cls: 'mod-cta obsidibot-setup-check-btn' });
     loginBtn.addEventListener('click', () => {
-      const binaryPath = this.plugin.claudeBinaryPath!;
+      const binaryPath = this.plugin.claudeBinaryPath;
       const isWin = process.platform === 'win32';
 
       if (isWin) {
@@ -1249,10 +1263,10 @@ export class ClaudeView extends ItemView {
       loginBtn.disabled = true;
 
       const doneBtn = btnRow.createEl('button', { text: 'Done', cls: 'obsidibot-setup-check-btn' });
-      doneBtn.addEventListener('click', async () => {
+      doneBtn.addEventListener('click', () => {
         doneBtn.setText('Checking…');
         doneBtn.disabled = true;
-        await this.onOpen();
+        void this.onOpen();
       });
     });
   }
@@ -1280,7 +1294,7 @@ export class ClaudeView extends ItemView {
         upgradeBtn.disabled = true;
         log('Session permission override set to full');
         this.inputEl.value = retryPrompt;
-        this.handleSend();
+        void this.handleSend();
       });
       btnRow.createEl('a', {
         cls: 'obsidibot-permission-settings-link',
@@ -1288,8 +1302,8 @@ export class ClaudeView extends ItemView {
         href: '#',
       }).addEventListener('click', (e) => {
         e.preventDefault();
-        (this.app as any).setting.open();
-        (this.app as any).setting.openTabById('obsidibot');
+        this.appInternal.setting.open();
+        this.appInternal.setting.openTabById('obsidibot');
       });
     }
     this.scrollToBottom();
@@ -1300,7 +1314,7 @@ export class ClaudeView extends ItemView {
     row.createEl('code', { text: code, cls: 'obsidibot-setup-code' });
     const copyBtn = row.createEl('button', { text: 'Copy', cls: 'obsidibot-setup-copy-btn' });
     copyBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText(code).then(() => {
+      void navigator.clipboard.writeText(code).then(() => {
         copyBtn.setText('Copied!');
         setTimeout(() => copyBtn.setText('Copy'), 2000);
       });
@@ -1344,7 +1358,7 @@ export class ClaudeView extends ItemView {
   private atDropdownRender() {
     const el = this.atDropdownEl;
     el.empty();
-    el.style.display = 'block';
+    el.show();
     this.atDropdownItems.forEach((file, i) => {
       const item = el.createDiv({ cls: 'obsidibot-at-item' + (i === this.atDropdownIndex ? ' obsidibot-at-item-active' : '') });
       const nameEl = item.createSpan({ cls: 'obsidibot-at-item-name', text: file.basename });
@@ -1356,7 +1370,7 @@ export class ClaudeView extends ItemView {
       item.addEventListener('mousedown', (e) => {
         e.preventDefault(); // prevent textarea blur before select fires
         this.atDropdownIndex = i;
-        this.atDropdownSelect();
+        void this.atDropdownSelect();
       });
     });
   }
@@ -1387,7 +1401,7 @@ export class ClaudeView extends ItemView {
   }
 
   private atDropdownHide() {
-    this.atDropdownEl.style.display = 'none';
+    this.atDropdownEl.hide();
     this.atDropdownItems = [];
     this.atDropdownIndex = -1;
   }
@@ -1395,8 +1409,8 @@ export class ClaudeView extends ItemView {
   private renderContextZone() {
     const zone = this.pendingContextZone;
     zone.empty();
-    if (this.pendingContexts.length === 0) { zone.style.display = 'none'; return; }
-    zone.style.display = 'flex';
+    if (this.pendingContexts.length === 0) { zone.hide(); return; }
+    zone.show();
     for (const entry of this.pendingContexts) {
       const row = zone.createDiv({ cls: 'obsidibot-pending-context-row' + (entry.pinned ? ' obsidibot-context-pinned' : '') });
       const preview = entry.text.length > 80 ? entry.text.substring(0, 80) + '…' : entry.text;
@@ -1425,7 +1439,7 @@ export class ClaudeView extends ItemView {
   }
 
   private updateTokenGauge(tokens: number) {
-    const arc = this.tokenGaugeEl.querySelector('.obsidibot-gauge-arc') as SVGCircleElement | null;
+    const arc = this.tokenGaugeEl.querySelector('.obsidibot-gauge-arc');
     if (!arc) return;
     const R = 7, C = R * 2 * Math.PI;
     const fraction = Math.min(tokens / ClaudeView.CONTEXT_WINDOW, 1);
@@ -1465,9 +1479,9 @@ export class ClaudeView extends ItemView {
     this.updateTokenGauge(0);
     new Notice('ObsidiBot: compacting session…');
     const proc = spawnClaude({
-      binaryPath: this.plugin.claudeBinaryPath!,
+      binaryPath: this.plugin.claudeBinaryPath,
       prompt: '/compact',
-      vaultRoot: (this.app.vault.adapter as any).basePath,
+      vaultRoot: this.getVaultRoot(),
       env: this.plugin.shellEnv,
       resumeSessionId: sessionId,
       permissionMode: this.sessionPermissionOverride ?? this.plugin.settings.permissionMode,
@@ -1483,7 +1497,7 @@ export class ClaudeView extends ItemView {
   private toggleAttachPopover(anchorBtn: HTMLElement) {
     const showing = this.attachPopoverEl.style.display !== 'none';
     if (showing) { this.closeAttachPopover(); return; }
-    this.attachPopoverEl.style.display = 'flex';
+    this.attachPopoverEl.show();
     anchorBtn.classList.add('is-active');
     // Close on any click outside the popover or anchor
     this.attachClickOutside = (e: MouseEvent) => {
@@ -1491,11 +1505,11 @@ export class ClaudeView extends ItemView {
         this.closeAttachPopover();
       }
     };
-    setTimeout(() => document.addEventListener('click', this.attachClickOutside!), 0);
+    setTimeout(() => document.addEventListener('click', this.attachClickOutside), 0);
   }
 
   private closeAttachPopover() {
-    this.attachPopoverEl.style.display = 'none';
+    this.attachPopoverEl.hide();
     this.attachPopoverEl.closest('.obsidibot-input-area')
       ?.querySelector('.obsidibot-icon-btn.is-active')
       ?.classList.remove('is-active');
@@ -1537,6 +1551,7 @@ export class ClaudeView extends ItemView {
     // Use Electron's clipboard API to get real file paths when a file was
     // copied from Explorer. Works even with context isolation unlike file.path.
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- Electron is only accessible via require() in Obsidian's renderer process
       const { clipboard } = require('electron') as { clipboard: { readFilePaths(): string[] } };
       const filePaths = clipboard.readFilePaths();
       if (filePaths.length > 0) {
@@ -1615,8 +1630,8 @@ export class ClaudeView extends ItemView {
   }
 
   private saveBinaryToTmp(filename: string, data: ArrayBuffer): string {
-    const vaultRoot = (this.app.vault.adapter as any).basePath;
-    const tmpDir = join(vaultRoot, '.obsidian', 'plugins', 'obsidibot', 'tmp');
+    const vaultRoot = this.getVaultRoot();
+    const tmpDir = join(vaultRoot, this.app.vault.configDir, 'plugins', 'obsidibot', 'tmp');
     if (!existsSync(tmpDir)) mkdirSync(tmpDir, { recursive: true });
     const filePath = join(tmpDir, filename);
     writeFileSync(filePath, Buffer.from(data));
@@ -1664,7 +1679,7 @@ export class ClaudeView extends ItemView {
           const a = li.createEl('a', { cls: 'internal-link', text: item });
           a.addEventListener('click', (e) => {
             e.preventDefault();
-            this.app.workspace.openLinkText(item, '/', false);
+            void this.app.workspace.openLinkText(item, '/', false);
           });
         }
       }
@@ -1686,21 +1701,21 @@ export class ClaudeView extends ItemView {
     // New response group for Claude's continuation (no user message bubble)
     const responseGroupEl = this.messagesEl.createDiv({ cls: 'obsidibot-response-group' });
     const toolEventsEl = responseGroupEl.createDiv({ cls: 'obsidibot-tool-events' });
-    toolEventsEl.style.display = 'none';
+    toolEventsEl.hide();
     const assistantEl = responseGroupEl.createDiv({ cls: 'obsidibot-message obsidibot-assistant' });
     const statusEl = assistantEl.createSpan({ cls: 'obsidibot-status', text: 'Processing vault data…' });
     const streamingTextEl = assistantEl.createSpan({ cls: 'obsidibot-streaming-text' });
     const tokenStatsEl = responseGroupEl.createDiv({ cls: 'obsidibot-token-stats' });
-    tokenStatsEl.style.display = 'none';
+    tokenStatsEl.hide();
     this.setSendState(true);
     this.scrollToBottom();
 
     let proc: ReturnType<typeof spawnClaude>;
     try {
       proc = spawnClaude({
-        binaryPath: this.plugin.claudeBinaryPath!,
+        binaryPath: this.plugin.claudeBinaryPath,
         prompt: injectPrompt,
-        vaultRoot: (this.app.vault.adapter as any).basePath,
+        vaultRoot: this.getVaultRoot(),
         env: this.plugin.shellEnv,
         resumeSessionId: this.currentSessionId,
         permissionMode: this.sessionPermissionOverride ?? this.plugin.settings.permissionMode,
@@ -1727,7 +1742,7 @@ export class ClaudeView extends ItemView {
           const { clean, actions } = extractActions(accumulated);
           accumulated = clean;
           uiBridgeActionCount += actions.length;
-          actions.forEach(a => executeAction(this.app, a, this.bridgeOptions()));
+          for (const a of actions) void executeAction(this.app, a, this.bridgeOptions());
         }
         streamingTextEl.textContent = accumulated;
         this.scrollToBottom();
@@ -1737,7 +1752,7 @@ export class ClaudeView extends ItemView {
           try {
             const { actions } = extractActions(line + '\n');
             uiBridgeActionCount += actions.length;
-            actions.forEach(a => executeAction(this.app, a, this.bridgeOptions()));
+            for (const a of actions) void executeAction(this.app, a, this.bridgeOptions());
           } catch { /* malformed */ }
         }
       },
@@ -1746,7 +1761,7 @@ export class ClaudeView extends ItemView {
         if (!statusEl.isConnected) assistantEl.appendChild(statusEl);
         statusEl.setText(TOOL_STATUS[key] ?? 'Working…');
         toolCallCount++;
-        if (toolEventsEl.style.display === 'none') toolEventsEl.style.display = 'flex';
+        toolEventsEl.show();
         const row = toolEventsEl.createDiv({ cls: 'obsidibot-tool-event' });
         const iconEl = row.createSpan({ cls: 'obsidibot-tool-event-icon' });
         setIcon(iconEl, TOOL_ICONS[key] ?? 'zap');
@@ -1771,7 +1786,7 @@ export class ClaudeView extends ItemView {
         const parts = [`${fmt(turnOutputTokens)} out`, `${fmt(turnInputTokens)} in`];
         if (turnCacheTokens > 0) parts.push(`${fmt(turnCacheTokens)} cached`);
         tokenStatsEl.setText(parts.join(' · '));
-        tokenStatsEl.style.display = '';
+        tokenStatsEl.show();
       },
       onError: (err) => {
         this.appendMessage('system', `stderr: ${err.trim()}`);
@@ -1781,7 +1796,7 @@ export class ClaudeView extends ItemView {
         this.activeProc = null;
 
         if (sessionId && this.currentSessionId) {
-          const vaultRoot = (this.app.vault.adapter as any).basePath;
+          const vaultRoot = this.getVaultRoot();
           const now = new Date().toISOString();
           const fileId = this.currentSessionFileId ?? this.currentSessionId;
           saveSession(vaultRoot, {
@@ -1794,8 +1809,8 @@ export class ClaudeView extends ItemView {
         }
 
         if (toolCallCount > 0) {
-          const rows = Array.from(toolEventsEl.querySelectorAll('.obsidibot-tool-event')) as HTMLElement[];
-          rows.forEach(r => { r.style.display = 'none'; });
+          const rows = Array.from(toolEventsEl.querySelectorAll<HTMLElement>('.obsidibot-tool-event'));
+          rows.forEach(r => { r.hide(); });
           const s = toolCallCount === 1 ? '' : 's';
           const toggle = toolEventsEl.createEl('button', {
             cls: 'obsidibot-tool-toggle',
@@ -1805,7 +1820,7 @@ export class ClaudeView extends ItemView {
           let expanded = false;
           toggle.addEventListener('click', () => {
             expanded = !expanded;
-            rows.forEach(r => { r.style.display = expanded ? 'flex' : 'none'; });
+            rows.forEach(r => { if (expanded) r.show(); else r.hide(); });
             toggle.setText(`${toolCallCount} tool call${s} ${expanded ? '▼' : '▶'}`);
           });
         }
@@ -1819,7 +1834,7 @@ export class ClaudeView extends ItemView {
         } else {
           assistantEl.dataset.markdown = accumulated;
           assistantEl.empty();
-          MarkdownRenderer.render(this.app, this.addHardLineBreaks(accumulated), assistantEl, '', this);
+          void MarkdownRenderer.render(this.app, this.addHardLineBreaks(accumulated), assistantEl, '', this);
           this.wireInternalLinks(assistantEl);
         }
         this.scrollToBottom();
@@ -1869,15 +1884,15 @@ export class ClaudeView extends ItemView {
       a.addEventListener('click', (e) => {
         e.preventDefault();
         const href = (a as HTMLAnchorElement).getAttribute('href') ?? a.textContent ?? '';
-        this.app.workspace.openLinkText(href, '/', false);
+        void this.app.workspace.openLinkText(href, '/', false);
       });
     });
   }
 
   /** Resolved sessions directory, honoring the user's sessionStoragePath setting. */
   private getSessionsDir(): string {
-    const vaultRoot = (this.app.vault.adapter as any).basePath as string;
-    return resolveSessionsDir(vaultRoot, this.plugin.settings.sessionStoragePath);
+    const vaultRoot = this.getVaultRoot();
+    return resolveSessionsDir(vaultRoot, this.plugin.settings.sessionStoragePath, this.app.vault.configDir);
   }
 
   /**
@@ -2039,7 +2054,7 @@ export class ClaudeView extends ItemView {
   }
 
   private resolveCommandsFolder(): string {
-    const vaultRoot = (this.app.vault.adapter as any).basePath as string;
+    const vaultRoot = this.getVaultRoot();
     const custom = this.plugin.settings.commandsFolder;
     if (custom?.trim()) {
       const p = custom.trim();
@@ -2056,7 +2071,7 @@ export class ClaudeView extends ItemView {
       let body = raw;
       let params: SlashParam[] | undefined;
       let autorun = false;
-      let name = filePath.split(/[\\/]/).pop()?.replace(/\.md$/, '') ?? 'Command';
+      const name = filePath.split(/[\\/]/).pop()?.replace(/\.md$/, '') ?? 'Command';
 
       const fmMatch = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
       if (fmMatch) {
@@ -2079,7 +2094,7 @@ export class ClaudeView extends ItemView {
             this.inputEl.dispatchEvent(new Event('input'));
             this.appendMessage('system', `Running: ${name}`);
             this.suppressNextUserBubble = true;
-            this.handleSend();
+            void this.handleSend();
           } else {
             this.inputEl.value = result;
             this.inputEl.dispatchEvent(new Event('input'));
@@ -2092,7 +2107,7 @@ export class ClaudeView extends ItemView {
         this.inputEl.dispatchEvent(new Event('input'));
         this.appendMessage('system', `Running: ${name}`);
         this.suppressNextUserBubble = true;
-        this.handleSend();
+        void this.handleSend();
       } else {
         const current = this.inputEl.value;
         const insert = current ? current + '\n\n' + body : body;
@@ -2151,7 +2166,7 @@ export class ClaudeView extends ItemView {
                     this.inputEl.dispatchEvent(new Event('input'));
                     this.appendMessage('system', `Running: ${name}`);
                     this.suppressNextUserBubble = true;
-                    this.handleSend();
+                    void this.handleSend();
                   } else {
                     this.inputEl.value = result;
                     this.inputEl.dispatchEvent(new Event('input'));
@@ -2164,7 +2179,7 @@ export class ClaudeView extends ItemView {
                 this.inputEl.dispatchEvent(new Event('input'));
                 this.appendMessage('system', `Running: ${name}`);
                 this.suppressNextUserBubble = true;
-                this.handleSend();
+                void this.handleSend();
               } else {
                 const current = this.inputEl.value;
                 const insert = current ? current + '\n\n' + body : body;
@@ -2201,7 +2216,7 @@ export class ClaudeView extends ItemView {
         description: 'Save this session to your vault',
         action: () => {
           if (!this.currentSessionFileId) { new Notice('No active session to export.'); return; }
-          const sessions = loadAllSessions((this.app.vault.adapter as any).basePath, this.getSessionsDir());
+          const sessions = loadAllSessions(this.getVaultRoot(), this.getSessionsDir());
           const session = sessions.find(s => s.id === this.currentSessionFileId);
           if (session) void this.exportSessionToVault(session);
           else new Notice('Session not found.');
@@ -2219,7 +2234,7 @@ export class ClaudeView extends ItemView {
         description: 'Edit your persistent vault context',
         action: () => {
           const file = this.app.vault.getFileByPath(this.plugin.settings.contextFilePath);
-          if (file) this.app.workspace.getLeaf(false).openFile(file);
+          if (file) void this.app.workspace.getLeaf(false).openFile(file);
           else new Notice(`Context file not found: ${this.plugin.settings.contextFilePath}`);
         },
       },
@@ -2234,8 +2249,8 @@ export class ClaudeView extends ItemView {
         name: 'Open settings',
         description: 'Open ObsidiBot settings',
         action: () => {
-          (this.app as any).setting.open();
-          (this.app as any).setting.openTabById('obsidibot');
+          this.appInternal.setting.open();
+          this.appInternal.setting.openTabById('obsidibot');
         },
       },
       ...this.loadSkillCommands(),

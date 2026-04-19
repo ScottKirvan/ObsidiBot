@@ -13,28 +13,28 @@ export interface StoredSession {
   assistantLabel?: string;
 }
 
-export function getSessionsDir(vaultRoot: string): string {
+export function getSessionsDir(vaultRoot: string, configDir = '.obsidian'): string {
   // Stored outside the plugin directory so symlinked dev installs don't
   // cause multiple vaults to share the same physical sessions folder.
-  return join(vaultRoot, '.obsidian', 'obsidibot', 'sessions');
+  return join(vaultRoot, configDir, 'obsidibot', 'sessions');
 }
 
 /**
  * Resolve the sessions directory from a user-configured path.
- * - Empty / whitespace → default location (.obsidian/obsidibot/sessions)
+ * - Empty / whitespace → default location (<configDir>/obsidibot/sessions)
  * - Absolute path → used as-is
  * - Relative path → resolved against vault root
  */
-export function resolveSessionsDir(vaultRoot: string, customPath?: string): string {
+export function resolveSessionsDir(vaultRoot: string, customPath?: string, configDir = '.obsidian'): string {
   const p = customPath?.trim();
-  if (!p) return getSessionsDir(vaultRoot);
+  if (!p) return getSessionsDir(vaultRoot, configDir);
   if (isAbsolute(p)) return p;
   return join(vaultRoot, p);
 }
 
 /** Legacy path used before the project was renamed from Cortex to ObsidiBot. */
-export function getLegacySessionsDir(vaultRoot: string): string {
-  return join(vaultRoot, '.obsidian', 'cortex', 'sessions');
+export function getLegacySessionsDir(vaultRoot: string, configDir = '.obsidian'): string {
+  return join(vaultRoot, configDir, 'cortex', 'sessions');
 }
 
 export function saveSession(vaultRoot: string, session: StoredSession, sessionsDir?: string): void {
@@ -53,7 +53,7 @@ export function saveSession(vaultRoot: string, session: StoredSession, sessionsD
   }
 }
 
-export function loadAllSessions(vaultRoot: string, sessionsDir?: string): StoredSession[] {
+export function loadAllSessions(vaultRoot: string, sessionsDir?: string, configDir = '.obsidian'): StoredSession[] {
   const loadDir = (dir: string, legacy: boolean): StoredSession[] => {
     if (!existsSync(dir)) return [];
     try {
@@ -69,8 +69,8 @@ export function loadAllSessions(vaultRoot: string, sessionsDir?: string): Stored
     }
   };
 
-  const currentSessions = loadDir(sessionsDir ?? getSessionsDir(vaultRoot), false);
-  const legacySessions = loadDir(getLegacySessionsDir(vaultRoot), true);
+  const currentSessions = loadDir(sessionsDir ?? getSessionsDir(vaultRoot, configDir), false);
+  const legacySessions = loadDir(getLegacySessionsDir(vaultRoot, configDir), true);
 
   // Merge: deduplicate by id (current takes precedence if same id exists in both)
   const seen = new Set(currentSessions.map(s => s.id));
@@ -79,7 +79,7 @@ export function loadAllSessions(vaultRoot: string, sessionsDir?: string): Stored
   return merged.sort((a, b) => {
     const aHas = a.sortOrder !== undefined;
     const bHas = b.sortOrder !== undefined;
-    if (aHas && bHas) return a.sortOrder! - b.sortOrder!;
+    if (aHas && bHas) return a.sortOrder - b.sortOrder;
     if (aHas || bHas) return aHas ? -1 : 1;
     return b.updatedAt.localeCompare(a.updatedAt);
   });
@@ -209,7 +209,7 @@ export function loadSessionMessages(claudeSessionId: string): ChatMessage[] {
         const entry = JSON.parse(line) as Record<string, unknown>;
 
         // Compaction boundary — insert a divider and skip the summary that follows
-        if (entry.type === 'system' && (entry as Record<string, unknown>).subtype === 'compact_boundary') {
+        if (entry.type === 'system' && (entry).subtype === 'compact_boundary') {
           skipNextUser = true;
           messages.push({ role: 'separator', content: '─── conversation compacted ───', timestamp: entry.timestamp as string });
           continue;
