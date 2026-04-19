@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+    "lint": "eslint src/ main.ts",
     "test": "npx tsx --test test/unit.test.ts",
     "devdocs": "vitepress dev docs",
     "builddocs": "vitepress build docs",
@@ -17,6 +18,7 @@
     "@types/node": "^18.0.0",
     "builtin-modules": "^3.3.0",
     "esbuild": "^0.21.0",
+    "eslint-plugin-obsidianmd": "github:obsidianmd/eslint-plugin",
     "obsidian": "latest",
     "tslib": "^2.6.0",
     "tsx": "^4.21.0",

@@ -57,7 +57,7 @@ export function resolveQuery(app: App, query: VaultQuery): VaultQueryResult {
           const cache = app.metadataCache.getFileCache(file);
           const inlineTags = (cache?.tags ?? []).map(t => t.tag);
           const fmTags: string[] = Array.isArray(cache?.frontmatter?.tags)
-            ? cache!.frontmatter!.tags
+            ? cache.frontmatter.tags
             : [];
           const tags = [...new Set([...inlineTags, ...fmTags])];
           log('QueryHandler: tags on file —', tags.length, 'tags');
@@ -70,7 +70,7 @@ export function resolveQuery(app: App, query: VaultQuery): VaultQueryResult {
             const cache = app.metadataCache.getFileCache(f);
             const fileTags = [
               ...(cache?.tags ?? []).map(t => t.tag),
-              ...(Array.isArray(cache?.frontmatter?.tags) ? cache!.frontmatter!.tags.map((t: string) => t.startsWith('#') ? t : `#${t}`) : []),
+              ...(Array.isArray(cache?.frontmatter?.tags) ? cache.frontmatter.tags.map((t: string) => t.startsWith('#') ? t : `#${t}`) : []),
             ];
             if (fileTags.includes(needle)) files.push(f.path);
           }
@@ -91,8 +91,8 @@ export function resolveQuery(app: App, query: VaultQuery): VaultQueryResult {
       }
 
       default:
-        warn('QueryHandler: unknown query type:', (query as VaultQuery).query);
-        return { query, result: null, error: `unknown query type: ${(query as VaultQuery).query}` };
+        warn('QueryHandler: unknown query type:', (query).query);
+        return { query, result: null, error: `unknown query type: ${String(query.query)}` };
     }
   } catch (err) {
     warn('QueryHandler: error resolving query:', err);

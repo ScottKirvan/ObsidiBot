@@ -1,4 +1,23 @@
 import { Modal, App, setIcon } from 'obsidian';
+
+/** Minimal confirm dialog using an Obsidian Modal (replaces window.confirm). */
+class ConfirmDeleteModal extends Modal {
+  constructor(app: App, private sessionTitle: string, private onConfirm: () => void) {
+    super(app);
+  }
+  onOpen() {
+    this.titleEl.setText('Delete session');
+    this.contentEl.createEl('p', {
+      text: `Delete "${this.sessionTitle}"? This cannot be undone.`,
+    });
+    const btnRow = this.contentEl.createDiv({ cls: 'modal-button-container' });
+    btnRow.createEl('button', { text: 'Cancel' })
+      .addEventListener('click', () => this.close());
+    const del = btnRow.createEl('button', { text: 'Delete', cls: 'mod-warning' });
+    del.addEventListener('click', () => { this.close(); this.onConfirm(); });
+  }
+  onClose() { this.contentEl.empty(); }
+}
 import { StoredSession, saveSession, canResumeLocally, deleteSession } from '../utils/sessionStorage';
 
 export class SessionListModal extends Modal {
@@ -119,7 +138,7 @@ export class SessionListModal extends Modal {
     // Drag handle (hidden while filtering)
     const grip = item.createEl('span', { cls: 'obsidibot-session-drag-handle' });
     setIcon(grip, 'grip-vertical');
-    if (this.isFiltering) grip.style.visibility = 'hidden';
+    if (this.isFiltering) grip.addClass('obsidibot-invisible');
 
     if (!this.isFiltering) {
       item.draggable = true;
@@ -217,13 +236,13 @@ export class SessionListModal extends Modal {
 
     deleteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (confirm(`Delete session "${session.title}"? This cannot be undone.`)) {
+      new ConfirmDeleteModal(this.app, session.title, () => {
         const legacyDir = (session as StoredSession & { _legacyDir?: string })._legacyDir;
         deleteSession(this.vaultRoot, session.id, legacyDir, this.sessionsDir);
         this.sessions = this.sessions.filter(s => s.id !== session.id);
         this.filteredSessions = this.filteredSessions.filter(s => s.id !== session.id);
         this.rerenderList();
-      }
+      }).open();
     });
 
     renameBtn.addEventListener('click', (e) => {

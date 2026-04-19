@@ -22,6 +22,10 @@ data.json
 # User slash command templates (local to each install)
 commands/
 
+# TypeScript compiled output (esbuild bundles to main.js; tsc -noEmit only)
+src/**/*.js
+test/**/*.js
+
 notes/COMMIT_DRAFT.md
 ObsidiBot_Marketing/
 docs/.vitepress/cache/

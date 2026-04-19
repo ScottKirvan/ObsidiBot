@@ -46,7 +46,7 @@ export class SlashMenu {
         attr: { type: 'text', placeholder: 'Search commands…' },
       });
       this.searchEl.addEventListener('input', () => {
-        this.filter(this.searchEl!.value);
+        this.filter(this.searchEl.value);
       });
       this.searchEl.addEventListener('keydown', (e) => {
         this.handleKeyDown(e);
@@ -67,7 +67,7 @@ export class SlashMenu {
   }
 
   open() {
-    this.el.style.display = '';
+    this.el.show();
     if (this.mode === 'button' && this.searchEl) {
       this.searchEl.focus();
     }
@@ -170,7 +170,7 @@ export class SlashMenu {
     const groups = new Map<string, SlashCommand[]>();
     for (const cmd of this.filtered) {
       if (!groups.has(cmd.category)) groups.set(cmd.category, []);
-      groups.get(cmd.category)!.push(cmd);
+      groups.get(cmd.category).push(cmd);
     }
 
     // Flat index tracks position across all groups for highlight
@@ -182,8 +182,7 @@ export class SlashMenu {
         if (flatIndex === this.highlightedIndex) item.addClass('obsidibot-slash-item-highlighted');
         item.setAttribute('role', 'option');
 
-        const nameEl = item.createSpan({ cls: 'obsidibot-slash-item-name', text: cmd.name });
-        nameEl; // used
+        item.createSpan({ cls: 'obsidibot-slash-item-name', text: cmd.name });
         if (cmd.description) {
           item.createSpan({ cls: 'obsidibot-slash-item-desc', text: cmd.description });
         }

@@ -4,7 +4,7 @@ export class ExportToVaultModal extends Modal {
   constructor(
     app: App,
     private defaultPath: string,
-    private onConfirm: (path: string, openAfter: boolean) => void,
+    private onConfirm: (path: string, openAfter: boolean) => void | Promise<void>,
   ) {
     super(app);
   }
@@ -38,7 +38,7 @@ export class ExportToVaultModal extends Modal {
     const exportBtn = btnRow.createEl('button', { text: 'Save to vault', cls: 'mod-cta' });
     exportBtn.addEventListener('click', () => {
       const path = input.value.trim();
-      if (path) { this.onConfirm(path, checkbox.checked); this.close(); }
+      if (path) { void this.onConfirm(path, checkbox.checked); this.close(); }
     });
 
     input.addEventListener('keydown', (e) => {

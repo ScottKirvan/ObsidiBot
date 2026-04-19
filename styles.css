@@ -1,5 +1,7 @@
 /* ObsidiBot plugin styles */
 
+.obsidibot-hidden { display: none; }
+
 /* ── Layout ── */
 .obsidibot-view {
   display: flex;
@@ -1287,3 +1289,5 @@
   border-color: var(--interactive-accent);
   color: var(--interactive-accent);
 }
+/* ── Utility ── */
+.obsidibot-invisible { visibility: hidden; }

@@ -29,12 +29,12 @@ export function initLogger(vaultRoot: string, config?: LoggerConfig) {
 function write(level: string, args: unknown[]) {
   // always echo to devtools console
   if (level === 'WARN') console.warn('[ObsidiBot]', ...args);
-  else console.log('[ObsidiBot]', ...args);
+  else console.debug('[ObsidiBot]', ...args);
 
   if (!fileEnabled || !logPath) return;
 
   const line = `[${new Date().toISOString()}] [${level}] ${args.map(a =>
-    typeof a === 'object' ? JSON.stringify(a) : String(a)
+    (typeof a === 'object' && a !== null) ? JSON.stringify(a) : String(a as string | number | boolean | null | undefined)
   ).join(' ')}\n`;
 
   try { appendFileSync(logPath, line); } catch { /* ignore write errors */ }

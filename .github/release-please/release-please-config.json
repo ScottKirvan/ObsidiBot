@@ -3,6 +3,7 @@
   "release-type": "simple",
   "include-component-in-tag": false,
   "include-v-in-tag": false,
+  "include-v-in-release-name": false,
   "changelog-path": "notes/CHANGELOG.md",
   "packages": {
     ".": {
