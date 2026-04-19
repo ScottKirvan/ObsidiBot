@@ -398,10 +398,11 @@ export default class ObsidiBotPlugin extends Plugin {
       for (const file of files) {
         const filePath = join(folder, file);
         const name = file.replace(/\.md$/, '');
-        const id = `obsidibot:skill-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+        const commandId = `skill-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+        const fullId = `obsidibot:${commandId}`;
 
         this.addCommand({
-          id,
+          id: commandId,
           name: `Skill: ${name}`,
           callback: () => {
             const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_CLAUDE);
@@ -417,7 +418,7 @@ export default class ObsidiBotPlugin extends Plugin {
           }
         });
 
-        this.skillCommandIds.add(id);
+        this.skillCommandIds.add(fullId);
       }
       log(`Registered ${files.length} skill(s) in Ctrl+P`);
     } catch (e) {
