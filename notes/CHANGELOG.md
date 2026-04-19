@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.7](https://github.com/ScottKirvan/ObsidiBot/compare/2.7.6...2.7.7) (2026-04-19)
+
+
+### Bug Fixes
+
+* restore last-used session on reload and fix skill command registration ([43190fa](https://github.com/ScottKirvan/ObsidiBot/commit/43190fae35d812829f4dc944f942e5cf81c22531))
+
 ## [2.7.6](https://github.com/ScottKirvan/ObsidiBot/compare/2.7.5...2.7.6) (2026-04-19)
 
 
