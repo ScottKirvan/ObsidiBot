@@ -44,7 +44,7 @@ class ConfirmCommandModal extends Modal {
   }
 
   onOpen() {
-    this.titleEl.setText('ObsidiBot — Unlisted command');
+    this.titleEl.setText('ObsidiBot — unlisted command');
     const { contentEl } = this;
 
     contentEl.createEl('p', {

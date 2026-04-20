@@ -80,7 +80,7 @@ export class SessionListModal extends Modal {
     });
 
     const newSessionBtn = topBar.createEl('button', {
-      text: '+ New',
+      text: '+ new',
       cls: 'obsidibot-new-session-btn',
     });
     newSessionBtn.addEventListener('click', () => this.createNewSession());
@@ -207,9 +207,9 @@ export class SessionListModal extends Modal {
       cls: 'obsidibot-session-date',
     });
     if (isNew) {
-      item.createEl('span', { text: 'new', cls: 'obsidibot-session-new-badge' });
+      item.createEl('span', { text: 'New', cls: 'obsidibot-session-new-badge' });
     } else if (!resumable) {
-      item.createEl('span', { text: 'remote', cls: 'obsidibot-session-remote-badge' });
+      item.createEl('span', { text: 'Remote', cls: 'obsidibot-session-remote-badge' });
     }
 
     const actionsDiv = item.createEl('div', { cls: 'obsidibot-session-actions' });

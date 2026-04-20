@@ -104,6 +104,7 @@ describe('estimateTokens', () => {
 // ---------------------------------------------------------------------------
 
 describe('session storage', () => {
+  const TEST_CONFIG_DIR = 'test-config';
   const makeSession = (id: string) => ({
     id,
     title: `Session ${id}`,
@@ -114,16 +115,17 @@ describe('session storage', () => {
 
   test('saveSession creates a JSON file', () => {
     const s = makeSession('s1');
-    saveSession(tmpDir, s);
-    const dir = getSessionsDir(tmpDir);
+    const dir = getSessionsDir(tmpDir, TEST_CONFIG_DIR);
+    saveSession(tmpDir, s, dir);
     const { existsSync } = require('node:fs');
     assert.ok(existsSync(join(dir, 's1.json')));
   });
 
   test('loadAllSessions returns saved session', () => {
     const s = makeSession('s2');
-    saveSession(tmpDir, s);
-    const sessions = loadAllSessions(tmpDir);
+    const dir = getSessionsDir(tmpDir, TEST_CONFIG_DIR);
+    saveSession(tmpDir, s, dir);
+    const sessions = loadAllSessions(tmpDir, dir, TEST_CONFIG_DIR);
     const found = sessions.find(x => x.id === 's2');
     assert.ok(found);
     assert.equal(found!.title, 'Session s2');
@@ -132,23 +134,25 @@ describe('session storage', () => {
   test('loadAllSessions sorts by updatedAt descending', () => {
     const older = { ...makeSession('s3'), updatedAt: '2024-01-01T00:00:00.000Z' };
     const newer = { ...makeSession('s4'), updatedAt: '2025-01-01T00:00:00.000Z' };
-    saveSession(tmpDir, older);
-    saveSession(tmpDir, newer);
-    const sessions = loadAllSessions(tmpDir);
+    const dir = getSessionsDir(tmpDir, TEST_CONFIG_DIR);
+    saveSession(tmpDir, older, dir);
+    saveSession(tmpDir, newer, dir);
+    const sessions = loadAllSessions(tmpDir, dir, TEST_CONFIG_DIR);
     const ids = sessions.map(s => s.id);
     assert.ok(ids.indexOf('s4') < ids.indexOf('s3'));
   });
 
   test('deleteSession removes the file', () => {
     const s = makeSession('s5');
-    saveSession(tmpDir, s);
-    deleteSession(tmpDir, 's5');
-    const sessions = loadAllSessions(tmpDir);
+    const dir = getSessionsDir(tmpDir, TEST_CONFIG_DIR);
+    saveSession(tmpDir, s, dir);
+    deleteSession(tmpDir, 's5', undefined, dir);
+    const sessions = loadAllSessions(tmpDir, dir, TEST_CONFIG_DIR);
     assert.ok(!sessions.find(x => x.id === 's5'));
   });
 
   test('loadAllSessions returns [] when dir missing', () => {
-    assert.deepEqual(loadAllSessions('/nonexistent/path/xyz'), []);
+    assert.deepEqual(loadAllSessions('/nonexistent/path/xyz', '/nonexistent/path/xyz/sessions', 'test-config'), []);
   });
 });
 

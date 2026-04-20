@@ -100,12 +100,9 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    // ── General ────────────────────────────────────────────────────────────
-    new Setting(containerEl).setName('General').setHeading();
-
     new Setting(containerEl)
       .setName('Claude binary path')
-      .setDesc('Path to the claude CLI binary. Leave blank to auto-detect.')
+      .setDesc('Path to the Claude CLI binary. Leave blank to auto-detect.')
       .addText((text) =>
         text
           .setPlaceholder('/usr/local/bin/claude')
@@ -117,7 +114,7 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('Send on Enter')
+      .setName('Send on enter')
       .setDesc('Press Enter to send. Shift+Enter always inserts a newline.')
       .addToggle((toggle) =>
         toggle
@@ -192,16 +189,16 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
       .addDropdown((drop) =>
         drop
           .addOption('0', 'Off')
-          .addOption('1', '1 level (root only)')
-          .addOption('2', '2 levels')
-          .addOption('3', '3 levels (default)')
-          .addOption('4', '4 levels')
-          .addOption('5', '5 levels')
-          .addOption('6', '6 levels')
-          .addOption('7', '7 levels')
-          .addOption('8', '8 levels')
-          .addOption('9', '9 levels')
-          .addOption('10', '10 levels')
+          .addOption('1', '1 Level (root only)')
+          .addOption('2', '2 Levels')
+          .addOption('3', '3 Levels (default)')
+          .addOption('4', '4 Levels')
+          .addOption('5', '5 Levels')
+          .addOption('6', '6 Levels')
+          .addOption('7', '7 Levels')
+          .addOption('8', '8 Levels')
+          .addOption('9', '9 Levels')
+          .addOption('10', '10 Levels')
           .addOption('-1', 'Unlimited')
           .setValue(String(this.plugin.settings.vaultTreeDepth))
           .onChange(async (value) => {
@@ -248,7 +245,7 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Export folder')
-      .setDesc('Vault-relative folder where "Export session to vault" saves notes. Created automatically if it does not exist.')
+      .setDesc('Vault-relative folder where "export session to vault" saves notes. Created automatically if it does not exist.')
       .addText((text) =>
         text
           .setPlaceholder('ObsidiBot Exports')
@@ -324,9 +321,9 @@ export class ObsidiBotSettingsTab extends PluginSettingTab {
       .setDesc('Controls which vault operations Claude is allowed to perform.')
       .addDropdown((drop) =>
         drop
-          .addOption('standard', 'Standard — files + web, no Bash (recommended)')
+          .addOption('standard', 'Standard — files + web, no bash (recommended)')
           .addOption('readonly', 'Read only — no writes or shell commands')
-          .addOption('full', 'Full access — everything including Bash')
+          .addOption('full', 'Full access — everything including bash')
           .setValue(this.plugin.settings.permissionMode)
           .onChange(async (value) => {
             this.plugin.settings.permissionMode = value as PermissionMode;
