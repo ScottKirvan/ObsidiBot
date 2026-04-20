@@ -48,7 +48,7 @@ export default class ObsidiBotPlugin extends Plugin {
     this.claudeBinaryPath = findClaudeBinary(this.settings.binaryPath);
 
     if (!this.claudeBinaryPath) {
-      new Notice('ObsidiBot: claude binary not found. Check plugin settings.');
+      new Notice('ObsidiBot: Claude binary not found. Check plugin settings.');
     }
 
     // Register custom icon — three S-curves suggesting obsidibot folds (gyri).
@@ -354,10 +354,7 @@ export default class ObsidiBotPlugin extends Plugin {
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
     // Migrate old hardcoded log paths → empty so the dynamic default takes over
-    if (
-      this.settings.logFilePath === '_obsidibot-debug.log' ||
-      this.settings.logFilePath === '.obsidian/plugins/obsidibot/obsidibot-debug.log'
-    ) {
+    if (this.settings.logFilePath === '_obsidibot-debug.log') {
       this.settings.logFilePath = '';
       await this.saveSettings();
     }

@@ -13,7 +13,7 @@ export interface StoredSession {
   assistantLabel?: string;
 }
 
-export function getSessionsDir(vaultRoot: string, configDir = '.obsidian'): string {
+export function getSessionsDir(vaultRoot: string, configDir: string): string {
   // Stored outside the plugin directory so symlinked dev installs don't
   // cause multiple vaults to share the same physical sessions folder.
   return join(vaultRoot, configDir, 'obsidibot', 'sessions');
@@ -25,7 +25,7 @@ export function getSessionsDir(vaultRoot: string, configDir = '.obsidian'): stri
  * - Absolute path → used as-is
  * - Relative path → resolved against vault root
  */
-export function resolveSessionsDir(vaultRoot: string, customPath?: string, configDir = '.obsidian'): string {
+export function resolveSessionsDir(vaultRoot: string, customPath: string | undefined, configDir: string): string {
   const p = customPath?.trim();
   if (!p) return getSessionsDir(vaultRoot, configDir);
   if (isAbsolute(p)) return p;
@@ -33,18 +33,18 @@ export function resolveSessionsDir(vaultRoot: string, customPath?: string, confi
 }
 
 /** Legacy path used before the project was renamed from Cortex to ObsidiBot. */
-export function getLegacySessionsDir(vaultRoot: string, configDir = '.obsidian'): string {
+export function getLegacySessionsDir(vaultRoot: string, configDir: string): string {
   return join(vaultRoot, configDir, 'cortex', 'sessions');
 }
 
-export function saveSession(vaultRoot: string, session: StoredSession, sessionsDir?: string): void {
-  const dir = sessionsDir ?? getSessionsDir(vaultRoot);
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+export function saveSession(vaultRoot: string, session: StoredSession, sessionsDir: string): void {
+  if (!existsSync(sessionsDir)) mkdirSync(sessionsDir, { recursive: true });
   // If this session came from the legacy dir, migrate it: delete the old file
   // after saving to the new location. Strip _legacyDir before persisting.
   const legacyDir = (session as StoredSession & { _legacyDir?: string })._legacyDir;
-  const { _legacyDir: _ignored, ...toSave } = session as StoredSession & { _legacyDir?: string };
-  writeFileSync(join(dir, `${toSave.id}.json`), JSON.stringify(toSave, null, 2));
+  const { _legacyDir, ...toSave } = session as StoredSession & { _legacyDir?: string };
+  void _legacyDir; // destructured only to omit from toSave
+  writeFileSync(join(sessionsDir, `${toSave.id}.json`), JSON.stringify(toSave, null, 2));
   if (legacyDir) {
     const oldPath = join(legacyDir, `${toSave.id}.json`);
     if (existsSync(oldPath)) unlinkSync(oldPath);
@@ -53,7 +53,7 @@ export function saveSession(vaultRoot: string, session: StoredSession, sessionsD
   }
 }
 
-export function loadAllSessions(vaultRoot: string, sessionsDir?: string, configDir = '.obsidian'): StoredSession[] {
+export function loadAllSessions(vaultRoot: string, sessionsDir: string, configDir: string): StoredSession[] {
   const loadDir = (dir: string, legacy: boolean): StoredSession[] => {
     if (!existsSync(dir)) return [];
     try {
@@ -69,7 +69,7 @@ export function loadAllSessions(vaultRoot: string, sessionsDir?: string, configD
     }
   };
 
-  const currentSessions = loadDir(sessionsDir ?? getSessionsDir(vaultRoot, configDir), false);
+  const currentSessions = loadDir(sessionsDir, false);
   const legacySessions = loadDir(getLegacySessionsDir(vaultRoot, configDir), true);
 
   // Merge: deduplicate by id (current takes precedence if same id exists in both)
@@ -90,22 +90,21 @@ export function loadAllSessions(vaultRoot: string, sessionsDir?: string, configD
  * If any existing sessions have a sortOrder, the new session gets sortOrder=0
  * and all others are shifted down by 1. Otherwise just saves normally.
  */
-export function saveSessionAtTop(vaultRoot: string, session: StoredSession, sessionsDir?: string): void {
-  const dir = sessionsDir ?? getSessionsDir(vaultRoot);
-  const existing = loadAllSessions(vaultRoot, dir);
+export function saveSessionAtTop(vaultRoot: string, session: StoredSession, sessionsDir: string, configDir: string): void {
+  const existing = loadAllSessions(vaultRoot, sessionsDir, configDir);
   const anyOrdered = existing.some(s => s.sortOrder !== undefined);
   if (anyOrdered) {
     existing.forEach(s => {
       s.sortOrder = (s.sortOrder ?? 0) + 1;
-      writeFileSync(join(dir, `${s.id}.json`), JSON.stringify(s, null, 2));
+      writeFileSync(join(sessionsDir, `${s.id}.json`), JSON.stringify(s, null, 2));
     });
     session.sortOrder = 0;
   }
-  saveSession(vaultRoot, session, dir);
+  saveSession(vaultRoot, session, sessionsDir);
 }
 
-export function deleteSession(vaultRoot: string, sessionId: string, fromDir?: string, sessionsDir?: string): void {
-  const dir = fromDir ?? sessionsDir ?? getSessionsDir(vaultRoot);
+export function deleteSession(vaultRoot: string, sessionId: string, fromDir: string | undefined, sessionsDir: string): void {
+  const dir = fromDir ?? sessionsDir;
   const filePath = join(dir, `${sessionId}.json`);
   if (existsSync(filePath)) unlinkSync(filePath);
 }

@@ -180,7 +180,7 @@ export class ClaudeView extends ItemView {
     attachFileBtn.addEventListener('mousedown', (e) => { e.preventDefault(); this.closeAttachPopover(); this.openFilePicker(); });
     const attachUrlBtn = this.attachPopoverEl.createEl('button', { cls: 'obsidibot-attach-option', text: '🔗  URL' });
     attachUrlBtn.addEventListener('mousedown', (e) => { e.preventDefault(); this.closeAttachPopover(); new AttachUrlModal(this.app, (url) => this.attachUrl(url)).open(); });
-    const attachAtBtn = this.attachPopoverEl.createEl('button', { cls: 'obsidibot-attach-option', text: '@ Add note' });
+    const attachAtBtn = this.attachPopoverEl.createEl('button', { cls: 'obsidibot-attach-option', text: '@ add note' });
     attachAtBtn.addEventListener('mousedown', (e) => {
       e.preventDefault(); this.closeAttachPopover();
       this.inputEl.focus();
@@ -350,7 +350,7 @@ export class ClaudeView extends ItemView {
 
     if (this.plugin.settings.resumeLastSession) {
       const vaultRoot = this.getVaultRoot();
-      const sessions = loadAllSessions(vaultRoot, this.getSessionsDir());
+      const sessions = loadAllSessions(vaultRoot, this.getSessionsDir(), this.app.vault.configDir);
       if (sessions.length > 0) {
         const lastId = this.plugin.settings.lastActiveSessionId;
         const target = (lastId && sessions.find(s => s.id === lastId)) || sessions[0];
@@ -401,7 +401,7 @@ export class ClaudeView extends ItemView {
       claudeSessionId: '',
     };
 
-    saveSessionAtTop(vaultRoot, newSession, this.getSessionsDir());
+    saveSessionAtTop(vaultRoot, newSession, this.getSessionsDir(), this.app.vault.configDir);
     this.placeholderSessionId = sessionId;
     this.currentSessionId = undefined;
     this.currentSessionFileId = sessionId;
@@ -418,7 +418,7 @@ export class ClaudeView extends ItemView {
   showSessionHistory() {
     const vaultRoot = this.getVaultRoot();
     const sessionsDir = this.getSessionsDir();
-    const sessions = loadAllSessions(vaultRoot, sessionsDir);
+    const sessions = loadAllSessions(vaultRoot, sessionsDir, this.app.vault.configDir);
     new SessionListModal(this.app, vaultRoot, sessions, (session) => {
       void this.loadSession(session);
     }, () => {
@@ -1071,7 +1071,7 @@ export class ClaudeView extends ItemView {
         if (!accumulated && uiBridgeActionCount) {
           assistantEl.remove();
         } else if (!accumulated) {
-          assistantEl.setText('(no response)');
+          assistantEl.setText('(No response)');
         } else if (this.isAuthError(accumulated)) {
           this.renderAuthError(assistantEl);
         } else {
@@ -1153,7 +1153,7 @@ export class ClaudeView extends ItemView {
 
     // Step 1 — Install
     const step1 = card.createDiv({ cls: 'obsidibot-setup-step' });
-    step1.createEl('p', { text: 'Step 1 — Install Claude Code', cls: 'obsidibot-setup-step-title' });
+    step1.createEl('p', { text: 'Step 1 — install Claude Code', cls: 'obsidibot-setup-step-title' });
     if (isWin) {
       step1.createEl('p', { text: 'Open PowerShell (not WSL, not Command Prompt) and run:', cls: 'obsidibot-setup-note' });
       this.renderCodeRow(step1, 'irm https://claude.ai/install.ps1 | iex');
@@ -1172,9 +1172,9 @@ export class ClaudeView extends ItemView {
 
     // Step 3 — Authenticate
     const step3 = card.createDiv({ cls: 'obsidibot-setup-step' });
-    step3.createEl('p', { text: 'Step 3 — Log in', cls: 'obsidibot-setup-step-title' });
+    step3.createEl('p', { text: 'Step 3 — log in', cls: 'obsidibot-setup-step-title' });
     step3.createEl('p', {
-      text: 'This opens a browser window to authenticate with your Claude account (Pro or Max required):',
+      text: 'This opens a browser window to authenticate with your Claude account (pro or max required):',
       cls: 'obsidibot-setup-note',
     });
     this.renderCodeRow(step3, 'claude login');
@@ -1186,7 +1186,7 @@ export class ClaudeView extends ItemView {
       cls: 'obsidibot-setup-step-title',
     });
     pathSection.createEl('p', {
-      text: 'Claude Code may not be on the auto-detected PATH. Enter the full path to your claude binary below, then click Check again.',
+      text: 'Claude Code may not be on the auto-detected path. Enter the full path to your Claude binary below, then click check again.',
       cls: 'obsidibot-setup-note',
     });
     const pathRow = pathSection.createDiv({ cls: 'obsidibot-setup-code-row' });
@@ -1240,7 +1240,7 @@ export class ClaudeView extends ItemView {
       cls: 'obsidibot-setup-note',
     });
     el.createEl('p', {
-      text: 'A Claude Pro or Max subscription is required.',
+      text: 'A Claude pro or max subscription is required.',
       cls: 'obsidibot-setup-note',
     });
 
@@ -1261,7 +1261,7 @@ export class ClaudeView extends ItemView {
         spawn(term, args, { detached: true });
       }
 
-      loginBtn.setText('Opened — log in, then click Done');
+      loginBtn.setText('Opened — log in, then click done');
       loginBtn.disabled = true;
 
       const doneBtn = btnRow.createEl('button', { text: 'Done', cls: 'obsidibot-setup-check-btn' });
@@ -1292,7 +1292,7 @@ export class ClaudeView extends ItemView {
       });
       upgradeBtn.addEventListener('click', () => {
         this.sessionPermissionOverride = 'full';
-        upgradeBtn.setText('↺ Retrying…');
+        upgradeBtn.setText('↺ retrying…');
         upgradeBtn.disabled = true;
         log('Session permission override set to full');
         this.inputEl.value = retryPrompt;
@@ -1553,7 +1553,7 @@ export class ClaudeView extends ItemView {
     // Use Electron's clipboard API to get real file paths when a file was
     // copied from Explorer. Works even with context isolation unlike file.path.
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports -- Electron is only accessible via require() in Obsidian's renderer process
+      // Electron is only accessible via require() in Obsidian's renderer process
       const { clipboard } = require('electron') as { clipboard: { readFilePaths(): string[] } };
       const filePaths = clipboard.readFilePaths();
       if (filePaths.length > 0) {
@@ -1830,7 +1830,7 @@ export class ClaudeView extends ItemView {
         if (!accumulated && uiBridgeActionCount) {
           assistantEl.remove();
         } else if (!accumulated) {
-          assistantEl.setText('(no response)');
+          assistantEl.setText('(No response)');
         } else if (this.isAuthError(accumulated)) {
           this.renderAuthError(assistantEl);
         } else {
@@ -2218,7 +2218,7 @@ export class ClaudeView extends ItemView {
         description: 'Save this session to your vault',
         action: () => {
           if (!this.currentSessionFileId) { new Notice('No active session to export.'); return; }
-          const sessions = loadAllSessions(this.getVaultRoot(), this.getSessionsDir());
+          const sessions = loadAllSessions(this.getVaultRoot(), this.getSessionsDir(), this.app.vault.configDir);
           const session = sessions.find(s => s.id === this.currentSessionFileId);
           if (session) void this.exportSessionToVault(session);
           else new Notice('Session not found.');
@@ -2272,7 +2272,7 @@ class AttachUrlModal extends Modal {
     this.titleEl.setText('Attach URL');
     const input = this.contentEl.createEl('input', {
       cls: 'obsidibot-attach-url-input',
-      attr: { type: 'text', placeholder: 'https://…', style: 'width:100%;box-sizing:border-box;' },
+      attr: { type: 'text', placeholder: 'HTTPS://…', style: 'width:100%;box-sizing:border-box;' },
     });
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { const v = input.value.trim(); if (v) { this.onSubmit(v); this.close(); } }

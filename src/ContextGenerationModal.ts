@@ -221,7 +221,7 @@ class UserIntroModal extends Modal {
     });
 
     const ta = contentEl.createEl('textarea', { cls: 'obsidibot-intro-textarea' });
-    ta.placeholder = '(optional) e.g. I\'m a screenwriter using this vault for research and script development.';
+    ta.placeholder = '(Optional) e.g. I\'m a screenwriter using this vault for research and script development.';
     ta.rows = 4;
 
     // ── Additional context files (optional) ──────────────────────────────
@@ -231,14 +231,14 @@ class UserIntroModal extends Modal {
       cls: 'obsidibot-intro-files-label',
     });
     filesSection.createEl('div', {
-      text: 'Add any files Claude should read before generating — e.g. an existing CLAUDE.md, project notes, or style guides.',
+      text: 'Add any files Claude should read before generating — e.g. An existing Claude.md, project notes, or style guides.',
       cls: 'obsidibot-intro-files-desc',
     });
 
     this.chipsEl = filesSection.createDiv({ cls: 'obsidibot-intro-chips' });
 
     const addBtn = filesSection.createEl('button', {
-      text: '+ Add file',
+      text: '+ add file',
       cls: 'obsidibot-intro-add-btn',
     });
     addBtn.addEventListener('click', () => {
