@@ -676,9 +676,29 @@
 
 .obsidibot-tool-event {
   display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0;
+}
+
+.obsidibot-tool-event-header {
+  display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 0;
+}
+
+.obsidibot-tool-event-output {
+  font-family: var(--font-monospace);
+  font-size: 0.9em;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--text-faint);
+  padding-left: 18px;
+  line-height: 1.4;
+}
+
+.obsidibot-tool-output-pending {
+  opacity: 0.4;
 }
 
 .obsidibot-tool-event+.obsidibot-tool-event {
@@ -759,6 +779,22 @@
 
 .obsidibot-permission-settings-link:hover {
   text-decoration: underline;
+}
+
+.obsidibot-permission-dismiss {
+  margin-left: auto;
+  font-size: 0.85em;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 2px 10px;
+  cursor: pointer;
+}
+
+.obsidibot-permission-dismiss:hover {
+  color: var(--text-normal);
+  border-color: var(--text-muted);
 }
 
 /* ── UI Bridge confirmation modal ── */

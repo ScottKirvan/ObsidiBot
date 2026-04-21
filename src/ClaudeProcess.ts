@@ -179,7 +179,8 @@ export interface StreamCallbacks {
   onAction: (line: string) => void;
   /** Called for each @@CORTEX_QUERY line. Optional — existing callers unaffected. */
   onQuery?: (line: string) => void;
-  onToolCall: (tool: string, input: unknown) => void;
+  onToolCall: (tool: string, input: unknown, toolUseId: string) => void;
+  onToolResult?: (toolUseId: string, content: string) => void;
   onPermissionDenied: (denials: PermissionDenial[]) => void;
   onUsage: (usage: TokenUsage) => void;
   onDone: (sessionId?: string) => void;
@@ -260,7 +261,30 @@ function handleMessage(
             const clean = textLines.join('\n');
             if (clean) cb.onText(clean);
           } else if (block.type === 'tool_use') {
-            cb.onToolCall(block.name as string, block.input);
+            cb.onToolCall(block.name as string, block.input, block.id as string);
+          }
+        }
+      }
+      break;
+    }
+    case 'user': {
+      if (!cb.onToolResult) break;
+      const userMsg = msg.message as Record<string, unknown> | undefined;
+      const userContent = userMsg?.content as Array<Record<string, unknown>> | undefined;
+      if (userContent) {
+        for (const block of userContent) {
+          if (block.type === 'tool_result') {
+            const id = block.tool_use_id as string;
+            let text = '';
+            if (typeof block.content === 'string') {
+              text = block.content;
+            } else if (Array.isArray(block.content)) {
+              text = (block.content as Array<Record<string, unknown>>)
+                .filter(b => b.type === 'text')
+                .map(b => b.text as string)
+                .join('');
+            }
+            cb.onToolResult(id, text);
           }
         }
       }
