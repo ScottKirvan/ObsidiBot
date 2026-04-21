@@ -73,6 +73,52 @@ class ConfirmCommandModal extends Modal {
   }
 }
 
+class RequestPermissionModal extends Modal {
+  private resolved = false;
+
+  constructor(
+    app: App,
+    private tool: string,
+    private reason: string,
+    private resolve: (granted: boolean) => void,
+  ) {
+    super(app);
+  }
+
+  private settle(granted: boolean) {
+    if (this.resolved) return;
+    this.resolved = true;
+    this.resolve(granted);
+    this.close();
+  }
+
+  onOpen() {
+    this.titleEl.setText('Permission request');
+    const { contentEl } = this;
+    contentEl.createEl('p', {
+      text: `Claude needs permission to use ${this.tool}:`,
+      cls: 'obsidibot-confirm-desc',
+    });
+    if (this.reason) {
+      contentEl.createEl('p', { text: this.reason, cls: 'obsidibot-permission-reason' });
+    }
+    const btnRow = contentEl.createDiv({ cls: 'obsidibot-confirm-btn-row' });
+    const allowBtn = btnRow.createEl('button', { text: 'Allow full access for this session', cls: 'mod-cta' });
+    allowBtn.addEventListener('click', () => this.settle(true));
+    const denyBtn = btnRow.createEl('button', { text: 'Deny' });
+    denyBtn.addEventListener('click', () => this.settle(false));
+  }
+
+  onClose() {
+    this.settle(false);
+    this.contentEl.empty();
+  }
+}
+
+export function promptPermissionRequest(app: App, tool: string, reason: string): Promise<boolean> {
+  return new Promise<boolean>(resolve => new RequestPermissionModal(app, tool, reason, resolve).open());
+}
+
 /**
  * Scan accumulated text for complete @@CORTEX_ACTION lines.
  * Returns cleaned text (lines stripped) and parsed actions.

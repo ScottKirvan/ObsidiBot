@@ -781,6 +781,12 @@
   text-decoration: underline;
 }
 
+.obsidibot-permission-reason {
+  font-style: italic;
+  color: var(--text-muted);
+  margin: 4px 0 12px;
+}
+
 .obsidibot-permission-dismiss {
   margin-left: auto;
   font-size: 0.85em;

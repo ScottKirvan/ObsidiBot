@@ -13,7 +13,7 @@ import { writeFileSync, mkdirSync, existsSync, readdirSync, readFileSync } from 
 import { join, isAbsolute } from 'path';
 import type ObsidiBotPlugin from '../main';
 import { spawnClaude, parseStreamOutput, killProcess, findClaudeBinary, PermissionDenial, PermissionMode } from './ClaudeProcess';
-import { extractActions, executeAction } from './UIBridge';
+import { extractActions, executeAction, promptPermissionRequest } from './UIBridge';
 import { VaultQuery, VaultQueryResult, resolveQuery, queryLabel, buildInjectMessage } from './QueryHandler';
 import { QUERY_PREFIX } from './constants';
 import { ContextManager } from './ContextManager';
@@ -952,6 +952,7 @@ export class ClaudeView extends ItemView {
     let turnOutputTokens = 0;
     const pendingQueries: VaultQuery[] = [];
     const toolRowMap = new Map<string, HTMLElement>();
+    let pendingPermissionRequest: { tool: string; reason: string } | null = null;
 
     parseStreamOutput(proc, {
       onText: (delta) => {
@@ -971,8 +972,17 @@ export class ClaudeView extends ItemView {
         if (this.plugin.settings.uiBridgeEnabled) {
           try {
             const { actions } = extractActions(line + '\n');
-            uiBridgeActionCount += actions.length;
-            for (const a of actions) void executeAction(this.app, a, this.bridgeOptions());
+            for (const a of actions) {
+              if (a.action === 'request-permission') {
+                pendingPermissionRequest = {
+                  tool: (a.tool as string) ?? 'unknown tool',
+                  reason: (a.reason as string) ?? '',
+                };
+              } else {
+                uiBridgeActionCount++;
+                void executeAction(this.app, a, this.bridgeOptions());
+              }
+            }
           } catch { /* malformed — already logged in extractActions */ }
         }
       },
@@ -1015,7 +1025,7 @@ export class ClaudeView extends ItemView {
         this.scrollToBottom();
       },
       onPermissionDenied: (denials) => {
-        this.renderPermissionDenials(denials, responseGroupEl);
+        if (!pendingPermissionRequest) this.renderPermissionDenials(denials, responseGroupEl);
       },
       onDone: (sessionId) => {
         statusEl.remove();
@@ -1115,6 +1125,12 @@ export class ClaudeView extends ItemView {
         if (injectQueries.length > 0) {
           // Stay locked — handleVaultInject will call unlock when done
           this.handleVaultInject(injectQueries, responseGroupEl, unlock);
+          return;
+        }
+
+        if (pendingPermissionRequest) {
+          // Stay locked — handlePermissionRequest will call unlock after modal resolves
+          this.handlePermissionRequest(pendingPermissionRequest, unlock);
           return;
         }
 
@@ -1288,6 +1304,19 @@ export class ClaudeView extends ItemView {
         doneBtn.disabled = true;
         void this.onOpen();
       });
+    });
+  }
+
+  private handlePermissionRequest(request: { tool: string; reason: string }, unlock: () => void) {
+    void promptPermissionRequest(this.app, request.tool, request.reason).then(granted => {
+      unlock();
+      if (granted) {
+        this.sessionPermissionOverride = 'full';
+        this.inputEl.value = `[Permission granted] Full access is now enabled. Please retry the blocked ${request.tool} operation and complete the task.`;
+      } else {
+        this.inputEl.value = `[Permission denied] ${request.tool} access was denied. Please continue without it or suggest an alternative approach.`;
+      }
+      void this.handleSend();
     });
   }
 
@@ -1760,6 +1789,7 @@ export class ClaudeView extends ItemView {
     let turnCacheTokens = 0;
     let turnOutputTokens = 0;
     const toolRowMap = new Map<string, HTMLElement>();
+    let pendingPermissionRequest: { tool: string; reason: string } | null = null;
 
     parseStreamOutput(proc, {
       onText: (delta) => {
@@ -1778,8 +1808,17 @@ export class ClaudeView extends ItemView {
         if (this.plugin.settings.uiBridgeEnabled) {
           try {
             const { actions } = extractActions(line + '\n');
-            uiBridgeActionCount += actions.length;
-            for (const a of actions) void executeAction(this.app, a, this.bridgeOptions());
+            for (const a of actions) {
+              if (a.action === 'request-permission') {
+                pendingPermissionRequest = {
+                  tool: (a.tool as string) ?? 'unknown tool',
+                  reason: (a.reason as string) ?? '',
+                };
+              } else {
+                uiBridgeActionCount++;
+                void executeAction(this.app, a, this.bridgeOptions());
+              }
+            }
           } catch { /* malformed */ }
         }
       },
@@ -1814,7 +1853,7 @@ export class ClaudeView extends ItemView {
         this.scrollToBottom();
       },
       onPermissionDenied: (denials) => {
-        this.renderPermissionDenials(denials, responseGroupEl);
+        if (!pendingPermissionRequest) this.renderPermissionDenials(denials, responseGroupEl);
       },
       onUsage: (usage) => {
         const total = Math.max(usage.cacheReadTokens, this.sessionContextTokens)
@@ -1882,6 +1921,12 @@ export class ClaudeView extends ItemView {
           this.wireInternalLinks(assistantEl);
         }
         this.scrollToBottom();
+
+        if (pendingPermissionRequest) {
+          this.handlePermissionRequest(pendingPermissionRequest, unlock);
+          return;
+        }
+
         unlock();
       },
     });
