@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.8.0](https://github.com/ScottKirvan/ObsidiBot/compare/2.7.8...2.8.0) (2026-04-21)
+
+
+### Features
+
+* mid-session permission requests via @@CORTEX_ACTION ([e4491a8](https://github.com/ScottKirvan/ObsidiBot/commit/e4491a842fdc55d871ef7d4c92b249af1974c445))
+* show tool call IN/OUT results inline and fix permission retry ([1dc9feb](https://github.com/ScottKirvan/ObsidiBot/commit/1dc9feb172a53340729dabab72841f907b2f9fdb))
+
 ## [2.7.8](https://github.com/ScottKirvan/ObsidiBot/compare/2.7.7...2.7.8) (2026-04-20)
 
 
