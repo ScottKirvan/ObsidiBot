@@ -43,7 +43,8 @@ export class ContextManager {
       `| \`show-notice\` | \`message\`, \`duration\` (ms, optional) | Show a brief toast notification |\n` +
       `| \`focus-search\` | *(none)* | Open Obsidian's quick switcher |\n` +
       `| \`open-settings\` | \`tab\` (optional, e.g. "obsidibot") | Open Obsidian settings, optionally to a specific tab |\n` +
-      `| \`run-command\` | \`commandId\` | Run any Obsidian command palette command by ID |\n\n` +
+      `| \`run-command\` | \`commandId\` | Run any Obsidian command palette command by ID |\n` +
+      `| \`request-permission\` | \`tool\`, \`reason\` | When a tool call is blocked and the blocked tool is clearly the right tool for the job — prefer requesting permission early rather than exhausting workarounds. Manually repeating an operation across many files or making the same edit 10+ times is not a practical alternative; that is exactly when you should request permission instead. Prompts the user to grant full access for this session. End your response after emitting this; the user's decision arrives in the next turn. |\n\n` +
       `Example: after creating a new note, emit:\n` +
       `@@CORTEX_ACTION {"action": "open-file", "path": "Notes/My New Note.md"}\n\n` +
       `Use these actions proactively when they improve the user's experience — ` +
