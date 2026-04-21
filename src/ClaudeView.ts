@@ -951,6 +951,7 @@ export class ClaudeView extends ItemView {
     let turnCacheTokens = 0;
     let turnOutputTokens = 0;
     const pendingQueries: VaultQuery[] = [];
+    const toolRowMap = new Map<string, HTMLElement>();
 
     parseStreamOutput(proc, {
       onText: (delta) => {
@@ -982,7 +983,7 @@ export class ClaudeView extends ItemView {
           log('onQuery — queued:', q.query, q.mode, q.path ?? '');
         } catch { log('onQuery — malformed line:', line.substring(0, 100)); }
       },
-      onToolCall: (tool, input) => {
+      onToolCall: (tool, input, toolUseId) => {
         const key = tool.toLowerCase();
         if (!statusEl.isConnected) assistantEl.appendChild(statusEl);
         statusEl.setText(TOOL_STATUS[key] ?? 'Working…');
@@ -990,14 +991,31 @@ export class ClaudeView extends ItemView {
         toolCallCount++;
         toolEventsEl.show();
         const row = toolEventsEl.createDiv({ cls: 'obsidibot-tool-event' });
-        const iconEl = row.createSpan({ cls: 'obsidibot-tool-event-icon' });
+        const header = row.createDiv({ cls: 'obsidibot-tool-event-header' });
+        const iconEl = header.createSpan({ cls: 'obsidibot-tool-event-icon' });
         setIcon(iconEl, TOOL_ICONS[key] ?? 'zap');
         const detail = extractToolDetail(key, input);
-        row.createSpan({ cls: 'obsidibot-tool-event-label', text: detail ? `${tool}: ${detail}` : tool });
+        header.createSpan({ cls: 'obsidibot-tool-event-label', text: detail ? `${tool}: ${detail}` : tool });
+        const outEl = row.createDiv({ cls: 'obsidibot-tool-event-output obsidibot-tool-output-pending' });
+        outEl.setText('…');
+        toolRowMap.set(toolUseId, outEl);
+        this.scrollToBottom();
+      },
+      onToolResult: (toolUseId, content) => {
+        const outEl = toolRowMap.get(toolUseId);
+        if (!outEl) return;
+        outEl.removeClass('obsidibot-tool-output-pending');
+        const trimmed = content.trim();
+        if (!trimmed) { outEl.setText('(no output)'); return; }
+        const lines = trimmed.split('\n');
+        const MAX_LINES = 5;
+        const shown = lines.slice(0, MAX_LINES).join('\n');
+        const overflow = lines.length - MAX_LINES;
+        outEl.setText(overflow > 0 ? `${shown}\n…+${overflow} lines` : shown);
         this.scrollToBottom();
       },
       onPermissionDenied: (denials) => {
-        this.renderPermissionDenials(denials, responseGroupEl, prompt);
+        this.renderPermissionDenials(denials, responseGroupEl);
       },
       onDone: (sessionId) => {
         statusEl.remove();
@@ -1273,7 +1291,7 @@ export class ClaudeView extends ItemView {
     });
   }
 
-  private renderPermissionDenials(denials: PermissionDenial[], container: HTMLElement, retryPrompt: string) {
+  private renderPermissionDenials(denials: PermissionDenial[], container: HTMLElement) {
     const card = container.createDiv({ cls: 'obsidibot-permission-card' });
     card.createEl('p', { cls: 'obsidibot-permission-title', text: `⚠ ${denials.length} operation${denials.length !== 1 ? 's' : ''} blocked by permission settings` });
 
@@ -1295,7 +1313,8 @@ export class ClaudeView extends ItemView {
         upgradeBtn.setText('↺ retrying…');
         upgradeBtn.disabled = true;
         log('Session permission override set to full');
-        this.inputEl.value = retryPrompt;
+        const toolList = [...new Set(denials.map(d => d.tool))].join(', ');
+        this.inputEl.value = `[Retrying with full access] The previous response was blocked because these tools required permission that wasn't granted: ${toolList}. Full access is now enabled for this session. Please resume and complete the task.`;
         void this.handleSend();
       });
       btnRow.createEl('a', {
@@ -1307,6 +1326,11 @@ export class ClaudeView extends ItemView {
         this.appInternal.setting.open();
         this.appInternal.setting.openTabById('obsidibot');
       });
+      const dismissBtn = btnRow.createEl('button', {
+        cls: 'obsidibot-permission-dismiss',
+        text: 'Dismiss',
+      });
+      dismissBtn.addEventListener('click', () => card.remove());
     }
     this.scrollToBottom();
   }
@@ -1735,6 +1759,7 @@ export class ClaudeView extends ItemView {
     let turnInputTokens = 0;
     let turnCacheTokens = 0;
     let turnOutputTokens = 0;
+    const toolRowMap = new Map<string, HTMLElement>();
 
     parseStreamOutput(proc, {
       onText: (delta) => {
@@ -1758,21 +1783,38 @@ export class ClaudeView extends ItemView {
           } catch { /* malformed */ }
         }
       },
-      onToolCall: (tool, input) => {
+      onToolCall: (tool, input, toolUseId) => {
         const key = tool.toLowerCase();
         if (!statusEl.isConnected) assistantEl.appendChild(statusEl);
         statusEl.setText(TOOL_STATUS[key] ?? 'Working…');
         toolCallCount++;
         toolEventsEl.show();
         const row = toolEventsEl.createDiv({ cls: 'obsidibot-tool-event' });
-        const iconEl = row.createSpan({ cls: 'obsidibot-tool-event-icon' });
+        const header = row.createDiv({ cls: 'obsidibot-tool-event-header' });
+        const iconEl = header.createSpan({ cls: 'obsidibot-tool-event-icon' });
         setIcon(iconEl, TOOL_ICONS[key] ?? 'zap');
         const detail = extractToolDetail(key, input);
-        row.createSpan({ cls: 'obsidibot-tool-event-label', text: detail ? `${tool}: ${detail}` : tool });
+        header.createSpan({ cls: 'obsidibot-tool-event-label', text: detail ? `${tool}: ${detail}` : tool });
+        const outEl = row.createDiv({ cls: 'obsidibot-tool-event-output obsidibot-tool-output-pending' });
+        outEl.setText('…');
+        toolRowMap.set(toolUseId, outEl);
+        this.scrollToBottom();
+      },
+      onToolResult: (toolUseId, content) => {
+        const outEl = toolRowMap.get(toolUseId);
+        if (!outEl) return;
+        outEl.removeClass('obsidibot-tool-output-pending');
+        const trimmed = content.trim();
+        if (!trimmed) { outEl.setText('(no output)'); return; }
+        const lines = trimmed.split('\n');
+        const MAX_LINES = 5;
+        const shown = lines.slice(0, MAX_LINES).join('\n');
+        const overflow = lines.length - MAX_LINES;
+        outEl.setText(overflow > 0 ? `${shown}\n…+${overflow} lines` : shown);
         this.scrollToBottom();
       },
       onPermissionDenied: (denials) => {
-        this.renderPermissionDenials(denials, responseGroupEl, injectPrompt);
+        this.renderPermissionDenials(denials, responseGroupEl);
       },
       onUsage: (usage) => {
         const total = Math.max(usage.cacheReadTokens, this.sessionContextTokens)
